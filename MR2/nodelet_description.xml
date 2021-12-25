@@ -1,6 +1,6 @@
 <library path="lib/libdr">
-  <class name="dr/dr_nodelet_main"
-     type="dr::dr_nodelet_main"
+  <class name="MR2/MR2_nodelet_main"
+     type="MR2::MR2_nodelet_main"
      base_class_type="nodelet::Nodelet">
     <description>
     </description>

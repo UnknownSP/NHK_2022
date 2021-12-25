@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>dr</name>
+  <name>MR2</name>
   <version>0.0.0</version>
-  <description>The dr package</description>
+  <description>The MR2 package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

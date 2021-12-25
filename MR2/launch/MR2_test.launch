@@ -80,7 +80,7 @@
     
     
     
-    <node pkg="nodelet" type="nodelet" name="dr_nodelet_main" args="$(arg nodelet_mode) dr/dr_nodelet_main $(arg manager_name)" >
+    <node pkg="nodelet" type="nodelet" name="MR2_nodelet_main" args="$(arg nodelet_mode) MR2/MR2_nodelet_main $(arg manager_name)" >
 
       <!--                    tr sz
                    5
