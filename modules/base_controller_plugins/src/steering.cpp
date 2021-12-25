@@ -26,6 +26,7 @@ namespace base_controller_plugins{
   	void CmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
   	void TimerCallback(const ros::TimerEvent& event);
   	void CalcSteering(double actualDt);
+	void CalcClosestAngle(double now_deg, double target_deg);
   
   	double MaximumAcceleration;
   	double MaximumVelocity;
@@ -68,6 +69,7 @@ namespace base_controller_plugins{
 	std_msgs::Float64 steerCmdPosmsg[4];
 	
 	double root_1par2 = 0.70710678118;
+	double pi_2 = 2.0 * M_PI;
 
     //nav_msgs::Odometry odom_twist;
   	//ros::Publisher odom_twist_pub;
@@ -114,7 +116,7 @@ namespace base_controller_plugins{
   	targetVelX = targetVelY = targetRotZ = 0.0;
   
     int ctrl_freq;
-    _nh.param("ctrl_freq", ctrl_freq, 20);
+    _nh.param("ctrl_freq", ctrl_freq, 100);
 
   	lastTarget_tire[0] = 0.0;
   	lastTarget_tire[1] = 0.0;
@@ -189,6 +191,15 @@ namespace base_controller_plugins{
     steer3CmdPos_pub.publish(steerCmdPosmsg[3]);
   }
 
+  void Steering::CalcClosestAngle(double now_deg, double target_deg)
+  {
+	  double direction = fmod(target_deg, pi_2) - fmod(now_deg, pi_2);
+	  if(fabs(direction) > M_PI){
+		  direction = -( (direction>=0)-(direction<0) )*pi_2 + direction;
+	  }
+	  return direction;
+  }
+
   void Steering::CalcSteering(double actualDt){
   	double speed[4];
 	double degree[4];
@@ -211,12 +222,6 @@ namespace base_controller_plugins{
 		speed[i] = sqrt( pow(x[i],2.0) + pow(y[i],2.0) );
 		degree[i] = 2.4 * atan2( y[i], x[i] );
 	}
-	
-
-  	//speed[0] = -((targetVelX * sin(1 * M_PI / 4))	+ (targetVelY * cos(1 * M_PI / 4)) 	+ (targetRotZ * RobotRadius)) / wheel_radius;
-  	//speed[1] = -((targetVelX * sin(3 * M_PI / 4))	+ (targetVelY * cos(3 * M_PI / 4)) 	+ (targetRotZ * RobotRadius)) / wheel_radius;
-  	//speed[2] = -((targetVelX * sin(5 * M_PI / 4))	+ (targetVelY * cos(5 * M_PI / 4)) 	+ (targetRotZ * RobotRadius)) / wheel_radius;
-    //speed[3] = -((targetVelX * sin(7 * M_PI / 4))	+ (targetVelY * cos(7 * M_PI / 4)) 	+ (targetRotZ * RobotRadius)) / wheel_radius;
   
   	double _k = this->speed_coeff;
   
@@ -242,29 +247,19 @@ namespace base_controller_plugins{
   		for(int i = 0; i < 4; i++){
   			double diffabs = fabs(speed[i] - lastTarget_tire[i]);
   			if(diffabs * _k > maxVelDelta){
-  				_k = maxVelDelta / diffabs;
+  				_k = (lastTarget_tire[i] + maxVelDelta) / speed[i];
   				NODELET_WARN("An infeasible acceleration detected! You might want to look into it.");
   			}
   		}
   
   		for(int i = 0; i < 4; i++){
-  			speed[i] = _k*lastTarget_tire[i] + ((speed[i] - lastTarget_tire[i]) * _k);
+  			speed[i] = _k * speed[i];
   		}
   	}
-  
-	//double limit = 500.0;
+	
   	for(int i = 0; i < 4; i++){
-		//if(i != 2){
-		//	t[i] *= 1.2;
-		//}	  
   		this->lastTarget_tire[i] = speed[i];
-		//if(fabs(t[i]) >= limit){
-		//	if(t[i] > 0.0){
-		//		t[i] = limit;
-		//	}else{
-		//		t[i] = -limit;
-		//	}
-		//}
+		this->lastTarget_steer[i] = degree[i];
   		this->tireCmdVelmsg[i].data = speed[i];
 		this->steerCmdPosmsg[i].data = degree[i];
   	}

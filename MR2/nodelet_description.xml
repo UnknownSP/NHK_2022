@@ -1,4 +1,4 @@
-<library path="lib/libdr">
+<library path="lib/libMR2">
   <class name="MR2/MR2_nodelet_main"
      type="MR2::MR2_nodelet_main"
      base_class_type="nodelet::Nodelet">

@@ -125,39 +125,35 @@ class MR2_nodelet_main : public nodelet::Nodelet
 public:
     virtual void onInit();
 private:
+    /***********************Function**************************/
     void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
 	void PosCallback(const std_msgs::Float32::ConstPtr& msg);
     void control_timer_callback(const ros::TimerEvent &event);
-        
-    void Cyl_Arm_grab_arrow();
-    void Cyl_Arm_release_arrow();
-
-    void ArmRotate_To_TargetPosi(double position);
-
-    void next_OpMode();
-    void back_OpMode();
-
     void shutdown();
     void recover();
-    void homing();
     void set_delay(double delay_s);
     void delay_start(double delay_s);
-    double delay_time = 0.0;
-
-    void change_OpMode();
-
+    /***********************Function**************************/
+    
+    
     ros::NodeHandle nh;
   	ros::NodeHandle _nh;
     ros::NodeHandle nh_MT;
-
-    //int linear_, angular_;
+    ros::Timer control_timer;
+    
+    /***********************Pub&Sub**************************/
     ros::Subscriber joy_sub;
 
-	/***********************/
-	ros::Subscriber ThrowPos_sub;
-	/***********************/
+    ros::Publisher cmd_vel_pub;
+    geometry_msgs::Twist cmd_vel_msg;
 
-	/***********************/
+    ros::Publisher SolenoidCmd_pub;
+    ros::Publisher SolenoidOrder_pub;
+	std_msgs::UInt8 solenoid_order_msg;
+    
+    std_msgs::UInt8 act_conf_cmd_msg;
+	std_msgs::UInt8 shirasu_cmd_msg;
+
     ros::Publisher foot_CmdPub0;
     ros::Publisher foot_CmdPub1;
     ros::Publisher foot_CmdPub2;
@@ -167,25 +163,9 @@ private:
     ros::Publisher steer_CmdPub1;
     ros::Publisher steer_CmdPub2;
 	ros::Publisher steer_CmdPub3;
-	/**********************/
-    ros::Publisher cmd_vel_pub;
-    geometry_msgs::Twist cmd_vel_msg;
-	/**********************/
-    ros::Publisher SolenoidCmd_pub;
-    ros::Publisher SolenoidOrder_pub;
-	std_msgs::UInt8 solenoid_order_msg;
-    uint8_t lastSolenoidOrder = 0b0000000;
-	/**********************/
-    std_msgs::UInt8 act_conf_cmd_msg;
-	/**********************/
-	std_msgs::UInt8 shirasu_cmd_msg;
-	/**********************/
-    ros::Timer control_timer;
 
-    int _delay_s = 0;
-    
-	int dr_mode = 0;
-    bool _command_ongoing = false;
+	ros::Subscriber ThrowPos_sub;
+    /***********************Pub&Sub**************************/
 
     bool _a = false;
     bool _b = false;
@@ -197,12 +177,10 @@ private:
     bool _leftthumb = false;
     bool _righttrigger = false;
     bool _lefttrigger = false;
-
     static int _padx;
     static int _pady;
     static int _lb;
     static int _rb;
-
     static int ButtonA;
     static int ButtonB;
     static int ButtonX;
@@ -211,11 +189,8 @@ private:
     static int ButtonRB;
     static int ButtonStart;
     static int ButtonBack;
-	/***************/
 	static int ButtonLeftThumb;
     static int ButtonRightThumb;
-	/***************/
-
     static int AxisDPadX;
     static int AxisDPadY;
     static int AxisLeftThumbX;
@@ -226,15 +201,20 @@ private:
     static int ButtonRightTrigger;
 
     int currentCommandIndex = 0;
-
-    static const std::vector<OpMode> opmode;
-    //-------------------------
     static const std::vector<ControllerCommands> SetLaunchPosi_commands;
     static const std::vector<ControllerCommands> manual_all;
     const std::vector<ControllerCommands> *command_list;
 
-    double throw_position_observed;
+
+    /***********************Valiables**************************/
+    int _delay_s = 0;
+    bool _command_ongoing = false;
     bool _is_manual_enabled = true;
+
+    double delay_time = 0.0;
+    uint8_t lastSolenoidOrder = 0b0000000;
+    double throw_position_observed;
+    /***********************Valiables**************************/
 };
 
 int MR2_nodelet_main::_padx = 0;
@@ -303,33 +283,6 @@ void MR2_nodelet_main::onInit(void)
     nh_MT = getMTNodeHandle();
     _nh = getPrivateNodeHandle();
 
-    this->joy_sub = nh.subscribe<sensor_msgs::Joy>("joy", 10, &MR2_nodelet_main::joyCallback, this);
-
-	/***************************************/
-	//this->ThrowPos_sub = nh_MT.subscribe<std_msgs::Float32>("motor4_current_val", 10, &MR2_nodelet_main::PosCallback, this);
-	/***************************************/
-
-	/**************************************************/
-	this->SolenoidCmd_pub = nh.advertise<std_msgs::UInt8>("solenoid_cmd", 1);
-    this->SolenoidOrder_pub = nh.advertise<std_msgs::UInt8>("solenoid_order", 1);
-	/**************************************************/
-    this->cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 1);
-
-    this->foot_CmdPub0 = nh.advertise<std_msgs::UInt8>("foot0_cmd", 1);
-    this->foot_CmdPub1 = nh.advertise<std_msgs::UInt8>("foot1_cmd", 1);
-    this->foot_CmdPub2 = nh.advertise<std_msgs::UInt8>("foot2_cmd", 1);
-	this->foot_CmdPub3 = nh.advertise<std_msgs::UInt8>("foot3_cmd", 1);
-    this->steer_CmdPub0 = nh.advertise<std_msgs::UInt8>("steer0_cmd", 1);
-    this->steer_ValPub0 = nh.advertise<std_msgs::Float64>("steer0_val", 1);
-    this->steer_CmdPub1 = nh.advertise<std_msgs::UInt8>("steer1_cmd", 1);
-    this->steer_CmdPub2 = nh.advertise<std_msgs::UInt8>("steer2_cmd", 1);
-	this->steer_CmdPub3 = nh.advertise<std_msgs::UInt8>("steer3_cmd", 1);
-	/**************************************************/
-    
-    //_nh.param("launch_long_vel", launch_long_vel, 0.0);
-    
-    //----------------------------------------
-
     nh.getParam("ButtonA", ButtonA);
     nh.getParam("ButtonB", ButtonB);
     nh.getParam("ButtonX", ButtonX);
@@ -339,7 +292,6 @@ void MR2_nodelet_main::onInit(void)
     nh.getParam("ButtonStart", ButtonStart);
     nh.getParam("ButtonLeftThumb", ButtonLeftThumb);
     nh.getParam("ButtonRightThumb", ButtonRightThumb);
-	/***************************/
 	nh.getParam("AxisLeftThumbX", AxisLeftThumbX);
     nh.getParam("AxisLeftThumbY", AxisLeftThumbY);
     nh.getParam("AxisRightThumbX", AxisRightThumbX);
@@ -348,9 +300,33 @@ void MR2_nodelet_main::onInit(void)
     nh.getParam("AxisDPadY", AxisDPadY);
 
     this->control_timer = nh.createTimer(ros::Duration(0.01), &MR2_nodelet_main::control_timer_callback, this);
-    NODELET_INFO("dr node has started.");
+    NODELET_INFO("MR2 node has started.");
 
     this->command_list = &MR2_nodelet_main::manual_all;
+
+
+	/*******************pub & sub*****************/
+    this->joy_sub = nh.subscribe<sensor_msgs::Joy>("joy", 10, &MR2_nodelet_main::joyCallback, this);
+    this->cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 1);
+
+	this->SolenoidCmd_pub = nh.advertise<std_msgs::UInt8>("solenoid_cmd", 1);
+    this->SolenoidOrder_pub = nh.advertise<std_msgs::UInt8>("solenoid_order", 1);
+    this->foot_CmdPub0 = nh.advertise<std_msgs::UInt8>("foot0_cmd", 1);
+    this->foot_CmdPub1 = nh.advertise<std_msgs::UInt8>("foot1_cmd", 1);
+    this->foot_CmdPub2 = nh.advertise<std_msgs::UInt8>("foot2_cmd", 1);
+	this->foot_CmdPub3 = nh.advertise<std_msgs::UInt8>("foot3_cmd", 1);
+    this->steer_CmdPub0 = nh.advertise<std_msgs::UInt8>("steer0_cmd", 1);
+    this->steer_ValPub0 = nh.advertise<std_msgs::Float64>("steer0_val", 1);
+    this->steer_CmdPub1 = nh.advertise<std_msgs::UInt8>("steer1_cmd", 1);
+    this->steer_CmdPub2 = nh.advertise<std_msgs::UInt8>("steer2_cmd", 1);
+	this->steer_CmdPub3 = nh.advertise<std_msgs::UInt8>("steer3_cmd", 1);
+
+    //this->ThrowPos_sub = nh_MT.subscribe<std_msgs::Float32>("motor4_current_val", 10, &MR2_nodelet_main::PosCallback, this);
+	/*******************pub & sub*****************/
+
+	/*******************parameter*****************/
+    //_nh.param("launch_long_vel", launch_long_vel, 0.0);
+	/*******************parameter*****************/
 
 }
 
@@ -360,19 +336,19 @@ void MR2_nodelet_main::PosCallback(const std_msgs::Float32::ConstPtr& msg)
 	this->throw_position_observed = msg->data;
 }
 
-void MR2_nodelet_main::Cyl_Arm_grab_arrow(void){
-    this->lastSolenoidOrder |= (uint8_t)SolenoidValveCommands::Cyl_Arm_cmd;
-    this->solenoid_order_msg.data = this->lastSolenoidOrder;
-    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
-    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
-}
-
-void MR2_nodelet_main::Cyl_Arm_release_arrow(void){
-    this->lastSolenoidOrder &= ~(uint8_t)SolenoidValveCommands::Cyl_Arm_cmd;
-    this->solenoid_order_msg.data = this->lastSolenoidOrder;
-    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
-    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
-}
+//void MR2_nodelet_main::Cyl_Arm_grab_arrow(void){
+//    this->lastSolenoidOrder |= (uint8_t)SolenoidValveCommands::Cyl_Arm_cmd;
+//    this->solenoid_order_msg.data = this->lastSolenoidOrder;
+//    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
+//    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
+//}
+//
+//void MR2_nodelet_main::Cyl_Arm_release_arrow(void){
+//    this->lastSolenoidOrder &= ~(uint8_t)SolenoidValveCommands::Cyl_Arm_cmd;
+//    this->solenoid_order_msg.data = this->lastSolenoidOrder;
+//    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
+//    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
+//}
 //void MR2_nodelet_main::ArmRotate_To_TargetPosi(double position){
 //    this->arm_position_msg.data = position;
 //    this->ArmVal_pub.publish(arm_position_msg);
@@ -577,12 +553,6 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
 
     ControllerCommands currentCommand = this->command_list->at(this->currentCommandIndex);
 
-    if(currentCommand == ControllerCommands::arm_home)
-    {
-        this->homing();
-        this->currentCommandIndex++;
-        NODELET_INFO("home");
-    }
     //else if(currentCommand == ControllerCommands::recover_current)
     //{
     //    this->act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_current;
@@ -604,7 +574,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
     //    this->currentCommandIndex++;
     //    NODELET_INFO("position");
     //}
-    else if (currentCommand == ControllerCommands::set_delay_10ms)
+    if (currentCommand == ControllerCommands::set_delay_10ms)
     {
         //set_delay(0.010);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
