@@ -1,0 +1,11 @@
+<library path="lib/libbase_controller_plugins">
+  <class name="base_controller_plugins/Omni4" type="base_controller_plugins::Omni4" base_class_type="nodelet::Nodelet">
+    <description>omni4</description>
+  </class>
+  <class name="base_controller_plugins/Omni3" type="base_controller_plugins::Omni3" base_class_type="nodelet::Nodelet">
+    <description>omni3</description>
+  </class>
+  <class name="base_controller_plugins/Steering" type="base_controller_plugins::Steering" base_class_type="nodelet::Nodelet">
+    <description>steering</description>
+  </class>
+</library>

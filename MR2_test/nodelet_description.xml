@@ -1,0 +1,9 @@
+<library path="lib/libdr">
+  <class name="dr/dr_nodelet_main"
+     type="dr::dr_nodelet_main"
+     base_class_type="nodelet::Nodelet">
+    <description>
+    </description>
+  </class>
+</library>
+

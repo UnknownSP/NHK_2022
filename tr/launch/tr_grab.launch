@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="robot_name" default="tr"/>
+  <arg name="manager_name" default="nodelet_manager"/>
+  <arg name="nodelet_mode" default="load"/>
+
+
+  <group ns="$(arg robot_name)">
+
+<!-- Nodelet Manager -->
+    <group if="$(eval nodelet_mode=='load')">
+      <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" />
+    </group>
+
+<!-- CAN -->
+    <node pkg="nodelet" type="nodelet" name="slcan_bridge" 
+    args="$(arg nodelet_mode) can_plugins/SlcanBridge $(arg manager_name)" >
+      <param name="port" type="string" value="/dev/ttyACM0" />
+    </node>
+
+    <node pkg="nodelet" type="nodelet" name="can_handler" 
+    args="$(arg nodelet_mode) can_plugins/CanHandler $(arg manager_name)" />
+
+<!--Motor Driver-->
+    <node pkg="nodelet" type="nodelet" name="motor0" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="4a0" />
+      <remap from="motor0_cmd" to="foot0_cmd"/>
+      <remap from="motor0_cmd_val" to="foot0_cmd_vel"/>      
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor1" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="4d0" />
+      <remap from="motor1_cmd" to="foot1_cmd"/>
+      <remap from="motor1_cmd_val" to="foot1_cmd_vel"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor2" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="540" />
+      <remap from="motor2_cmd" to="foot2_cmd"/>
+      <remap from="motor2_cmd_val" to="foot2_cmd_vel"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor3" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="5b4" />
+      <remap from="motor3_cmd" to="foot3_cmd"/>
+      <remap from="motor3_cmd_val" to="foot3_cmd_vel"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor4" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="52c" />
+      <remap from="motor4_cmd" to="Baseangle_cmd"/>
+      <remap from="motor4_cmd_val" to="Baseangle_cmd_pos"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor5" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="608" />
+      <remap from="motor5_cmd" to="Armangle_cmd"/>
+      <remap from="motor5_cmd_val" to="Armangle_cmd_pos"/>
+    </node>
+    
+    <node pkg="nodelet" type="nodelet" name="motor6" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="600" />
+      <remap from="motor6_cmd" to="ArmMove_cmd"/>
+      <remap from="motor6_cmd_val" to="ArmMove_cmd_pos"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor7" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="610" />
+      <remap from="motor7_cmd" to="LaunchForce_cmd"/>
+      <remap from="motor7_cmd_val" to="LaunchForce_cmd_pos"/>
+    </node>
+    
+    <node pkg="nodelet" type="nodelet" name="motor8" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="630" />
+      <remap from="motor8_cmd" to="Launchangle_cmd"/>
+      <remap from="motor8_cmd_val" to="Launchangle_cmd_pos"/>
+    </node>
+    
+    <node pkg="nodelet" type="nodelet" name="tr_nodelet_main" args="$(arg nodelet_mode) tr/tr_nodelet_main $(arg manager_name)" />
+    
+<!--Solenoid_Driver-->  
+    <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid" >
+      <param name="bid" type="string" value="100" />
+      <param name="name" value="solenoid"/>
+      <remap from="solenoid_cmd" to="solenoid_cmd"/>
+      <remap from="solenoid_order" to="solenoid_order"/>
+    </node>
+<!-- joy -->
+    <rosparam file="$(find tr)/param/logitech_f710_joy_assign.yaml" command="load" />
+    <node respawn="true" pkg="joy" type="joy_node" name="joy_node" >
+      <param name="dev" type="string" value="/dev/input/js0" />
+      <param name="deadzone" value="0.12" />
+    </node>
+    
+     <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Omni4 $(arg manager_name)" >
+      <param name="motor_max_acc" value="124000.0" />
+      <param name="motor_max_vel" value="400.0" />
+      <param name="invert_x" value="false" />
+      <param name="invert_y" value="false" />
+      <param name="invert_z" value="false" />
+      <remap from="motor0_cmd_vel" to="foot0_cmd_vel" />
+      <remap from="motor1_cmd_vel" to="foot1_cmd_vel" />
+      <remap from="motor2_cmd_vel" to="foot2_cmd_vel" />
+      <remap from="motor3_cmd_vel" to="foot3_cmd_vel" />
+    </node>
+  </group>  
+</launch>   
+    

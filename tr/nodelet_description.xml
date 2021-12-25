@@ -1,0 +1,9 @@
+<library path="lib/libtr">
+  <class name="tr/tr_nodelet_main"
+     type="tr::tr_nodelet_main"
+     base_class_type="nodelet::Nodelet">
+    <description>
+    </description>
+  </class>
+</library>
+

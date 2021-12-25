@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="robot_name" default="dr"/>
+  <arg name="manager_name" default="nodelet_manager"/>
+  <arg name="nodelet_mode" default="standalone"/>
+
+
+  <group ns="$(arg robot_name)">
+
+<!-- Nodelet Manager -->
+    <group if="$(eval nodelet_mode=='load')">
+      <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" />
+    </group>
+
+<!-- CAN -->
+    <node pkg="nodelet" type="nodelet" name="slcan_bridge" 
+    args="$(arg nodelet_mode) can_plugins/SlcanBridge $(arg manager_name)" >
+      <param name="port" type="string" value="/dev/ttyACM0" />
+    </node>
+
+    <node pkg="nodelet" type="nodelet" name="can_handler" 
+    args="$(arg nodelet_mode) can_plugins/CanHandler $(arg manager_name)" />
+
+<!--Motor Driver-->
+    <node pkg="nodelet" type="nodelet" name="motor0" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="4a0" /> <!-- 4a0 -->
+      <remap from="motor0_cmd" to="foot0_cmd"/>
+      <remap from="motor0_cmd_val" to="foot0_cmd_vel"/>      
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor1" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="60c" /> <!-- 60c -->
+      <remap from="motor1_cmd" to="foot1_cmd"/>
+      <remap from="motor1_cmd_val" to="foot1_cmd_vel"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor2" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="5b0" /> <!-- 5b0 -->
+      <remap from="motor2_cmd" to="foot2_cmd"/>
+      <remap from="motor2_cmd_val" to="foot2_cmd_vel"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor3" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="5d4" /> <!-- 5d4 -->
+      <remap from="motor3_cmd" to="foot3_cmd"/>
+      <remap from="motor3_cmd_val" to="foot3_cmd_vel"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor4" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="4c4" />
+      <remap from="motor4_cmd" to="arm_cmd"/>
+      <remap from="motor4_cmd_val" to="arm_val"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor5" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="52c"/>
+      <remap from="motor5_cmd" to="pitch_right_cmd"/>
+      <remap from="motor5_cmd_val" to="pitch_right_cmd_pos"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor6" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="620" />
+      <remap from="motor6_cmd" to="pitch_left_cmd"/>
+      <remap from="motor6_cmd_val" to="pitch_left_cmd_pos"/>
+    </node>
+    
+    
+    
+    <node pkg="nodelet" type="nodelet" name="dr_nodelet_main" args="$(arg nodelet_mode) dr/dr_nodelet_main $(arg manager_name)" >
+
+      <!--                    tr sz
+                   5
+         
+         2         3         4
+                 
+                   1
+
+                  dr sz
+      -->
+
+      <param name="RotStart_cur_adjust" type="double" value="-1.5" />
+      <param name="RotStart_deg_adjust" type="double" value="0.13" />
+      <param name="RotStop_deg_adjust" type="double" value="0.13" />
+      <param name="RotStart_deg_error" type="double" value="0.005" />
+
+      <param name="Pos_1_wall_RotStart_deg" type="double" value="1.57" />
+      <param name="Pos_1_wall_RotStop_deg" type="double" value="1.0" />
+      <param name="Pos_1_wall_RotStart_cur" type="double" value="-24" />
+      <param name="Pos_1_wall_RotStop_cur" type="double" value="0.2" />
+      <param name="pitch_1_wall_deg" type="double" value="-1.5" />
+
+      <param name="Pos_2_wall_RotStart_deg" type="double" value="1.65" />
+      <param name="Pos_2_wall_RotStop_deg" type="double" value="1.0" />
+      <param name="Pos_2_wall_RotStart_cur" type="double" value="-42" />
+      <param name="Pos_2_wall_RotStop_cur" type="double" value="0.0" />
+      <param name="pitch_2_wall_deg" type="double" value="-1.5" />
+
+      <param name="Pos_3_wall_RotStart_deg" type="double" value="1.63" />
+      <param name="Pos_3_wall_RotStop_deg" type="double" value="1.0" />
+      <param name="Pos_3_wall_RotStart_cur" type="double" value="-36.5" />
+      <param name="Pos_3_wall_RotStop_cur" type="double" value="0.0" />
+      <param name="pitch_3_wall_deg" type="double" value="-1.5" />
+
+      <param name="Pos_4_wall_RotStart_deg" type="double" value="1.60" />
+      <param name="Pos_4_wall_RotStop_deg" type="double" value="1.0" />
+      <param name="Pos_4_wall_RotStart_cur" type="double" value="-37" />
+      <param name="Pos_4_wall_RotStop_cur" type="double" value="0.0" />
+      <param name="pitch_4_wall_deg" type="double" value="-1.5" />
+
+      <param name="Pos_5_wall_RotStart_deg" type="double" value="1.75" />
+      <param name="Pos_5_wall_RotStop_deg" type="double" value="0.8" />
+      <param name="Pos_5_wall_RotStart_cur" type="double" value="-100" />
+      <param name="Pos_5_wall_RotStop_cur" type="double" value="0.0" />
+      <param name="pitch_5_wall_deg" type="double" value="-1.5" />
+
+      <!-- ~10/1
+      <param name="Pos_2_free_RotStart_deg" type="double" value="1.72" />
+      <param name="Pos_2_free_RotStop_deg" type="double" value="0.7" />
+      <param name="Pos_2_free_RotStart_cur" type="double" value="-60" />
+      <param name="Pos_2_free_RotStop_cur" type="double" value="0.0" />
+      <param name="pitch_2_free_deg" type="double" value="-1.5" />
+      -->
+      <param name="Pos_2_free_RotStart_deg" type="double" value="1.705" />
+      <param name="Pos_2_free_RotStop_deg" type="double" value="0.9" />
+      <param name="Pos_2_free_RotStart_cur" type="double" value="-45" />
+      <param name="Pos_2_free_RotStop_cur" type="double" value="0.0" />
+      <param name="pitch_2_free_deg" type="double" value="-1.5" />
+
+      <param name="Pos_3_free_RotStart_deg" type="double" value="1.68" />
+      <param name="Pos_3_free_RotStop_deg" type="double" value="1.0" />
+      <param name="Pos_3_free_RotStart_cur" type="double" value="-41" />
+      <param name="Pos_3_free_RotStop_cur" type="double" value="0.0" />
+      <param name="pitch_3_free_deg" type="double" value="-1.5" />
+
+      <param name="Pos_4_free_RotStart_deg" type="double" value="1.68" />
+      <param name="Pos_4_free_RotStop_deg" type="double" value="1.0" />
+      <param name="Pos_4_free_RotStart_cur" type="double" value="-43" />
+      <param name="Pos_4_free_RotStop_cur" type="double" value="0.0" />
+      <param name="pitch_4_free_deg" type="double" value="-1.5" />
+
+      <param name="launch_short_vel" type="double" value="-25" /> 
+      <param name="launch_short_pos" type="double" value="1.0" />
+      <param name="Pos_1_RotStart_deg" type="double" value="1.60" />
+      <param name="Pos_1_RotStop_cur" type="double" value="0.2" />
+      <param name="pitchrightpos_1_deg" type="double" value="-1.52" />
+
+    	<param name="launch_medium_vel" type="double" value="-38" />
+    	<param name="launch_medium_pos" type="double" value="1.0" />
+      <param name="Pos_2_RotStart_deg" type="double" value="1.61" />
+      <param name="Pos_2_RotStop_cur" type="double" value="0" />
+      <param name="pitchrightpos_2_deg" type="double" value="-1.52" />
+
+      <param name="launch_long_vel" type="double" value="-100" />
+    	<param name="launch_long_pos" type="double" value="1.0" />
+      <param name="Pos_3_RotStart_deg" type="double" value="1.67" />
+      <param name="Pos_3_RotStop_cur" type="double" value="0" />
+      <param name="pitchrightpos_3_deg" type="double" value="-1.55" />
+
+      <!-- wall to 1 gata pod temae
+      <param name="launch_short_vel" type="double" value="-25" /> 
+      <param name="launch_short_pos" type="double" value="1.0" />
+      <param name="Pos_1_RotStart_deg" type="double" value="1.60" />
+      <param name="Pos_1_RotStop_cur" type="double" value="0.2" />
+      -->
+
+      <!-- wall to 3 gata pod
+      <param name="launch_long_vel" type="double" value="-38" />
+    	<param name="launch_long_pos" type="double" value="1.0" />
+      <param name="Pos_3_RotStart_deg" type="double" value="1.61" />
+      <param name="Pos_3_RotStop_cur" type="double" value="0" />
+      -->
+
+      <!-- start zone to 3 gata pod
+      <param name="launch_long_vel" type="double" value="-70" />
+    	<param name="launch_long_pos" type="double" value="1.0" />
+      <param name="Pos_3_RotStart_deg" type="double" value="1.58" />
+      <param name="Pos_3_RotStop_cur" type="double" value="0" />
+
+      <param name="launch_long_vel" type="double" value="-44" />
+    	<param name="launch_long_pos" type="double" value="1.0" />
+      <param name="Pos_3_RotStart_deg" type="double" value="1.63" />
+      <param name="Pos_3_RotStop_cur" type="double" value="0" />
+      -->
+
+      <param name="pitchright_init_deg" type="double" value="-0.5" />
+      <!-- <param name="pitchrightpos_1_deg" type="double" value="-1.95" /> -->
+      <!-- <param name="pitchleftpos_1_deg" type="double" value="2.06" /> -->
+      
+      <param name="pitchright_avoid_arm_deg" type="double" value="-1.8" />
+      <!--<param name="pitchrightpos_1_deg" type="double" value="-2.05" />
+      <param name="pitchrightpos_2_deg" type="double" value="-2.05" />
+      <param name="pitchrightpos_3_deg" type="double" value="-1.95" />-->
+
+      <param name="pitchleft_init_deg" type="double" value="1.0" />
+      <param name="pitchleftpos_1_deg" type="double" value="2.15" />
+      <param name="pitchleftpos_2_deg" type="double" value="2.13" />
+      <param name="pitchleftpos_3_deg" type="double" value="2.05" />
+
+      <param name="Arrow_Pick_Arm_deg" type="double" value="2.5" />
+      <param name="Arrow_Adjust_Arm_deg" type="double" value="1.1" />
+      <param name="Arrow_Pick_Rack_Arm_deg" type="double" value="-2.05" />
+      <param name="Arrow_Adjust_Hight_Rack_Arm_deg" type="double" value="-1.95" />
+      <param name="Arrow_Adjust_Rack_Arm_deg" type="double" value="1.1" />
+      <param name="ArmAvoid_inner_deg" type="double" value="-2.8" />
+    	<!-- <param name="launch_short_vel" type="double" value="14.75" /> -->
+    	<!-- <param name="launch_short_pos" type="double" value="7.7" /> -->
+      <!-- 2m80 iikanzi
+      <param name="launch_short_vel" type="double" value="20.0" /> 
+      <param name="launch_short_pos" type="double" value="-4.2" />
+      -->
+      <!-- 3m30 iikanzi
+      <param name="launch_short_vel" type="double" value="35.0" /> 
+      <param name="launch_short_pos" type="double" value="-4.2" />
+      -->
+      <!-- 4m30 iikanzi
+      <param name="launch_short_vel" type="double" value="45.0" /> 
+      <param name="launch_short_pos" type="double" value="-4.25" />
+      -->
+    </node>
+    
+<!--Solenoid_Driver-->  
+    <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid" >
+      <param name="bid" type="string" value="100" />
+      <param name="name" value="solenoid"/>
+      <remap from="solenoid_cmd" to="solenoid_cmd"/>
+      <remap from="solenoid_order" to="solenoid_order"/>
+    </node>
+<!-- joy -->
+    <rosparam file="$(find dr)/param/logitech_f710_joy_assign.yaml" command="load" />
+    <node respawn="true" pkg="joy" type="joy_node" name="joy_node" >
+      <param name="dev" type="string" value="/dev/input/js0" />
+      <param name="deadzone" value="0.12" />
+    </node>
+    
+     <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Omni4 $(arg manager_name)" >
+      <param name="motor_max_acc" value="124000.0" />
+      <param name="motor_max_vel" value="1000.0" />
+      <param name="invert_x" value="false" />
+      <param name="invert_y" value="false" />
+      <param name="invert_z" value="false" />
+      <remap from="motor0_cmd_vel" to="foot0_cmd_vel" />
+      <remap from="motor1_cmd_vel" to="foot1_cmd_vel" />
+      <remap from="motor2_cmd_vel" to="foot2_cmd_vel" />
+      <remap from="motor3_cmd_vel" to="foot3_cmd_vel" />
+    </node>
+  </group>  
+</launch>   
+    

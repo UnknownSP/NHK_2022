@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="robot_name"/>
+  <arg name="lidar"/>
+  <arg name="manager_name"/>
+  <arg name="nodelet_mode"/>
+  <arg name="color"/>
+  <arg name="map"/>
+  <arg name="x0" default="$(eval 0.55)"/>
+  <arg name="y0" default="$(eval 9.55)"/>
+  <arg name="yaw0" default="$(eval pi/4)"/> 
+
+  <include file="$(find tr)/config/machine/remote.machine"/>
+
+  <group ns="$(arg robot_name)">
+
+<!-- Nodelet Manager -->
+    <group if="$(eval nodelet_mode=='load')">
+      <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" machine="robot"/>
+    </group>
+
+<!-- CAN -->
+    <node pkg="nodelet" type="nodelet" name="slcan_bridge" 
+    args="$(arg nodelet_mode) can_plugins/SlcanBridge $(arg manager_name)" machine="robot"/>
+
+    <node pkg="nodelet" type="nodelet" name="can_handler" 
+    args="$(arg nodelet_mode) can_plugins/CanHandler $(arg manager_name)" machine="robot"/>
+
+<!--Motor Driver-->
+    <node pkg="nodelet" type="nodelet" name="motor0" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" machine="robot">
+      <param name="bid" type="string" value="5b0" />
+      <remap from="motor0_cmd" to="base/foot0_cmd"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor1" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" machine="robot">
+      <param name="bid" type="string" value="4e0" />
+      <remap from="motor1_cmd" to="base/foot1_cmd"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor2" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" machine="robot">
+      <param name="bid" type="string" value="608" />
+      <remap from="motor2_cmd" to="base/foot2_cmd"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor3" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" machine="robot">
+      <param name="bid" type="string" value="5b8" />
+      <remap from="motor3_cmd" to="base/foot3_cmd"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor4" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" machine="robot">
+      <param name="bid" type="string" value="60c" />
+      <remap from="motor4_cmd" to="beta/cmd"/>
+      <remap from="motor4_cmd_val" to="pass"/>
+      <param name="ctrl_freq" value="5" />
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor5" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" machine="robot">
+      <param name="bid" type="string" value="4d0" />
+      <remap from="motor5_cmd" to="beta/cmd"/>
+      <remap from="motor5_cmd_val" to="pass"/>
+      <param name="ctrl_freq" value="5" />
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor6" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" machine="robot">
+      <param name="bid" type="string" value="4a0" />
+      <remap from="motor6_cmd" to="beta/cmd"/>
+      <remap from="motor6_cmd_val" to="slide"/>
+      <param name="ctrl_freq" value="5" />
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor7" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" machine="robot">
+      <param name="bid" type="string" value="4b0" />
+      <remap from="motor7_cmd" to="beta/cmd"/>
+      <remap from="motor7_cmd_val" to="arm"/>
+      <param name="ctrl_freq" value="5" />
+    </node>
+<!--Solenoid_Driver-->  
+    <node pkg="can_plugins" type="solenoid_driver_node" name="solenoid" machine="robot">
+      <param name="bid" type="string" value="100" />
+      <param name="name" value="solenoid"/>
+      <remap from="solenoid_cmd" to="tr/solenoid_cmd"/>
+      <remap from="solenoid_order" to="tr/solenid_order"/>
+    </node>
+<!--lider-->
+    <node name="urg_node" pkg="urg_node" type="urg_node" machine="robot">
+      <param name="serial_port" value="/dev/sensors/hokuyo_H1323516"/>
+      <param name="frame_id" value="$(arg robot_name)/laser_link"/>
+      <param name="angle_min" value="-1.5"/>
+      <param name="angle_max" value="1.5"/>
+      <param name="intensity" value="false"/>
+      <remap from="scan" to="scan"/>
+    </node>
+    <group if="$(arg lidar)">
+
+      <node pkg="map_server" type="map_server" name="map_server" args="$(find robot_control)/resources/$(arg map)/map.yaml">
+        <param name="frame_id" value="$(arg robot_name)/map"/>
+      </node>
+
+      <node pkg="amcl" type="amcl" name="amcl" output="screen" machine="robot">
+          <rosparam command="load" file="$(find robot_control)/config/amcl.yaml" />
+          <param name="base_frame_id" value="$(arg robot_name)/base_link" />
+          <param name="odom_frame_id" value="$(arg robot_name)/odom" />
+          <param name="global_frame_id" value="$(arg robot_name)/map" />
+      </node>
+    </group>
+    
+    <node pkg="tf2_ros" type="static_transform_publisher" name="odom_link_init_broadcaster" args="$(arg x0) $(arg y0) 0 $(arg yaw0) 0 0 $(arg robot_name)/odom $(arg robot_name)/odom_link_init" machine="robot"/>
+
+    
+    <group unless="$(arg lidar)">
+      <node pkg="map_server" type="map_server" name="map_server" args="resources/$(arg map)/map.yaml">
+        <param name="frame_id" value="$(arg robot_name)/odom"/>
+      </node>
+    </group>
+  
+    <group if="$(arg lidar)">
+
+      <node pkg="map_server" type="map_server" name="map_server" args="$(find robot_control)/resources/red/map.yaml">
+        <param name="frame_id" value="$(arg robot_name)/map"/>
+      </node>
+
+      <node pkg="amcl" type="amcl" name="amcl" output="screen" machine="robot">
+          <rosparam command="load" file="$(find robot_control)/config/amcl.yaml" />
+          <param name="base_frame_id" value="$(arg robot_name)/base_link" />
+          <param name="odom_frame_id" value="$(arg robot_name)/odom" />
+          <param name="global_frame_id" value="$(arg robot_name)/map" />
+      </node>
+    </group>
+    
+    <group unless="$(arg lidar)">
+      <node pkg="map_server" type="map_server" name="map_server" args="$(find robot_control)/resources/red/map.yaml">
+        <param name="frame_id" value="$(arg robot_name)/odom"/>
+      </node>
+    </group>
+    
+  </group>
+</launch>

@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>  
+  <arg name="manager_name" default="nodelet_manager" />
+  <arg name="nodelet_mode" default="standalone" /><!-- set to standalone if you want to use as node-->
+  <arg name="lidar" default="true"/>
+  <arg name="debug" default="true"/>
+  <arg name="robot_name" default="tr"/>
+  <arg name="color" default="red"/>
+  <arg name="map" default="red_small"/>
+  
+  
+  <group if = "$(eval robot_name == 'tr' or robot_name == 'dr')">
+    <include file="$(eval find(robot_name) + '/launch/RobotHW.launch' )">
+      <arg name="manager_name" value="$(arg manager_name)" />
+      <arg name="nodelet_mode" value="$(arg nodelet_mode)" />
+      <arg name="robot_name" value="$(arg robot_name)"/>
+      <arg name="lidar" value="$(arg lidar)"/>
+      <arg name="color" value="$(arg color)"/>
+      <arg name="map" value="$(arg map)"/>
+    </include>
+    <node pkg="amcl" type="amcl" name="amcl" output="screen" machine="robot">
+      <rosparam command="load" file="config/amcl_params.yaml" />
+      <param name="base_frame_id" value="$(arg robot_name)/base_link" />
+      <param name="odom_frame_id" value="$(arg robot_name)/odom" />
+      <param name="global_frame_id" value="$(arg robot_name)/map" />
+    </node>
+  </group>  
+  <group if = "$(eval robot_name == 'tr_grab' or robot_name == 'dr_grab')">
+    <include file="$(eval find(robot_name) + '/launch/RobotHW.launch' )">
+      <arg name="manager_name" value="$(arg manager_name)" />
+      <arg name="nodelet_mode" value="$(arg nodelet_mode)" />
+      <arg name="robot_name" value="$(arg robot_name)"/>
+    </include>
+  </group>
+
+
+</launch>
+
+ 
