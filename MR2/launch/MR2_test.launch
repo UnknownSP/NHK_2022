@@ -101,7 +101,7 @@
     </node>
     
      <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Steering $(arg manager_name)" >
-      <param name="tire_max_acc" value="10000.0" />
+      <param name="tire_max_acc" value="1000.0" />
       <param name="tire_max_vel" value="3000.0" />
       <param name="speed_coeff" value="1500.0" />
       <param name="invert_x" value="false" />

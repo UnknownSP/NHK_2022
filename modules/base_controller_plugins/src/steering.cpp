@@ -26,13 +26,14 @@ namespace base_controller_plugins{
   	void CmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
   	void TimerCallback(const ros::TimerEvent& event);
   	void CalcSteering(double actualDt);
-	void CalcClosestAngle(double now_deg, double target_deg);
+	double CalcClosestAngle(double now_deg, double target_deg);
   
   	double MaximumAcceleration;
   	double MaximumVelocity;
   	double RobotRadius;
   	double wheel_radius;
 	double speed_coeff;
+	double gear_ratio;
   
   	bool InvertX = false;
   	bool InvertY = false;
@@ -67,6 +68,8 @@ namespace base_controller_plugins{
 	double lastTarget_steer[4];
   	std_msgs::Float64 tireCmdVelmsg[4];
 	std_msgs::Float64 steerCmdPosmsg[4];
+	bool tire_reverse[4] = {false};
+	bool tire_reverse_recent[4] = {false};
 	
 	double root_1par2 = 0.70710678118;
 	double pi_2 = 2.0 * M_PI;
@@ -85,6 +88,7 @@ namespace base_controller_plugins{
   	_nh.param("robot_radius", this->RobotRadius, 0.49);
   	_nh.param("wheel_radius", this->wheel_radius, 0.0400);
 	_nh.param("speed_coeff", this->speed_coeff, 0.0);
+	_nh.param("gear_ratio", this->gear_ratio, 2.4);
   
   	NODELET_INFO("tire_max_acc : %f", this->MaximumAcceleration);
   	NODELET_INFO("tire_max_vel : %f", this->MaximumVelocity);
@@ -191,7 +195,7 @@ namespace base_controller_plugins{
     steer3CmdPos_pub.publish(steerCmdPosmsg[3]);
   }
 
-  void Steering::CalcClosestAngle(double now_deg, double target_deg)
+  double Steering::CalcClosestAngle(double now_deg, double target_deg)
   {
 	  double direction = fmod(target_deg, pi_2) - fmod(now_deg, pi_2);
 	  if(fabs(direction) > M_PI){
@@ -220,7 +224,20 @@ namespace base_controller_plugins{
 
 	for(int i=0;i<4;i++){
 		speed[i] = sqrt( pow(x[i],2.0) + pow(y[i],2.0) );
-		degree[i] = 2.4 * atan2( y[i], x[i] );
+		double closest_angle = CalcClosestAngle(lastTarget_steer[i], atan2( y[i], x[i] ));
+		if(fabs(closest_angle) >= M_PI * 1.0/2.0){
+			closest_angle += ( (closest_angle<0)-(closest_angle>=0) ) * M_PI;
+			tire_reverse[i] = true;
+		}else{
+			tire_reverse[i] = false;
+		}
+		degree[i] = lastTarget_steer[i] + closest_angle;
+	}
+	if(speed[0]==0.0 && speed[1]==0.0 && speed[2]==0.0 && speed[3]==0.0){
+		for(int i=0;i<4;i++){
+			degree[i] = lastTarget_steer[i];
+			tire_reverse[i] = tire_reverse_recent[i];
+		}
 	}
   
   	double _k = this->speed_coeff;
@@ -245,9 +262,14 @@ namespace base_controller_plugins{
   		_k = 1.0;
   
   		for(int i = 0; i < 4; i++){
-  			double diffabs = fabs(speed[i] - lastTarget_tire[i]);
-  			if(diffabs * _k > maxVelDelta){
-  				_k = (lastTarget_tire[i] + maxVelDelta) / speed[i];
+  			double diffabs = speed[i] - lastTarget_tire[i];
+  			if(fabs(diffabs) * _k > maxVelDelta){
+				if(diffabs > 0){
+					_k = (lastTarget_tire[i] + maxVelDelta) / speed[i];
+				}else{
+					_k = (lastTarget_tire[i] - maxVelDelta) / lastTarget_tire[i];
+					speed[i] = lastTarget_tire[i];
+				}
   				NODELET_WARN("An infeasible acceleration detected! You might want to look into it.");
   			}
   		}
@@ -261,7 +283,9 @@ namespace base_controller_plugins{
   		this->lastTarget_tire[i] = speed[i];
 		this->lastTarget_steer[i] = degree[i];
   		this->tireCmdVelmsg[i].data = speed[i];
-		this->steerCmdPosmsg[i].data = degree[i];
+		if(tire_reverse[i]) this->tireCmdVelmsg[i].data *= -1.0;
+		this->steerCmdPosmsg[i].data = this->gear_ratio * degree[i];
+		tire_reverse_recent[i] = tire_reverse[i];
   	}
   }
   

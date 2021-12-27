@@ -492,14 +492,21 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     
     if (this->_is_manual_enabled)
     {
+        static double recent_vel_x = 0.0;
+        static double recent_vel_y = 0.0;
+        static double recent_vel_yaw = 0.0;
         double vel_x = joy->axes[AxisLeftThumbX];   
         double vel_y = joy->axes[AxisLeftThumbY];
         //double vel_yaw_l = (joy->buttons[ButtonLeftThumbX] - 1.0) * (1.0 - 0.0) / (- 1.0 - 1.0) + 0.0;
         //double vel_yaw_r = (joy->buttons[ButtonRightThumbX] - 1.0) * (- 1.0 - 0.0) / (- 1.0 - 1.0) + 0.0;
         double vel_yaw = joy->axes[AxisRightThumbX];//vel_yaw_l + vel_yaw_r;
+
+        //if(vel_x == 0.0 && vel_y == 0.0 && vel_yaw ==0.0){
+        //    vel_x = recent_vel_x;
+        //    vel_y = recent_vel_y;
+        //    vel_yaw = recent_vel_yaw;
+        //}
         double vel_norm = hypot(vel_x, vel_y);
-
-
         if (vel_norm > 1.0)
         {
             vel_x /= vel_norm;
@@ -523,6 +530,10 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this->cmd_vel_msg.angular.z = -vel_yaw;
         }
         this->cmd_vel_pub.publish(this->cmd_vel_msg);
+
+        recent_vel_x = vel_x;
+        recent_vel_y = vel_y;
+        recent_vel_yaw = vel_yaw;
     }
     last_start = _start;
     last_back = _back;
