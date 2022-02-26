@@ -1,0 +1,9 @@
+<library path="lib/libMR1">
+  <class name="MR1/MR1_nodelet_main"
+     type="MR1::MR1_nodelet_main"
+     base_class_type="nodelet::Nodelet">
+    <description>
+    </description>
+  </class>
+</library>
+
