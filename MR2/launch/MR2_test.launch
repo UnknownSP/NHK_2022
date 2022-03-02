@@ -64,18 +64,23 @@
     </node>
     <node pkg="nodelet" type="nodelet" name="motor8" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="4d0" />
-      <remap from="motor8_cmd" to="arm_cmd"/>
-      <remap from="motor8_cmd_val" to="arm_val"/>
+      <remap from="motor8_cmd" to="arm_r_cmd"/>
+      <remap from="motor8_cmd_val" to="arm_r_value"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor9" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="52c"/>
-      <remap from="motor9_cmd" to="pitch_right_cmd"/>
-      <remap from="motor9_cmd_val" to="pitch_right_cmd_pos"/>
+      <param name="bid" type="string" value="500" />
+      <remap from="motor9_cmd" to="arm_l_cmd"/>
+      <remap from="motor9_cmd_val" to="arm_l_value"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor10" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="52c"/>
+      <remap from="motor10_cmd" to="pitch_right_cmd"/>
+      <remap from="motor10_cmd_val" to="pitch_right_cmd_pos"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor11" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="620" />
-      <remap from="motor10_cmd" to="pitch_left_cmd"/>
-      <remap from="motor10_cmd_val" to="pitch_left_cmd_pos"/>
+      <remap from="motor11_cmd" to="pitch_left_cmd"/>
+      <remap from="motor11_cmd_val" to="pitch_left_cmd_pos"/>
     </node>
     
     
@@ -87,11 +92,25 @@
     </node>
     
 <!--Solenoid_Driver-->  
+<!--
     <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid" >
       <param name="bid" type="string" value="100" />
       <param name="name" value="solenoid"/>
       <remap from="solenoid_cmd" to="solenoid_cmd"/>
       <remap from="solenoid_order" to="solenoid_order"/>
+    </node>
+-->
+    <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid1" >
+      <param name="bid" type="string" value="100" />
+      <param name="name" value="solenoid1"/>
+      <remap from="solenoid1_cmd" to="solenoid1_cmd"/>
+      <remap from="solenoid1_order" to="solenoid1_order"/>
+    </node>
+    <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid2" >
+      <param name="bid" type="string" value="120" />
+      <param name="name" value="solenoid2"/>
+      <remap from="solenoid2_cmd" to="solenoid2_cmd"/>
+      <remap from="solenoid2_order" to="solenoid2_order"/>
     </node>
 <!-- joy -->
     <rosparam file="$(find MR2)/param/logitech_f710_joy_assign.yaml" command="load" />

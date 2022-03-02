@@ -363,10 +363,11 @@ void MR1_nodelet_main::shutdown(void){
 }
 
 void MR1_nodelet_main::recover(void){
-    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_cmd;
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
     launch1_CmdPub.publish(act_conf_cmd_msg);
     launch2_CmdPub.publish(act_conf_cmd_msg);
     launch3_CmdPub.publish(act_conf_cmd_msg);
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_cmd;
     SolenoidCmd_pub.publish(act_conf_cmd_msg);
 }
 

@@ -23,17 +23,17 @@
 
 <!--Motor Driver-->
     <node pkg="nodelet" type="nodelet" name="motor1" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="640" />
+      <param name="bid" type="string" value="400" />
       <remap from="motor1_cmd" to="launch1_cmd"/>
       <remap from="motor1_cmd_val" to="launch1_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor2" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="62c"/>
+      <param name="bid" type="string" value="410"/>
       <remap from="motor2_cmd" to="launch2_cmd"/>
       <remap from="motor2_cmd_val" to="launch2_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor3" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="63c" />
+      <param name="bid" type="string" value="420" />
       <remap from="motor3_cmd" to="launch3_cmd"/>
       <remap from="motor3_cmd_val" to="launch3_vel"/>
     </node>
