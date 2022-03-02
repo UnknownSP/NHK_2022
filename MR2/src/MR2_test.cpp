@@ -94,19 +94,20 @@ enum class SolenoidValveCommands : uint8_t
     recover_cmd       = 0b000001,
     
     Cyl_Arm_R_cmd           = 0b0100000,
-    Cyl_Arm_L_cmd           = 0b1000000,
     Cyl_Clutch_R_cmd        = 0b0000001,
-    Cyl_Clutch_L_cmd        = 0b0000001,
     Cyl_Push_Lagori_cmd     = 0b0010000,
     Cyl_Pull_Lagori_cmd     = 0b0010000,
-    Cyl_Shelf_1_cmd         = 0b0010000,
-    Cyl_Shelf_2_cmd         = 0b0010000,
-    Cyl_Shelf_3_cmd         = 0b0010000,
-    Cyl_Shelf_4_cmd         = 0b0010000,
+
+    Cyl_Arm_L_cmd           = 0b1000000,
+    Cyl_Clutch_L_cmd        = 0b0000001,
     Cyl_Ball_Lift_cmd       = 0b0010000,
     Cyl_Ball_Catch_cmd      = 0b0010000,
     Cyl_Ball_Tilt_cmd       = 0b0010000,
+    Cyl_Shelf_4_cmd         = 0b0010000,
 
+    Cyl_Shelf_1_cmd         = 0b0010000,
+    Cyl_Shelf_2_cmd         = 0b0010000,
+    Cyl_Shelf_3_cmd         = 0b0010000,
 };
 
 enum class MotorCommands : uint8_t
@@ -142,27 +143,32 @@ private:
     void recover();
     void set_delay(double delay_s);
     void delay_start(double delay_s);
+
+    void steer_homing();
     
-    void grab_Arm_R();
-    void release_Arm_R();
-    void grab_Arm_L();
-    void release_Arm_L();
-    void On_Clutch_R();
-    void Off_Clutch_R();
-    void On_Clutch_L();
-    void Off_Clutch_L();
-    void On_Push_LGR();
-    void Off_Push_LGR();
-    void On_Pull_LGR();
-    void Off_Pull_LGR();
-    void On_Shelf_4();
-    void Off_Shelf_4();
-    void On_B_Lift();
-    void Off_B_Lift();
-    void On_B_Catch();
-    void Off_B_Catch();
-    void On_B_Tilt();
-    void Off_B_Tilt();
+    void Cyl_grab_Arm_R();
+    void Cyl_release_Arm_R();
+    void Cyl_grab_Arm_L();
+    void Cyl_release_Arm_L();
+    void Cyl_On_Clutch_R();
+    void Cyl_Off_Clutch_R();
+    void Cyl_On_Clutch_L();
+    void Cyl_Off_Clutch_L();
+    void Cyl_On_Push_LGR();
+    void Cyl_Off_Push_LGR();
+    void Cyl_On_Pull_LGR();
+    void Cyl_Off_Pull_LGR();
+    void Cyl_On_Shelf_4();
+    void Cyl_Off_Shelf_4();
+    void Cyl_On_B_Lift();
+    void Cyl_Off_B_Lift();
+    void Cyl_On_B_Catch();
+    void Cyl_Off_B_Catch();
+    void Cyl_On_B_Tilt();
+    void Cyl_Off_B_Tilt();
+
+    void Arm_R_move_Vel(double target);
+    void Arm_L_move_Vel(double target);
 
     /***********************Function**************************/
     
@@ -436,15 +442,15 @@ void MR2_nodelet_main::recover(void){
     Solenoid1_Cmd_pub.publish(act_conf_cmd_msg);
     Solenoid2_Cmd_pub.publish(act_conf_cmd_msg);
     act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_position;
-    foot_CmdPub0.publish(act_conf_cmd_msg);
-    foot_CmdPub1.publish(act_conf_cmd_msg);
-    foot_CmdPub2.publish(act_conf_cmd_msg);
-    foot_CmdPub3.publish(act_conf_cmd_msg);
     steer_CmdPub0.publish(act_conf_cmd_msg);
     steer_CmdPub1.publish(act_conf_cmd_msg);
     steer_CmdPub2.publish(act_conf_cmd_msg);
     steer_CmdPub3.publish(act_conf_cmd_msg);
     act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
+    foot_CmdPub0.publish(act_conf_cmd_msg);
+    foot_CmdPub1.publish(act_conf_cmd_msg);
+    foot_CmdPub2.publish(act_conf_cmd_msg);
+    foot_CmdPub3.publish(act_conf_cmd_msg);
     Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
     Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
 }
@@ -489,10 +495,11 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
     static bool _a_enable = false;
     static bool _b_enable = false;
-    static bool _Cyl_catch = false;
     static bool _x_enable = false;
-    static bool _Cyl_arm = false;
-    static bool _Cyl_table = false;
+    static bool _y_enable = false;
+
+    static bool _Cyl_Arm = false;
+    static bool _Cyl_Clutch = false;
 
     this->_a = joy->buttons[ButtonA];
     this->_b = joy->buttons[ButtonB];
@@ -525,14 +532,40 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
    
     if (_righttrigger && (_padx != -1))
     {   
-        act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
-        steer_CmdPub0.publish(act_conf_cmd_msg);
-        act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
-        steer_CmdPub0.publish(act_conf_cmd_msg);
+        this->steer_homing();
     }
+
+    if(joy->buttons[ButtonRightThumb] != 0.0){
+        this->Cyl_Off_Clutch_R();
+        if(_rb){
+            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 2.0);
+        }else{
+            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -2.0);
+        }
+    }else{
+        this->Cyl_On_Clutch_R();
+    }
+    if(joy->buttons[ButtonLeftThumb] != 0.0){
+        this->Cyl_Off_Clutch_L();
+        if(_lb){
+            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * 2.0);
+        }else{
+            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -2.0);
+        }
+    }else{
+        this->Cyl_On_Clutch_L();
+    }
+
     if(_a && _a_enable){
-        //this->act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_position;
-        //this->steer_CmdPub0.publish(act_conf_cmd_msg);
+        if(_Cyl_Clutch){
+            Cyl_On_Clutch_R();
+            Cyl_On_Clutch_L();
+            _Cyl_Clutch = false;
+        }else{
+            Cyl_Off_Clutch_R();
+            Cyl_Off_Clutch_L();
+            _Cyl_Clutch = true;
+        }
         _a_enable = false;
     }
     if(!_a){
@@ -540,8 +573,15 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     }
 
     if(_b && _b_enable){
-        //this->arm_position_msg.data = 7.0;
-        //this->steer_ValPub0.publish(arm_position_msg);
+        if(_Cyl_Arm){
+            Cyl_grab_Arm_R();
+            Cyl_grab_Arm_L();
+            _Cyl_Arm = false;
+        }else{
+            Cyl_release_Arm_R();
+            Cyl_release_Arm_L();
+            _Cyl_Arm = true;
+        }
         _b_enable = false;
     }
     if(!_b){
@@ -555,6 +595,15 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     }
     if(!_x){
         _x_enable = true;
+    }
+
+    if(_y && _y_enable){
+        //this->arm_position_msg.data = 0.0;
+        //this->steer_ValPub0.publish(arm_position_msg);
+        _y_enable = false;
+    }
+    if(!_x){
+        _y_enable = true;
     }
     
     if (this->_is_manual_enabled)
@@ -583,19 +632,23 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             vel_x *= -1.0;
             vel_y *= -1.0;
         }
-        if(joy->buttons[ButtonLeftThumb] >= 1.0){
-            this->cmd_vel_msg.linear.x = vel_x * 0.3;
-            this->cmd_vel_msg.linear.y = vel_y * 0.3;
-            this->cmd_vel_msg.angular.z = -vel_yaw * 0.3;
-        }else if(joy->buttons[ButtonRightThumb] >= 1.0){
-            this->cmd_vel_msg.linear.x = vel_x * 5;
-            this->cmd_vel_msg.linear.y = vel_y * 5;
-            this->cmd_vel_msg.angular.z = -vel_yaw * 3.5;
-        }else{
-            this->cmd_vel_msg.linear.x = vel_x;
-            this->cmd_vel_msg.linear.y = vel_y;
-            this->cmd_vel_msg.angular.z = -vel_yaw;
-        }
+        //if(joy->buttons[ButtonLeftThumb] >= 1.0){
+        //    this->cmd_vel_msg.linear.x = vel_x * 0.3;
+        //    this->cmd_vel_msg.linear.y = vel_y * 0.3;
+        //    this->cmd_vel_msg.angular.z = -vel_yaw * 0.3;
+        //}else if(joy->buttons[ButtonRightThumb] >= 1.0){
+        //    this->cmd_vel_msg.linear.x = vel_x * 5;
+        //    this->cmd_vel_msg.linear.y = vel_y * 5;
+        //    this->cmd_vel_msg.angular.z = -vel_yaw * 3.5;
+        //}else{
+        //    this->cmd_vel_msg.linear.x = vel_x;
+        //    this->cmd_vel_msg.linear.y = vel_y;
+        //    this->cmd_vel_msg.angular.z = -vel_yaw;
+        //}
+        this->cmd_vel_msg.linear.x = vel_x;
+        this->cmd_vel_msg.linear.y = vel_y;
+        this->cmd_vel_msg.angular.z = -vel_yaw;
+
         this->cmd_vel_pub.publish(this->cmd_vel_msg);
 
         recent_vel_x = vel_x;
@@ -700,6 +753,129 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
     }
 
 
+}
+
+void MR2_nodelet_main::steer_homing(void){
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
+    steer_CmdPub0.publish(act_conf_cmd_msg);
+    steer_CmdPub1.publish(act_conf_cmd_msg);
+    steer_CmdPub2.publish(act_conf_cmd_msg);
+    steer_CmdPub3.publish(act_conf_cmd_msg);
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
+    steer_CmdPub0.publish(act_conf_cmd_msg);
+    steer_CmdPub1.publish(act_conf_cmd_msg);
+    steer_CmdPub2.publish(act_conf_cmd_msg);
+    steer_CmdPub3.publish(act_conf_cmd_msg);
+}
+
+void MR2_nodelet_main::Arm_R_move_Vel(double target){
+    this->Arm_R_Value_msg.data = target;
+    this->Arm_R_Value_pub.publish(this->Arm_R_Value_msg);
+}
+void MR2_nodelet_main::Arm_L_move_Vel(double target){
+    this->Arm_L_Value_msg.data = target;
+    this->Arm_L_Value_pub.publish(this->Arm_L_Value_msg);
+}
+
+void MR2_nodelet_main::Cyl_grab_Arm_R(void){
+    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Arm_R_cmd;
+    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
+    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
+}
+void MR2_nodelet_main::Cyl_release_Arm_R(void){
+    this->lastSolenoid_1_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Arm_R_cmd;
+    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
+    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
+}
+void MR2_nodelet_main::Cyl_grab_Arm_L(void){
+    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Arm_L_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+}
+void MR2_nodelet_main::Cyl_release_Arm_L(void){
+    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Arm_L_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+}
+void MR2_nodelet_main::Cyl_On_Clutch_R(void){
+    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Clutch_R_cmd;
+    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
+    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
+}
+void MR2_nodelet_main::Cyl_Off_Clutch_R(void){
+    this->lastSolenoid_1_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Clutch_R_cmd;
+    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
+    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
+}
+void MR2_nodelet_main::Cyl_On_Clutch_L(void){
+    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Clutch_L_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+}
+void MR2_nodelet_main::Cyl_Off_Clutch_L(void){
+    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Clutch_L_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+}
+void MR2_nodelet_main::Cyl_On_Push_LGR(void){
+    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Push_Lagori_cmd;
+    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
+    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
+}
+void MR2_nodelet_main::Cyl_Off_Push_LGR(void){
+    this->lastSolenoid_1_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Push_Lagori_cmd;
+    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
+    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
+}
+void MR2_nodelet_main::Cyl_On_Pull_LGR(void){
+    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Pull_Lagori_cmd;
+    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
+    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
+}
+void MR2_nodelet_main::Cyl_Off_Pull_LGR(void){
+    this->lastSolenoid_1_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Pull_Lagori_cmd;
+    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
+    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
+}
+void MR2_nodelet_main::Cyl_On_Shelf_4(void){
+    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Shelf_4_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+}
+void MR2_nodelet_main::Cyl_Off_Shelf_4(void){
+    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Shelf_4_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+}
+void MR2_nodelet_main::Cyl_On_B_Lift(void){
+    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Ball_Lift_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+}
+void MR2_nodelet_main::Cyl_Off_B_Lift(void){
+    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Ball_Lift_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+}
+void MR2_nodelet_main::Cyl_On_B_Catch(void){
+    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Ball_Catch_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+}
+void MR2_nodelet_main::Cyl_Off_B_Catch(void){
+    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Ball_Catch_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+}
+void MR2_nodelet_main::Cyl_On_B_Tilt(void){
+    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Ball_Tilt_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+}
+void MR2_nodelet_main::Cyl_Off_B_Tilt(void){
+    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Ball_Tilt_cmd;
+    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
+    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
 }
 
 }
