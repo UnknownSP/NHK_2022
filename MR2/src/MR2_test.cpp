@@ -589,8 +589,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     }
 
     if(_x && _x_enable){
-        //this->arm_position_msg.data = 0.0;
-        //this->steer_ValPub0.publish(arm_position_msg);
+
         _x_enable = false;
     }
     if(!_x){
@@ -598,8 +597,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     }
 
     if(_y && _y_enable){
-        //this->arm_position_msg.data = 0.0;
-        //this->steer_ValPub0.publish(arm_position_msg);
+        
         _y_enable = false;
     }
     if(!_x){

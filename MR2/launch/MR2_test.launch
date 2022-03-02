@@ -126,6 +126,10 @@
       <param name="invert_x" value="false" />
       <param name="invert_y" value="false" />
       <param name="invert_z" value="false" />
+      <param name="steer0_adjust" value="0.0" />
+      <param name="steer1_adjust" value="0.0" />
+      <param name="steer2_adjust" value="0.0" />
+      <param name="steer3_adjust" value="0.0" />
       <remap from="tire0_cmd_vel" to="foot0_cmd_vel" />
       <remap from="tire1_cmd_vel" to="foot1_cmd_vel" />
       <remap from="tire2_cmd_vel" to="foot2_cmd_vel" />
@@ -134,6 +138,7 @@
       <remap from="steer1_cmd_pos" to="steer1_val" />
       <remap from="steer2_cmd_pos" to="steer2_val" />
       <remap from="steer3_cmd_pos" to="steer3_val" />
+      
     </node>
   </group>  
 </launch>   

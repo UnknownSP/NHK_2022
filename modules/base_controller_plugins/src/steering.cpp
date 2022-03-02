@@ -70,6 +70,7 @@ namespace base_controller_plugins{
 	std_msgs::Float64 steerCmdPosmsg[4];
 	bool tire_reverse[4] = {false};
 	bool tire_reverse_recent[4] = {false};
+	double steer_adjust[4] = {0.0};
 	
 	double root_1par2 = 0.70710678118;
 	double pi_2 = 2.0 * M_PI;
@@ -89,6 +90,11 @@ namespace base_controller_plugins{
   	_nh.param("wheel_radius", this->wheel_radius, 0.0400);
 	_nh.param("speed_coeff", this->speed_coeff, 0.0);
 	_nh.param("gear_ratio", this->gear_ratio, 2.4);
+
+	_nh.param("steer0_adjust", this->steer_adjust[0], 0.0);
+	_nh.param("steer1_adjust", this->steer_adjust[1], 0.0);
+	_nh.param("steer2_adjust", this->steer_adjust[2], 0.0);
+	_nh.param("steer3_adjust", this->steer_adjust[3], 0.0);
   
   	NODELET_INFO("tire_max_acc : %f", this->MaximumAcceleration);
   	NODELET_INFO("tire_max_vel : %f", this->MaximumVelocity);
@@ -284,7 +290,7 @@ namespace base_controller_plugins{
 		this->lastTarget_steer[i] = degree[i];
   		this->tireCmdVelmsg[i].data = speed[i];
 		if(tire_reverse[i]) this->tireCmdVelmsg[i].data *= -1.0;
-		this->steerCmdPosmsg[i].data = this->gear_ratio * degree[i];
+		this->steerCmdPosmsg[i].data = this->gear_ratio * degree[i] + steer_adjust[i];
 		tire_reverse_recent[i] = tire_reverse[i];
   	}
   }
