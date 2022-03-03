@@ -93,17 +93,17 @@ enum class SolenoidValveCommands : uint8_t
     shutdown_cmd      = 0b000000,
     recover_cmd       = 0b000001,
     
-    Cyl_Arm_R_cmd           = 0b0100000,
-    Cyl_Clutch_R_cmd        = 0b0000001,
-    Cyl_Push_Lagori_cmd     = 0b0010000,
-    Cyl_Pull_Lagori_cmd     = 0b0010000,
+    Cyl_Arm_R_cmd           = 0b0000010,
+    Cyl_Clutch_R_cmd        = 0b0001000,
+    Cyl_Push_Lagori_cmd     = 0b0100000,
+    Cyl_Shelf_4_cmd         = 0b0010000,
+    Cyl_Pull_Lagori_cmd     = 0b1000000,
 
-    Cyl_Arm_L_cmd           = 0b1000000,
-    Cyl_Clutch_L_cmd        = 0b0000001,
+    Cyl_Arm_L_cmd           = 0b0000100,
+    Cyl_Clutch_L_cmd        = 0b0000010,
     Cyl_Ball_Lift_cmd       = 0b0010000,
     Cyl_Ball_Catch_cmd      = 0b0010000,
     Cyl_Ball_Tilt_cmd       = 0b0010000,
-    Cyl_Shelf_4_cmd         = 0b0010000,
 
     Cyl_Shelf_1_cmd         = 0b0010000,
     Cyl_Shelf_2_cmd         = 0b0010000,
@@ -500,6 +500,9 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
     static bool _Cyl_Arm = false;
     static bool _Cyl_Clutch = false;
+    static bool _Cyl_Shelf = false;
+    static bool _Cyl_Push = false;
+    static bool _Cyl_Pull = false;
 
     this->_a = joy->buttons[ButtonA];
     this->_b = joy->buttons[ButtonB];
@@ -538,33 +541,35 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     if(joy->buttons[ButtonRightThumb] != 0.0){
         this->Cyl_Off_Clutch_R();
         if(_rb){
-            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 2.0);
+            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -5.0);
         }else{
-            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -2.0);
+            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -5.0);
         }
     }else{
         this->Cyl_On_Clutch_R();
+        this->Arm_R_move_Vel(0.0);
     }
     if(joy->buttons[ButtonLeftThumb] != 0.0){
         this->Cyl_Off_Clutch_L();
         if(_lb){
-            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * 2.0);
+            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * 5.0);
         }else{
-            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -2.0);
+            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -5.0);
         }
     }else{
         this->Cyl_On_Clutch_L();
+        this->Arm_L_move_Vel(0.0);
     }
 
     if(_a && _a_enable){
-        if(_Cyl_Clutch){
-            Cyl_On_Clutch_R();
-            Cyl_On_Clutch_L();
-            _Cyl_Clutch = false;
+        if(_Cyl_Pull){
+            Cyl_On_Pull_LGR();
+            //Cyl_On_Clutch_L();
+            _Cyl_Pull = false;
         }else{
-            Cyl_Off_Clutch_R();
-            Cyl_Off_Clutch_L();
-            _Cyl_Clutch = true;
+            Cyl_Off_Pull_LGR();
+            //Cyl_Off_Clutch_L();
+            _Cyl_Pull = true;
         }
         _a_enable = false;
     }
@@ -589,7 +594,13 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     }
 
     if(_x && _x_enable){
-
+        if(_Cyl_Shelf){
+            Cyl_On_Shelf_4();
+            _Cyl_Shelf = false;
+        }else{
+            Cyl_Off_Shelf_4();
+            _Cyl_Shelf = true;
+        }
         _x_enable = false;
     }
     if(!_x){
@@ -597,7 +608,13 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     }
 
     if(_y && _y_enable){
-        
+        if(_Cyl_Push){
+            Cyl_On_Push_LGR();
+            _Cyl_Push = false;
+        }else{
+            Cyl_Off_Push_LGR();
+            _Cyl_Push = true;
+        }
         _y_enable = false;
     }
     if(!_x){
@@ -796,22 +813,22 @@ void MR2_nodelet_main::Cyl_release_Arm_L(void){
     this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
 }
 void MR2_nodelet_main::Cyl_On_Clutch_R(void){
-    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Clutch_R_cmd;
-    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
-    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
-}
-void MR2_nodelet_main::Cyl_Off_Clutch_R(void){
     this->lastSolenoid_1_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Clutch_R_cmd;
     this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
     this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
 }
+void MR2_nodelet_main::Cyl_Off_Clutch_R(void){
+    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Clutch_R_cmd;
+    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
+    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
+}
 void MR2_nodelet_main::Cyl_On_Clutch_L(void){
-    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Clutch_L_cmd;
+    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Clutch_L_cmd;
     this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
     this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
 }
 void MR2_nodelet_main::Cyl_Off_Clutch_L(void){
-    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Clutch_L_cmd;
+    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Clutch_L_cmd;
     this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
     this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
 }
@@ -836,14 +853,14 @@ void MR2_nodelet_main::Cyl_Off_Pull_LGR(void){
     this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
 }
 void MR2_nodelet_main::Cyl_On_Shelf_4(void){
-    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Shelf_4_cmd;
-    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Shelf_4_cmd;
+    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
+    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
 }
 void MR2_nodelet_main::Cyl_Off_Shelf_4(void){
-    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Shelf_4_cmd;
-    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
+    this->lastSolenoid_1_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Shelf_4_cmd;
+    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
+    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
 }
 void MR2_nodelet_main::Cyl_On_B_Lift(void){
     this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Ball_Lift_cmd;

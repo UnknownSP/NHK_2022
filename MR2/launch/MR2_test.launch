@@ -23,52 +23,52 @@
 
 <!--Motor Driver-->
     <node pkg="nodelet" type="nodelet" name="motor0" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="5d4" /> <!-- 4a0 -->
+      <param name="bid" type="string" value="510" /> <!-- 4a0 -->
       <remap from="motor0_cmd" to="foot0_cmd"/>
       <remap from="motor0_cmd_val" to="foot0_cmd_vel"/>      
     </node>
     <node pkg="nodelet" type="nodelet" name="motor1" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="60c" /> <!-- 60c -->
+      <param name="bid" type="string" value="520" /> <!-- 60c -->
       <remap from="motor1_cmd" to="foot1_cmd"/>
       <remap from="motor1_cmd_val" to="foot1_cmd_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor2" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="5b0" /> <!-- 5b0 -->
+      <param name="bid" type="string" value="530" /> <!-- 5b0 -->
       <remap from="motor2_cmd" to="foot2_cmd"/>
       <remap from="motor2_cmd_val" to="foot2_cmd_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor3" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="4a0" /> <!-- 5d4 -->
+      <param name="bid" type="string" value="540" /> <!-- 5d4 -->
       <remap from="motor3_cmd" to="foot3_cmd"/>
       <remap from="motor3_cmd_val" to="foot3_cmd_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor4" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="4c4" /> <!-- 4a0 -->
+      <param name="bid" type="string" value="410" /> <!-- 4a0 -->
       <remap from="motor4_cmd" to="steer0_cmd"/>
       <remap from="motor4_cmd_val" to="steer0_val"/>      
     </node>
     <node pkg="nodelet" type="nodelet" name="motor5" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="660" /> <!-- 60c -->
+      <param name="bid" type="string" value="420" /> <!-- 60c -->
       <remap from="motor5_cmd" to="steer1_cmd"/>
       <remap from="motor5_cmd_val" to="steer1_val"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor6" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="670" /> <!-- 5b0 -->
+      <param name="bid" type="string" value="430" /> <!-- 5b0 -->
       <remap from="motor6_cmd" to="steer2_cmd"/>
       <remap from="motor6_cmd_val" to="steer2_val"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor7" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="680" /> <!-- 5d4 -->
+      <param name="bid" type="string" value="440" /> <!-- 5d4 -->
       <remap from="motor7_cmd" to="steer3_cmd"/>
       <remap from="motor7_cmd_val" to="steer3_val"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor8" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="4d0" />
+      <param name="bid" type="string" value="610" />
       <remap from="motor8_cmd" to="arm_r_cmd"/>
       <remap from="motor8_cmd_val" to="arm_r_value"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor9" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="500" />
+      <param name="bid" type="string" value="620" />
       <remap from="motor9_cmd" to="arm_l_cmd"/>
       <remap from="motor9_cmd_val" to="arm_l_value"/>
     </node>
