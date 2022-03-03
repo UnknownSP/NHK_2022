@@ -99,8 +99,8 @@ enum class SolenoidValveCommands : uint8_t
     Cyl_Shelf_4_cmd         = 0b0010000,
     Cyl_Pull_Lagori_cmd     = 0b1000000,
 
-    Cyl_Arm_L_cmd           = 0b0000100,
-    Cyl_Clutch_L_cmd        = 0b0000010,
+    Cyl_Arm_L_cmd           = 0b0000010,
+    Cyl_Clutch_L_cmd        = 0b0000100,
     Cyl_Ball_Lift_cmd       = 0b0010000,
     Cyl_Ball_Catch_cmd      = 0b0010000,
     Cyl_Ball_Tilt_cmd       = 0b0010000,
@@ -541,34 +541,36 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     if(joy->buttons[ButtonRightThumb] != 0.0){
         this->Cyl_Off_Clutch_R();
         if(_rb){
-            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -5.0);
+            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -15.0);
         }else{
-            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -5.0);
+            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
         }
     }else{
-        this->Cyl_On_Clutch_R();
+        //this->Cyl_On_Clutch_R();
         this->Arm_R_move_Vel(0.0);
     }
     if(joy->buttons[ButtonLeftThumb] != 0.0){
         this->Cyl_Off_Clutch_L();
         if(_lb){
-            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * 5.0);
+            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * 15.0);
         }else{
-            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -5.0);
+            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
         }
     }else{
-        this->Cyl_On_Clutch_L();
+        //this->Cyl_On_Clutch_L();
         this->Arm_L_move_Vel(0.0);
     }
 
     if(_a && _a_enable){
         if(_Cyl_Pull){
-            Cyl_On_Pull_LGR();
+            //Cyl_On_Pull_LGR();
             //Cyl_On_Clutch_L();
+            Cyl_On_Clutch_L();
             _Cyl_Pull = false;
         }else{
-            Cyl_Off_Pull_LGR();
+            //Cyl_Off_Pull_LGR();
             //Cyl_Off_Clutch_L();
+            Cyl_Off_Clutch_L();
             _Cyl_Pull = true;
         }
         _a_enable = false;
@@ -579,12 +581,16 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
     if(_b && _b_enable){
         if(_Cyl_Arm){
-            Cyl_grab_Arm_R();
+            //Cyl_grab_Arm_R();
             Cyl_grab_Arm_L();
+            //Cyl_On_Clutch_R();
+            //Cyl_On_Clutch_L();
             _Cyl_Arm = false;
         }else{
-            Cyl_release_Arm_R();
+            //Cyl_release_Arm_R();
             Cyl_release_Arm_L();
+            //Cyl_Off_Clutch_R();
+            //Cyl_Off_Clutch_L();
             _Cyl_Arm = true;
         }
         _b_enable = false;
