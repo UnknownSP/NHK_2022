@@ -127,7 +127,7 @@ public:
 private:
     /***********************Function**************************/
     void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
-	void PosCallback(const std_msgs::Float32::ConstPtr& msg);
+	void PosCallback(const geometry_msgs::Twist::ConstPtr& msg);
     void control_timer_callback(const ros::TimerEvent &event);
     void shutdown();
     void recover();
@@ -160,8 +160,12 @@ private:
     ros::Publisher launch1_VelPub;
     ros::Publisher launch2_VelPub;
     ros::Publisher launch3_VelPub;
+    ros::Publisher pitch_CmdPub;
+    ros::Publisher yaw_CmdPub;
+    ros::Publisher pitch_PosPub;
+    ros::Publisher yaw_PosPub;
 
-	ros::Subscriber ThrowPos_sub;
+	ros::Subscriber Mouse_sub;
     /***********************Pub&Sub**************************/
 
     bool _a = false;
@@ -316,8 +320,12 @@ void MR1_nodelet_main::onInit(void)
     this->launch1_VelPub = nh.advertise<std_msgs::Float64>("launch1_vel", 1);
     this->launch2_VelPub = nh.advertise<std_msgs::Float64>("launch2_vel", 1);
     this->launch3_VelPub = nh.advertise<std_msgs::Float64>("launch3_vel", 1);
+    this->pitch_CmdPub = nh.advertise<std_msgs::UInt8>("pitch_cmd", 1);
+    this->pitch_PosPub = nh.advertise<std_msgs::Float64>("pitch_pos", 1);
+    this->yaw_CmdPub = nh.advertise<std_msgs::UInt8>("yaw_cmd", 1);
+    this->yaw_PosPub = nh.advertise<std_msgs::Float64>("yaw_pos", 1);
 
-    //this->ThrowPos_sub = nh_MT.subscribe<std_msgs::Float32>("motor4_current_val", 10, &MR1_nodelet_main::PosCallback, this);
+    this->Mouse_sub = nh.subscribe<geometry_msgs::Twist>("mouse_vel", 10, &MR1_nodelet_main::PosCallback, this);
 	/*******************pub & sub*****************/
 
 	/*******************parameter*****************/
@@ -330,9 +338,10 @@ void MR1_nodelet_main::onInit(void)
 }
 
 /**************************************************************************************/
-void MR1_nodelet_main::PosCallback(const std_msgs::Float32::ConstPtr& msg)
+void MR1_nodelet_main::PosCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
-	this->throw_position_observed = msg->data;
+	this->throw_position_observed = msg->linear.x;
+    NODELET_INFO("x : %f", this->throw_position_observed);
 }
 
 //void MR1_nodelet_main::Cyl_Arm_grab_arrow(void){
@@ -359,6 +368,8 @@ void MR1_nodelet_main::shutdown(void){
     launch1_CmdPub.publish(act_conf_cmd_msg);
     launch2_CmdPub.publish(act_conf_cmd_msg);
     launch3_CmdPub.publish(act_conf_cmd_msg);
+    pitch_CmdPub.publish(act_conf_cmd_msg);
+    yaw_CmdPub.publish(act_conf_cmd_msg);
     SolenoidCmd_pub.publish(act_conf_cmd_msg);
 }
 
@@ -367,6 +378,9 @@ void MR1_nodelet_main::recover(void){
     launch1_CmdPub.publish(act_conf_cmd_msg);
     launch2_CmdPub.publish(act_conf_cmd_msg);
     launch3_CmdPub.publish(act_conf_cmd_msg);
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_position;
+    pitch_CmdPub.publish(act_conf_cmd_msg);
+    yaw_CmdPub.publish(act_conf_cmd_msg);
     act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_cmd;
     SolenoidCmd_pub.publish(act_conf_cmd_msg);
 }
@@ -561,9 +575,8 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
     //this->command_list->size() <= (int)this->currentCommandIndex || this->command_list == &this->manual_all
     if (!this->_command_ongoing)
     {
-        NODELET_INFO("control_time_return");
+        //NODELET_INFO("control_time_return");
     }
-    ROS_INFO("control_time_return");
 
     ControllerCommands currentCommand = this->command_list->at(this->currentCommandIndex);
 
