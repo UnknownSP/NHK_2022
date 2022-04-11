@@ -15,7 +15,11 @@ except ImportError:
 import rospy
 from geometry_msgs.msg import Twist, Vector3
 
+import pyautogui
+
 import numpy
+import cv2
+from PIL import Image, ImageTk, ImageOps
 
 
 class MouseTeleop():
@@ -47,16 +51,16 @@ class MouseTeleop():
         self._root.resizable(0, 0)
 
         # Create canvas:
-        self._canvas = tkinter.Canvas(self._root, bg='white')
+        self._canvas = tkinter.Canvas(self._root, bg='white', width="1000",height="500")
 
         # Create canvas objects:
-        self._canvas.create_arc(0, 0, 0, 0, fill='red', outline='red',
-                width=1, style=tkinter.PIESLICE, start=90.0, tag='w')
-        self._canvas.create_line(0, 0, 0, 0, fill='blue', width=4, tag='v_x')
+        #self._canvas.create_arc(0, 0, 0, 0, fill='red', outline='red',
+        #        width=1, style=tkinter.PIESLICE, start=90.0, tag='w')
+        #self._canvas.create_line(0, 0, 0, 0, fill='blue', width=4, tag='v_x')
 
-        if self._holonomic:
-            self._canvas.create_line(0, 0, 0, 0,
-                    fill='blue', width=4, tag='v_y')
+        #if self._holonomic:
+        #    self._canvas.create_line(0, 0, 0, 0,
+        #            fill='blue', width=4, tag='v_y')
 
         # Create canvas text objects:
         self._text_v_x = tkinter.StringVar()
@@ -86,20 +90,20 @@ class MouseTeleop():
         self._label_w.pack()
 
         # Bind event handlers:
-        self._canvas.bind('<Button-1>', self._start)
-        self._canvas.bind('<ButtonRelease-1>', self._release)
+        self._canvas.bind('<KeyPress-a>', self._start)
+        self._canvas.bind('<KeyRelease-a>', self._release)
 
         self._canvas.bind('<Configure>', self._configure)
 
-        if self._holonomic:
-            self._canvas.bind('<B1-Motion>', self._mouse_motion_linear)
-            self._canvas.bind('<Shift-B1-Motion>', self._mouse_motion_angular)
-
-            self._root.bind('<Shift_L>', self._change_to_motion_angular)
-            self._root.bind('<KeyRelease-Shift_L>',
-                    self._change_to_motion_linear)
-        else:
-            self._canvas.bind('<B1-Motion>', self._mouse_motion_angular)
+        #if self._holonomic:
+        #    self._canvas.bind('<B1-Motion>', self._mouse_motion_linear)
+        #    self._canvas.bind('<Shift-B1-Motion>', self._mouse_motion_angular)
+#
+        #    self._root.bind('<Shift_L>', self._change_to_motion_angular)
+        #    self._root.bind('<KeyRelease-Shift_L>',
+        #            self._change_to_motion_linear)
+        #else:
+        #    self._canvas.bind('<B1-Motion>', self._mouse_motion_angular)
 
         self._canvas.pack()
 
@@ -111,6 +115,16 @@ class MouseTeleop():
             self._timer = rospy.Timer(period, self._publish_twist)
 
         # Start window event manager main loop:
+        GST_STR = 'nvarguscamerasrc \
+    ! video/x-raw(memory:NVMM), width=1920, height=1080, format=(string)NV12, framerate=(fraction)30/1 \
+    ! nvvidconv ! video/x-raw, width=(int)1920, height=(int)1080, format=(string)BGRx \
+    ! videoconvert \
+    ! appsink'
+        #self._capture = cv2.VideoCapture(GST_STR,2)
+        #self._capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('H', '2', '6', '4'))
+        #self._capture.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        self._display = None
+
         self._root.mainloop()
 
     def __del__(self):
@@ -120,16 +134,52 @@ class MouseTeleop():
         self._root.quit()
 
     def _start(self, event):
-        self._x, self._y = event.y, event.x
+        #self._x, self._y = event.y, event.x
+        self._x, self._y = pyautogui.position()
 
         self._y_linear = self._y_angular = 0
 
         self._v_x = self._v_y = self._w = 0.0
 
+        if self._display is None:
+            self._display_image()
+
     def _release(self, event):
         self._v_x = self._v_y = self._w = 0.0
 
         self._send_motion()
+
+
+    def _display_image(self):
+        self._display = True
+        #ret, frame = self._capture.read()
+
+        #cv2.imshow("Image", frame)
+
+        ## BGR→RGB変換
+        #cv_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        ## NumPyのndarrayからPillowのImageへ変換
+        #pil_image = Image.fromarray(cv_image)
+#
+        ## キャンバスのサイズを取得
+        #canvas_width = self._canvas.winfo_width()
+        #canvas_height = self._canvas.winfo_height()
+#
+        ## 画像のアスペクト比（縦横比）を崩さずに指定したサイズ（キャンバスのサイズ）全体に画像をリサイズする
+        #pil_image = ImageOps.pad(pil_image, (canvas_width, canvas_height))
+#
+        ## PIL.ImageからPhotoImageへ変換する
+        #self.photo_image = ImageTk.PhotoImage(image=pil_image)
+#
+        ## 画像の描画
+        #self._canvas.create_image(
+        #    canvas_width / 2,       # 画像表示位置(Canvasの中心)
+        #    canvas_height / 2,                   
+        #    image=self.photo_image  # 表示画像データ
+        #)
+
+        # disp_image()を10msec後に実行する
+        #self._display = self._root.after(10, self._display_image)
 
     def _configure(self, event):
         self._width, self._height = event.height, event.width
@@ -182,6 +232,8 @@ class MouseTeleop():
         v_x = self._v_x * self._scale
         v_y = self._v_y * self._scale
         w   = self._w   * self._scale
+
+        v_x ,v_y = pyautogui.position()
 
         linear  = Vector3(v_x, v_y, 0.0)
         angular = Vector3(0.0, 0.0,   w)
