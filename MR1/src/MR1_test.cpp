@@ -214,7 +214,8 @@ private:
 
     double delay_time = 0.0;
     uint8_t lastSolenoidOrder = 0b0000000;
-    double throw_position_observed;
+    double mouse_position_x;
+    double mouse_position_y;
 
     std_msgs::Float64 launch_VelMsg[3];
     /***********************Valiables**************************/
@@ -340,8 +341,9 @@ void MR1_nodelet_main::onInit(void)
 /**************************************************************************************/
 void MR1_nodelet_main::PosCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
-	this->throw_position_observed = msg->linear.x;
-    NODELET_INFO("x : %f", this->throw_position_observed);
+	this->mouse_position_x = msg->linear.x;
+	this->mouse_position_y = msg->linear.y;
+    NODELET_INFO("x : %f, y : %f", this->mouse_position_x, this->mouse_position_y);
 }
 
 //void MR1_nodelet_main::Cyl_Arm_grab_arrow(void){
