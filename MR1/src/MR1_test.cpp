@@ -127,7 +127,8 @@ public:
 private:
     /***********************Function**************************/
     void joyCallback(const sensor_msgs::Joy::ConstPtr& joy);
-	void PosCallback(const geometry_msgs::Twist::ConstPtr& msg);
+	void MouseCallback(const geometry_msgs::Twist::ConstPtr& msg);
+    void KeyCallback(const std_msgs::String::ConstPtr& msg);
     void control_timer_callback(const ros::TimerEvent &event);
     void shutdown();
     void recover();
@@ -166,6 +167,7 @@ private:
     ros::Publisher yaw_PosPub;
 
 	ros::Subscriber Mouse_sub;
+	ros::Subscriber Key_sub;
     /***********************Pub&Sub**************************/
 
     bool _a = false;
@@ -216,6 +218,7 @@ private:
     uint8_t lastSolenoidOrder = 0b0000000;
     double mouse_position_x;
     double mouse_position_y;
+    std::string key_press = "";
 
     std_msgs::Float64 launch_VelMsg[3];
     /***********************Valiables**************************/
@@ -326,7 +329,8 @@ void MR1_nodelet_main::onInit(void)
     this->yaw_CmdPub = nh.advertise<std_msgs::UInt8>("yaw_cmd", 1);
     this->yaw_PosPub = nh.advertise<std_msgs::Float64>("yaw_pos", 1);
 
-    this->Mouse_sub = nh.subscribe<geometry_msgs::Twist>("mouse_vel", 10, &MR1_nodelet_main::PosCallback, this);
+    this->Mouse_sub = nh.subscribe<geometry_msgs::Twist>("mouse_vel", 10, &MR1_nodelet_main::MouseCallback, this);
+    this->Key_sub = nh.subscribe<std_msgs::String>("keypress", 10, &MR1_nodelet_main::KeyCallback, this);
 	/*******************pub & sub*****************/
 
 	/*******************parameter*****************/
@@ -339,11 +343,17 @@ void MR1_nodelet_main::onInit(void)
 }
 
 /**************************************************************************************/
-void MR1_nodelet_main::PosCallback(const geometry_msgs::Twist::ConstPtr& msg)
+void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
 	this->mouse_position_x = msg->linear.x;
 	this->mouse_position_y = msg->linear.y;
-    NODELET_INFO("x : %f, y : %f", this->mouse_position_x, this->mouse_position_y);
+    //NODELET_INFO("x : %f, y : %f", this->mouse_position_x, this->mouse_position_y);
+}
+
+void MR1_nodelet_main::KeyCallback(const std_msgs::String::ConstPtr& msg)
+{
+	this->key_press = msg->data;
+    NODELET_INFO("x : %s", this->key_press.c_str());
 }
 
 //void MR1_nodelet_main::Cyl_Arm_grab_arrow(void){
