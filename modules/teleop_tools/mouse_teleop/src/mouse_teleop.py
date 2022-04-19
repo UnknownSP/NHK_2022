@@ -128,7 +128,7 @@ class MouseTeleop():
     def _keypress(self, event):
         pressedKey = event.keysym
         #rospy.loginfo(pressedKey)
-        if pressedKey == "a":
+        if pressedKey == "w":
             if self._enable_ctrl is False:
                 self._enable_ctrl = True
                 #rospy.loginfo("pushed a")
@@ -139,9 +139,9 @@ class MouseTeleop():
         elif pressedKey == "s":
             self._enable_ctrl = False
             self._recent_x, self._recent_y = self._x, self._y
-        else:
-            pub_key = String(pressedKey)
-            self._pub_key.publish(pub_key)
+        
+        pub_key = String(pressedKey)
+        self._pub_key.publish(pub_key)
         
 
     def _start(self, event):

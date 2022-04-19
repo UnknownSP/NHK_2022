@@ -170,6 +170,23 @@ private:
 	ros::Subscriber Key_sub;
     /***********************Pub&Sub**************************/
 
+    /***********************Valiables**************************/
+    int _delay_s = 0;
+    bool _command_ongoing = false;
+    bool _is_manual_enabled = true;
+
+    double delay_time = 0.0;
+    uint8_t lastSolenoidOrder = 0b0000000;
+    double mouse_position_x;
+    double mouse_position_y;
+    std::string key_press = "";
+
+    std_msgs::Float64 launch_VelMsg[3];
+
+    bool _enableAim_fromJoy = false;
+    bool _enableAim_fromKey = false;
+    /***********************Valiables**************************/
+
     bool _a = false;
     bool _b = false;
     bool _x = false;
@@ -207,21 +224,6 @@ private:
     static const std::vector<ControllerCommands> SetLaunchPosi_commands;
     static const std::vector<ControllerCommands> manual_all;
     const std::vector<ControllerCommands> *command_list;
-
-
-    /***********************Valiables**************************/
-    int _delay_s = 0;
-    bool _command_ongoing = false;
-    bool _is_manual_enabled = true;
-
-    double delay_time = 0.0;
-    uint8_t lastSolenoidOrder = 0b0000000;
-    double mouse_position_x;
-    double mouse_position_y;
-    std::string key_press = "";
-
-    std_msgs::Float64 launch_VelMsg[3];
-    /***********************Valiables**************************/
 };
 
 int MR1_nodelet_main::_padx = 0;
@@ -353,7 +355,13 @@ void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
 void MR1_nodelet_main::KeyCallback(const std_msgs::String::ConstPtr& msg)
 {
 	this->key_press = msg->data;
-    NODELET_INFO("x : %s", this->key_press.c_str());
+    if(this->key_press == "a"){
+        this->_enableAim_fromKey = true;
+    }else if(this->key_press == "s"){
+        this->_enableAim_fromKey = false;
+    }
+
+    NODELET_INFO("keypress : %s", this->key_press.c_str());
 }
 
 //void MR1_nodelet_main::Cyl_Arm_grab_arrow(void){
@@ -418,6 +426,7 @@ void MR1_nodelet_main::delay_start(double delay_s)
 void MR1_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
 
+    NODELET_INFO("%d",joy->buttons[ButtonA]);
     static bool control_invert = false;
     static bool last_start;
     static bool last_back;
@@ -437,8 +446,9 @@ void MR1_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
     static bool _a_enable = false;
     static bool _b_enable = false;
-    static bool _Cyl_catch = false;
     static bool _x_enable = false;
+    static bool _y_enable = false;
+    static bool _Cyl_catch = false;
     static bool _Cyl_arm = false;
     static bool _Cyl_table = false;
 
@@ -475,6 +485,15 @@ void MR1_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     {   
        
     }
+
+    if(_y && _y_enable){
+
+        _y_enable = false;
+    }
+    if(!_y){
+        _y_enable = true;
+    }
+
     if(_rb){
         if(_a && _a_enable){
             this->launch_VelMsg[0].data -= 100.0;
