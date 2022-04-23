@@ -9,6 +9,7 @@
 #include <std_msgs/UInt16.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Empty.h>
 #include <geometry_msgs/Twist.h>
@@ -219,7 +220,16 @@ private:
   	ros::Publisher Arm_L_Value_pub;
     std_msgs::Float64 Arm_L_Value_msg;
 
+    ros::Publisher Defence_Lift_Cmd_pub;
+  	ros::Publisher Defence_Lift_Value_pub;
+    std_msgs::Float64 Defence_Lift_Value_msg;
+
+    ros::Publisher Defence_Roll_Cmd_pub;
+  	ros::Publisher Defence_Roll_Value_pub;
+    std_msgs::Float64 Defence_Roll_Value_msg;
+
 	ros::Subscriber ThrowPos_sub;
+    ros::Publisher SteerAdjust_pub;
     /***********************Pub&Sub**************************/
 
     bool _a = false;
@@ -269,6 +279,9 @@ private:
     double delay_time = 0.0;
     //uint8_t lastSolenoidOrder = 0b0000000;
     double throw_position_observed;
+
+    double steer_adjust[4] = {0.0};
+    std_msgs::Float64MultiArray adjust_pubData;
     /***********************Valiables**************************/
 };
 
@@ -386,12 +399,27 @@ void MR2_nodelet_main::onInit(void)
   	this->Arm_R_Value_pub = nh.advertise<std_msgs::Float64>("arm_r_value", 1);
     this->Arm_L_Cmd_pub = nh.advertise<std_msgs::UInt8>("arm_l_cmd", 1);
   	this->Arm_L_Value_pub = nh.advertise<std_msgs::Float64>("arm_l_value", 1);
-
+    this->Defence_Lift_Cmd_pub = nh.advertise<std_msgs::UInt8>("defence_lift_cmd", 1);
+  	this->Defence_Lift_Value_pub = nh.advertise<std_msgs::Float64>("defence_lift_value", 1);
+    this->Defence_Roll_Cmd_pub = nh.advertise<std_msgs::UInt8>("defence_roll_cmd", 1);
+  	this->Defence_Roll_Value_pub = nh.advertise<std_msgs::Float64>("defence_roll_value", 1);
     //this->ThrowPos_sub = nh_MT.subscribe<std_msgs::Float32>("motor4_current_val", 10, &MR2_nodelet_main::PosCallback, this);
+
+    this->SteerAdjust_pub = nh.advertise<std_msgs::Float64MultiArray>("adjust_val", 1);
+
 	/*******************pub & sub*****************/
 
 	/*******************parameter*****************/
-    //_nh.param("launch_long_vel", launch_long_vel, 0.0);
+    //_nh.param("steer0_adjust", launch_long_vel, 0.0);
+    _nh.param("steer0_adjust", this->steer_adjust[0], 0.0);
+	_nh.param("steer1_adjust", this->steer_adjust[1], 0.0);
+	_nh.param("steer2_adjust", this->steer_adjust[2], 0.0);
+	_nh.param("steer3_adjust", this->steer_adjust[3], 0.0);
+
+    adjust_pubData.data.resize(4);
+    for(int i=0;i<4;i++){
+        adjust_pubData.data[i] = this->steer_adjust[i];
+    }
 	/*******************parameter*****************/
 
 }
@@ -433,6 +461,8 @@ void MR2_nodelet_main::shutdown(void){
     steer_CmdPub3.publish(act_conf_cmd_msg);
     Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
     Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
+    Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
+    Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
     Solenoid1_Cmd_pub.publish(act_conf_cmd_msg);
     Solenoid2_Cmd_pub.publish(act_conf_cmd_msg);
 }
@@ -453,6 +483,8 @@ void MR2_nodelet_main::recover(void){
     foot_CmdPub3.publish(act_conf_cmd_msg);
     Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
     Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
+    Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
+    Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
 }
 
 //void MR2_nodelet_main::homing(void){
@@ -525,7 +557,11 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
     if (_start)
     {
-        this->recover();
+        if(_y){
+
+        }else{
+            this->recover();
+        }
     }
     if (_back)
     {

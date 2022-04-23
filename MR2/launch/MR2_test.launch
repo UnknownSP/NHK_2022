@@ -23,42 +23,42 @@
 
 <!--Motor Driver-->
     <node pkg="nodelet" type="nodelet" name="motor0" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="510" /> <!-- 4a0 -->
+      <param name="bid" type="string" value="510" /> 
       <remap from="motor0_cmd" to="foot3_cmd"/>
       <remap from="motor0_cmd_val" to="foot3_cmd_vel"/>      
     </node>
     <node pkg="nodelet" type="nodelet" name="motor1" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="520" /> <!-- 60c -->
+      <param name="bid" type="string" value="520" /> 
       <remap from="motor1_cmd" to="foot0_cmd"/>
       <remap from="motor1_cmd_val" to="foot0_cmd_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor2" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="530" /> <!-- 5b0 -->
+      <param name="bid" type="string" value="530" /> 
       <remap from="motor2_cmd" to="foot1_cmd"/>
       <remap from="motor2_cmd_val" to="foot1_cmd_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor3" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="540" /> <!-- 5d4 -->
+      <param name="bid" type="string" value="540" /> 
       <remap from="motor3_cmd" to="foot2_cmd"/>
       <remap from="motor3_cmd_val" to="foot2_cmd_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor4" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="410" /> <!-- 4a0 -->
+      <param name="bid" type="string" value="410" /> 
       <remap from="motor4_cmd" to="steer3_cmd"/>
       <remap from="motor4_cmd_val" to="steer3_val"/>      
     </node>
     <node pkg="nodelet" type="nodelet" name="motor5" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="420" /> <!-- 60c -->
+      <param name="bid" type="string" value="420" />
       <remap from="motor5_cmd" to="steer0_cmd"/>
       <remap from="motor5_cmd_val" to="steer0_val"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor6" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="430" /> <!-- 5b0 -->
+      <param name="bid" type="string" value="430" /> 
       <remap from="motor6_cmd" to="steer1_cmd"/>
       <remap from="motor6_cmd_val" to="steer1_val"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor7" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="440" /> <!-- 5d4 -->
+      <param name="bid" type="string" value="440" /> 
       <remap from="motor7_cmd" to="steer2_cmd"/>
       <remap from="motor7_cmd_val" to="steer2_val"/>
     </node>
@@ -73,6 +73,16 @@
       <remap from="motor9_cmd_val" to="arm_l_value"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor10" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="630" />
+      <remap from="motor10_cmd" to="defence_lift_cmd"/>
+      <remap from="motor10_cmd_val" to="defence_lift_value"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor11" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="640" />
+      <remap from="motor11_cmd" to="defence_roll_cmd"/>
+      <remap from="motor11_cmd_val" to="defence_roll_value"/>
+    </node>
+    <!-- <node pkg="nodelet" type="nodelet" name="motor10" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="52c"/>
       <remap from="motor10_cmd" to="pitch_right_cmd"/>
       <remap from="motor10_cmd_val" to="pitch_right_cmd_pos"/>
@@ -81,14 +91,16 @@
       <param name="bid" type="string" value="700" />
       <remap from="motor11_cmd" to="pitch_left_cmd"/>
       <remap from="motor11_cmd_val" to="pitch_left_cmd_pos"/>
-    </node>
+    </node> -->
     
     
     
     <node pkg="nodelet" type="nodelet" name="MR2_nodelet_main" args="$(arg nodelet_mode) MR2/MR2_nodelet_main $(arg manager_name)" >
       
-      <param name="Arrow_Pick_Arm_deg" type="double" value="2.5" />
-      
+      <param name="steer3_adjust" type="double" value="4.75" />
+      <param name="steer0_adjust" type="double" value="0.7" />
+      <param name="steer1_adjust" type="double" value="0.9" />
+      <param name="steer2_adjust" type="double" value="3.1" />
     </node>
     
 <!--Solenoid_Driver-->  
@@ -126,10 +138,10 @@
       <param name="invert_x" value="false" />
       <param name="invert_y" value="false" />
       <param name="invert_z" value="true" />
-      <param name="steer3_adjust" value="4.75" />
+      <!--<param name="steer3_adjust" value="4.75" />
       <param name="steer0_adjust" value="0.7" />
       <param name="steer1_adjust" value="0.9" />
-      <param name="steer2_adjust" value="3.1" />
+      <param name="steer2_adjust" value="3.1" />-->
       <remap from="tire0_cmd_vel" to="foot0_cmd_vel" />
       <remap from="tire1_cmd_vel" to="foot1_cmd_vel" />
       <remap from="tire2_cmd_vel" to="foot2_cmd_vel" />

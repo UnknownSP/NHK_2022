@@ -10,6 +10,7 @@
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Int16MultiArray.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/Float64MultiArray.h>
 #include <math.h>
 
 #include <nodelet/nodelet.h>
@@ -24,6 +25,7 @@ namespace base_controller_plugins{
   
   private:
   	void CmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
+	void AdjustCallback(const std_msgs::Float64MultiArray::ConstPtr& msg);
   	void TimerCallback(const ros::TimerEvent& event);
   	void CalcSteering(double actualDt);
 	double CalcClosestAngle(double now_deg, double target_deg);
@@ -46,6 +48,7 @@ namespace base_controller_plugins{
   	ros::NodeHandle _nh;
   
   	ros::Subscriber cmdVel_sub;
+	ros::Subscriber adjust_sub;
   	ros::Timer control_tim;
   
   	ros::Publisher tire0CmdVel_pub;
@@ -91,10 +94,10 @@ namespace base_controller_plugins{
 	_nh.param("speed_coeff", this->speed_coeff, 0.0);
 	_nh.param("gear_ratio", this->gear_ratio, 2.4);
 
-	_nh.param("steer0_adjust", this->steer_adjust[0], 0.0);
-	_nh.param("steer1_adjust", this->steer_adjust[1], 0.0);
-	_nh.param("steer2_adjust", this->steer_adjust[2], 0.0);
-	_nh.param("steer3_adjust", this->steer_adjust[3], 0.0);
+	//_nh.param("steer0_adjust", this->steer_adjust[0], 0.0);
+	//_nh.param("steer1_adjust", this->steer_adjust[1], 0.0);
+	//_nh.param("steer2_adjust", this->steer_adjust[2], 0.0);
+	//_nh.param("steer3_adjust", this->steer_adjust[3], 0.0);
   
   	NODELET_INFO("tire_max_acc : %f", this->MaximumAcceleration);
   	NODELET_INFO("tire_max_vel : %f", this->MaximumVelocity);
@@ -150,6 +153,7 @@ namespace base_controller_plugins{
     //odom_twist_pub = nh.advertise<nav_msgs::Odometry>("odom_twist", 10);
 
   	cmdVel_sub = nh.subscribe<geometry_msgs::Twist>("cmd_vel", 10, &Steering::CmdVelCallback, this);
+	adjust_sub = nh.subscribe<std_msgs::Float64MultiArray>("adjust_val", 10, &Steering::AdjustCallback, this);
 	control_tim = nh.createTimer(ros::Duration(1.0 / ctrl_freq), &Steering::TimerCallback, this);
     //main
   	NODELET_INFO("base_controller node has started.");
@@ -173,19 +177,12 @@ namespace base_controller_plugins{
   	{
   		this->targetRotZ *= -1;
   	}
-  
-   	//odom_twist.header.frame_id = "/steering/odom";
-   	//odom_twist.header.stamp = ros::Time::now();
-   	//odom_twist.child_frame_id = "/steering/odom_link";
-   	//odom_twist.twist.covariance = {
-   	//0.5, 0, 0, 0, 0, 0,  // covariance on gps_x
-   	//0, 0.5, 0, 0, 0, 0,  // covariance on gps_y
-   	//0, 0, 0.5, 0, 0, 0,  // covariance on gps_z
-   	//0, 0, 0, 0.1, 0, 0,  // large covariance on rot x
-   	//0, 0, 0, 0, 0.1, 0,  // large covariance on rot y
-   	//0, 0, 0, 0, 0, 0.1}; // large covariance on rot z
-   	//odom_twist.twist.twist = *msg;
-   	//odom_twist_pub.publish(odom_twist);
+  }
+
+  void Steering::AdjustCallback(const std_msgs::Float64MultiArray::ConstPtr& msg){
+	  for(int i=0;i<4;i++){
+		  this->steer_adjust[i] = msg->data[i];
+	  }
   }
 
   void Steering::TimerCallback(const ros::TimerEvent& event)
