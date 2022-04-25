@@ -95,7 +95,7 @@
     
     
     
-    <node pkg="nodelet" type="nodelet" name="MR2_nodelet_main" args="$(arg nodelet_mode) MR2/MR2_nodelet_main $(arg manager_name)" >
+    <node pkg="nodelet" type="nodelet" name="MR2_nodelet_main" args="$(arg nodelet_mode) MR2/MR2_nodelet_main $(arg manager_name)" output="screen">
       
       <param name="steer3_adjust" type="double" value="4.75" />
       <param name="steer0_adjust" type="double" value="0.7" />
@@ -104,14 +104,6 @@
     </node>
     
 <!--Solenoid_Driver-->  
-<!--
-    <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid" >
-      <param name="bid" type="string" value="100" />
-      <param name="name" value="solenoid"/>
-      <remap from="solenoid_cmd" to="solenoid_cmd"/>
-      <remap from="solenoid_order" to="solenoid_order"/>
-    </node>
--->
     <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid1" >
       <param name="bid" type="string" value="100" />
       <param name="name" value="solenoid1"/>
@@ -124,6 +116,24 @@
       <remap from="solenoid2_cmd" to="solenoid2_cmd"/>
       <remap from="solenoid2_order" to="solenoid2_order"/>
     </node>
+    <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid3" >
+      <param name="bid" type="string" value="140" />
+      <param name="name" value="solenoid3"/>
+      <remap from="solenoid3_cmd" to="solenoid3_cmd"/>
+      <remap from="solenoid3_order" to="solenoid3_order"/>
+    </node>
+    <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid4" >
+      <param name="bid" type="string" value="160" />
+      <param name="name" value="solenoid4"/>
+      <remap from="solenoid4_cmd" to="solenoid4_cmd"/>
+      <remap from="solenoid4_order" to="solenoid4_order"/>
+    </node>
+    <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid5" >
+      <param name="bid" type="string" value="180" />
+      <param name="name" value="solenoid2"/>
+      <remap from="solenoid5_cmd" to="solenoid5_cmd"/>
+      <remap from="solenoid5_order" to="solenoid5_order"/>
+    </node>
 <!-- joy -->
     <rosparam file="$(find MR2)/param/logitech_f710_joy_assign.yaml" command="load" />
     <node respawn="true" pkg="joy" type="joy_node" name="joy_node" >
@@ -131,14 +141,14 @@
       <param name="deadzone" value="0.12" />
     </node>
     
-     <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Steering $(arg manager_name)" >
+    <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Steering $(arg manager_name)" output="screen">
       <param name="tire_max_acc" value="1000.0" />
       <param name="tire_max_vel" value="3000.0" />
       <param name="speed_coeff" value="1500.0" />
       <param name="invert_x" value="false" />
       <param name="invert_y" value="false" />
       <param name="invert_z" value="true" />
-      <!--<param name="steer3_adjust" value="4.75" />
+      <!-- <param name="steer3_adjust" value="4.75" />
       <param name="steer0_adjust" value="0.7" />
       <param name="steer1_adjust" value="0.9" />
       <param name="steer2_adjust" value="3.1" />-->
@@ -152,6 +162,21 @@
       <remap from="steer3_cmd_pos" to="steer3_val" />
       
     </node>
-  </group>  
+  </group>
+
+  <!-- key&mouse -->
+  <arg name="mouse_vel" default="mouse_vel"/>
+    <arg name="holonomic" default="false"/>
+    <arg name="plot" default="false"/>
+    <node pkg="mouse_teleop" type="mouse_teleop.py" name="mouse_teleop" output="screen">
+      <rosparam file="$(find mouse_teleop)/config/mouse_teleop.yaml" command="load"/>
+      <param name="scale" value="1.0"/>
+      <remap from="mouse_vel" to="$(arg mouse_vel)"/>
+    </node>
+
+    <group if="$(arg plot)">
+      <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot"
+            args="$(arg mouse_vel)/linear/x $(arg mouse_vel)/linear/y $(arg mouse_vel)/angular/z"/>
+    </group>
 </launch>   
     

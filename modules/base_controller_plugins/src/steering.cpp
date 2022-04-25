@@ -117,14 +117,14 @@ namespace base_controller_plugins{
   	_nh.param("invert_y", this->InvertY, false);
   	_nh.param("invert_z", this->InvertZ, false);
   
-  	tire0CmdVel_pub = nh.advertise<std_msgs::Float64>("tire0_cmd_vel", 1);
-  	tire1CmdVel_pub = nh.advertise<std_msgs::Float64>("tire1_cmd_vel", 1);
-  	tire2CmdVel_pub = nh.advertise<std_msgs::Float64>("tire2_cmd_vel", 1);
-  	tire3CmdVel_pub = nh.advertise<std_msgs::Float64>("tire3_cmd_vel", 1);
-	steer0CmdPos_pub = nh.advertise<std_msgs::Float64>("steer0_cmd_pos", 1);
-  	steer1CmdPos_pub = nh.advertise<std_msgs::Float64>("steer1_cmd_pos", 1);
-  	steer2CmdPos_pub = nh.advertise<std_msgs::Float64>("steer2_cmd_pos", 1);
-  	steer3CmdPos_pub = nh.advertise<std_msgs::Float64>("steer3_cmd_pos", 1);
+  	this->tire0CmdVel_pub = nh.advertise<std_msgs::Float64>("tire0_cmd_vel", 1);
+  	this->tire1CmdVel_pub = nh.advertise<std_msgs::Float64>("tire1_cmd_vel", 1);
+  	this->tire2CmdVel_pub = nh.advertise<std_msgs::Float64>("tire2_cmd_vel", 1);
+  	this->tire3CmdVel_pub = nh.advertise<std_msgs::Float64>("tire3_cmd_vel", 1);
+	this->steer0CmdPos_pub = nh.advertise<std_msgs::Float64>("steer0_cmd_pos", 1);
+  	this->steer1CmdPos_pub = nh.advertise<std_msgs::Float64>("steer1_cmd_pos", 1);
+  	this->steer2CmdPos_pub = nh.advertise<std_msgs::Float64>("steer2_cmd_pos", 1);
+  	this->steer3CmdPos_pub = nh.advertise<std_msgs::Float64>("steer3_cmd_pos", 1);
   
   	targetVelX = targetVelY = targetRotZ = 0.0;
   
@@ -152,9 +152,9 @@ namespace base_controller_plugins{
     //odom_twist = nav_msgs::Odometry();
     //odom_twist_pub = nh.advertise<nav_msgs::Odometry>("odom_twist", 10);
 
-  	cmdVel_sub = nh.subscribe<geometry_msgs::Twist>("cmd_vel", 10, &Steering::CmdVelCallback, this);
-	adjust_sub = nh.subscribe<std_msgs::Float64MultiArray>("adjust_val", 10, &Steering::AdjustCallback, this);
-	control_tim = nh.createTimer(ros::Duration(1.0 / ctrl_freq), &Steering::TimerCallback, this);
+  	this->cmdVel_sub = nh.subscribe<geometry_msgs::Twist>("cmd_vel", 10, &Steering::CmdVelCallback, this);
+	this->adjust_sub = nh.subscribe<std_msgs::Float64MultiArray>("adjust_val", 10, &Steering::AdjustCallback, this);
+	this->control_tim = nh.createTimer(ros::Duration(1.0 / ctrl_freq), &Steering::TimerCallback, this);
     //main
   	NODELET_INFO("base_controller node has started.");
   }
@@ -180,9 +180,10 @@ namespace base_controller_plugins{
   }
 
   void Steering::AdjustCallback(const std_msgs::Float64MultiArray::ConstPtr& msg){
-	  for(int i=0;i<4;i++){
-		  this->steer_adjust[i] = msg->data[i];
-	  }
+	for(int i=0;i<4;i++){
+		this->steer_adjust[i] = msg->data[i];
+  		NODELET_INFO("steer_adjust[%d],%f",i,this->steer_adjust[i]);
+	}
   }
 
   void Steering::TimerCallback(const ros::TimerEvent& event)

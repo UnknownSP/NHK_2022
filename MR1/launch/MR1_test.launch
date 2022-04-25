@@ -68,7 +68,7 @@
     </node>
   </group>
 
-<!-- mouse -->
+<!-- key&mouse -->
   <arg name="mouse_vel" default="mouse_vel"/>
     <arg name="holonomic" default="false"/>
     <arg name="plot" default="false"/>

@@ -31,8 +31,8 @@ class MouseTeleop():
         self._holonomic = rospy.get_param('~holonomic', False)
 
         # Create twist publisher:
-        self._pub_cmd = rospy.Publisher('MR1/mouse_vel', Twist, queue_size=10)
-        self._pub_key = rospy.Publisher('MR1/keypress', String, queue_size=10)
+        self._pub_cmd = rospy.Publisher('/mouse_vel', Twist, queue_size=10)
+        self._pub_key = rospy.Publisher('/keypress', String, queue_size=10)
 
         # Initialize twist components to zero:
         self._x = 0.0

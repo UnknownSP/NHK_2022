@@ -308,11 +308,7 @@ void MR1_nodelet_main::onInit(void)
     nh.getParam("AxisDPadX", AxisDPadX);
     nh.getParam("AxisDPadY", AxisDPadY);
 
-    this->control_timer = nh.createTimer(ros::Duration(0.01), &MR1_nodelet_main::control_timer_callback, this);
-    NODELET_INFO("MR1 node has started.");
-
     this->command_list = &MR1_nodelet_main::manual_all;
-
 
 	/*******************pub & sub*****************/
     this->joy_sub = nh.subscribe<sensor_msgs::Joy>("joy", 10, &MR1_nodelet_main::joyCallback, this);
@@ -331,8 +327,8 @@ void MR1_nodelet_main::onInit(void)
     this->yaw_CmdPub = nh.advertise<std_msgs::UInt8>("yaw_cmd", 1);
     this->yaw_PosPub = nh.advertise<std_msgs::Float64>("yaw_pos", 1);
 
-    this->Mouse_sub = nh.subscribe<geometry_msgs::Twist>("mouse_vel", 10, &MR1_nodelet_main::MouseCallback, this);
-    this->Key_sub = nh.subscribe<std_msgs::String>("keypress", 10, &MR1_nodelet_main::KeyCallback, this);
+    this->Mouse_sub = nh.subscribe<geometry_msgs::Twist>("/mouse_vel", 10, &MR1_nodelet_main::MouseCallback, this);
+    this->Key_sub = nh.subscribe<std_msgs::String>("/keypress", 10, &MR1_nodelet_main::KeyCallback, this);
 	/*******************pub & sub*****************/
 
 	/*******************parameter*****************/
@@ -342,6 +338,10 @@ void MR1_nodelet_main::onInit(void)
     launch_VelMsg[0].data = 0.0;
     launch_VelMsg[1].data = 0.0;
     launch_VelMsg[2].data = 0.0;
+
+    this->control_timer = nh.createTimer(ros::Duration(0.01), &MR1_nodelet_main::control_timer_callback, this);
+    NODELET_INFO("MR1 node has started.");
+    
 }
 
 /**************************************************************************************/
