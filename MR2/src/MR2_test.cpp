@@ -93,20 +93,20 @@ enum class SolenoidValveCommands : uint8_t
 {
     shutdown_cmd      = 0b000000,
     recover_cmd       = 0b000001,
-    
-    Cyl_R_Clutch_cmd        = 0b0010000,//0b0000010,
-    Cyl_R_Upper_Rotate_cmd  = 0b0100000,//0b0010000,
-    Cyl_R_Upper_Grab_cmd    = 0b0000100,
-    Cyl_R_Upper_Deploy_cmd  = 0b0001000,
-    Cyl_R_Lower_Grab_cmd    = 0b0000001,
-    Cyl_R_Lower_Deploy_cmd  = 0b0000010,
 
-    Cyl_L_Clutch_cmd        = 0b0000000,
-    Cyl_L_Upper_Rotate_cmd  = 0b0000000,
-    Cyl_L_Upper_Grab_cmd    = 0b0000000,
-    Cyl_L_Upper_Deploy_cmd  = 0b0000000,
-    Cyl_L_Lower_Grab_cmd    = 0b0000000,
-    Cyl_L_Lower_Deploy_cmd  = 0b0000000,
+    Cyl_R_Clutch_cmd        = 0b0000000,
+    Cyl_R_Upper_Rotate_cmd  = 0b0000000,
+    Cyl_R_Upper_Grab_cmd    = 0b0000000,
+    Cyl_R_Upper_Deploy_cmd  = 0b0000000,
+    Cyl_R_Lower_Grab_cmd    = 0b0000000,
+    Cyl_R_Lower_Deploy_cmd  = 0b0000000,
+
+    Cyl_L_Clutch_cmd        = 0b0100000,//0b0000010,
+    Cyl_L_Upper_Rotate_cmd  = 0b0010000,//0b0010000,
+    Cyl_L_Upper_Grab_cmd    = 0b0000100,
+    Cyl_L_Upper_Deploy_cmd  = 0b0001000,
+    Cyl_L_Lower_Grab_cmd    = 0b0000001,
+    Cyl_L_Lower_Deploy_cmd  = 0b0000010,
 
     Cyl_Defend_Grab_cmd     = 0b0000000,
     Cyl_Defend_Rise_cmd     = 0b0000000,
@@ -119,19 +119,19 @@ enum class SolenoidValveCommands : uint8_t
 };
 enum class SolenoidValveBoards : uint8_t
 {   
-    Cyl_R_Clutch_board        = 0,
-    Cyl_R_Upper_Rotate_board  = 0,
-    Cyl_R_Upper_Grab_board    = 0,
-    Cyl_R_Upper_Deploy_board  = 0,
-    Cyl_R_Lower_Grab_board    = 0,
-    Cyl_R_Lower_Deploy_board  = 0,
+    Cyl_R_Clutch_board        = 2,
+    Cyl_R_Upper_Rotate_board  = 2,
+    Cyl_R_Upper_Grab_board    = 2,
+    Cyl_R_Upper_Deploy_board  = 2,
+    Cyl_R_Lower_Grab_board    = 2,
+    Cyl_R_Lower_Deploy_board  = 2,
 
-    Cyl_L_Clutch_board        = 2,
-    Cyl_L_Upper_Rotate_board  = 2,
-    Cyl_L_Upper_Grab_board    = 2,
-    Cyl_L_Upper_Deploy_board  = 2,
-    Cyl_L_Lower_Grab_board    = 3,
-    Cyl_L_Lower_Deploy_board  = 3,
+    Cyl_L_Clutch_board        = 0,
+    Cyl_L_Upper_Rotate_board  = 0,
+    Cyl_L_Upper_Grab_board    = 0,
+    Cyl_L_Upper_Deploy_board  = 0,
+    Cyl_L_Lower_Grab_board    = 0,
+    Cyl_L_Lower_Deploy_board  = 0,
 
     Cyl_Defend_Grab_board     = 4,
     Cyl_Defend_Rise_board     = 4,
@@ -327,6 +327,9 @@ private:
 
     double steer_adjust[4] = {0.0};
     bool _enable_steerAdjust = false;
+    bool _ballPick_Mode = false;
+    bool _piling_Mode = true;
+    bool _defence_Mode = false;
     /***********************Valiables**************************/
 };
 
@@ -489,29 +492,29 @@ void MR2_nodelet_main::KeyCallback(const std_msgs::String::ConstPtr& msg)
 
 	this->key_press = msg->data;
     if(this->key_press == "q"){
-        Cylinder_Operation("R_Clutch",true);
+        Cylinder_Operation("L_Clutch",true);
     }else if(this->key_press == "w"){
-        Cylinder_Operation("R_Clutch",false);
+        Cylinder_Operation("L_Clutch",false);
     }else if(this->key_press == "e"){
-        Cylinder_Operation("R_Upper_Rotate",true);
+        Cylinder_Operation("L_Upper_Rotate",true);
     }else if(this->key_press == "r"){
-        Cylinder_Operation("R_Upper_Rotate",false);
+        Cylinder_Operation("L_Upper_Rotate",false);
     }else if(this->key_press == "t"){
-        Cylinder_Operation("R_Upper_Grab",true);
+        Cylinder_Operation("L_Upper_Grab",true);
     }else if(this->key_press == "y"){
-        Cylinder_Operation("R_Upper_Grab",false);
+        Cylinder_Operation("L_Upper_Grab",false);
     }else if(this->key_press == "u"){
-        Cylinder_Operation("R_Upper_Deploy",true);
+        Cylinder_Operation("L_Upper_Deploy",true);
     }else if(this->key_press == "i"){
-        Cylinder_Operation("R_Upper_Deploy",false);
+        Cylinder_Operation("L_Upper_Deploy",false);
     }else if(this->key_press == "d"){
-        Cylinder_Operation("R_Lower_Grab",true);
+        Cylinder_Operation("L_Lower_Grab",true);
     }else if(this->key_press == "f"){
-        Cylinder_Operation("R_Lower_Grab",false);
+        Cylinder_Operation("L_Lower_Grab",false);
     }else if(this->key_press == "g"){
-        Cylinder_Operation("R_Lower_Deploy",true);
+        Cylinder_Operation("L_Lower_Deploy",true);
     }else if(this->key_press == "h"){
-        Cylinder_Operation("R_Lower_Deploy",false);
+        Cylinder_Operation("L_Lower_Deploy",false);
     }
     
     NODELET_INFO("keypress : %s", this->key_press.c_str());
@@ -623,11 +626,30 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     static bool _x_enable = false;
     static bool _y_enable = false;
 
-    static bool _Cyl_Arm = false;
-    static bool _Cyl_Clutch = false;
-    static bool _Cyl_Shelf = false;
-    static bool _Cyl_Push = false;
-    static bool _Cyl_Pull = false;
+    //static bool _Cyl_Arm = false;
+    //static bool _Cyl_Clutch = false;
+    //static bool _Cyl_Shelf = false;
+    //static bool _Cyl_Push = false;
+    //static bool _Cyl_Pull = false;
+
+    static bool _Cyl_R_Clutch        = false;
+    static bool _Cyl_R_Upper_Rotate  = false;
+    static bool _Cyl_R_Upper_Grab    = false;
+    static bool _Cyl_R_Upper_Deploy  = false;
+    static bool _Cyl_R_Lower_Grab    = false;
+    static bool _Cyl_R_Lower_Deploy  = false;
+    static bool _Cyl_L_Clutch        = false;
+    static bool _Cyl_L_Upper_Rotate  = false;
+    static bool _Cyl_L_Upper_Grab    = false;
+    static bool _Cyl_L_Upper_Deploy  = false;
+    static bool _Cyl_L_Lower_Grab    = false;
+    static bool _Cyl_L_Lower_Deploy  = false;
+    static bool _Cyl_Defend_Grab     = false;
+    static bool _Cyl_Defend_Rise     = false;
+    static bool _Cyl_Defend_Press    = false;
+    static bool _Cyl_Ball_Grab       = false;
+    static bool _Cyl_Ball_Gather     = false;
+    static bool _Cyl_Ball_Rise       = false;
 
     this->_a = joy->buttons[ButtonA];
     this->_b = joy->buttons[ButtonB];
@@ -670,10 +692,22 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
     if (_start)
     {
-        if(_y){
-            this-> _enable_steerAdjust = true;
-        }else{
+        if(_b){
             this->recover();
+        }else if(_y){
+            this-> _enable_steerAdjust = true;
+        }else if(_x){
+            this->steer_homing();
+        }else if(_padx == 1){
+            this-> _ballPick_Mode = false;
+            this-> _piling_Mode = false;
+            this-> _defence_Mode = true;
+            return;
+        }else if(_padx == -1){
+            this-> _ballPick_Mode = true;
+            this-> _piling_Mode = false;
+            this-> _defence_Mode = false;
+            return;
         }
     }
     if (_back)
@@ -682,105 +716,174 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         this->_command_ongoing = false;
     }
    
-    if (_righttrigger && (_padx != -1))
-    {   
-        this->steer_homing();
-    }
+    //if (_righttrigger && (_padx != -1))
+    //{   
+    //    this->steer_homing();
+    //}
 
-    if(joy->buttons[ButtonRightThumb] != 0.0){
-        //this->Cyl_Off_Clutch_R();
-        Cylinder_Operation("R_Clutch",false);
-        if(_rb){
-            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -15.0);
-        }else{
-            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
-        }
-    }else{
-        //this->Cyl_On_Clutch_R();
-        Cylinder_Operation("R_Clutch",true);
-        this->Arm_R_move_Vel(0.0);
-    }
-    if(joy->buttons[ButtonLeftThumb] != 0.0){
-        //this->Cyl_Off_Clutch_L();
-        Cylinder_Operation("R_Clutch",false);
-        if(_lb){
-            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * 15.0);
-        }else{
-            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
-        }
-    }else{
 
-        Cylinder_Operation("R_Clutch",true);
-        //this->Cyl_On_Clutch_L();
-        this->Arm_L_move_Vel(0.0);
-    }
-
-    if(_a && _a_enable){
-        if(_Cyl_Pull){
-            //Cyl_On_Pull_LGR();
-            //Cyl_On_Clutch_L();
-            //Cyl_On_Clutch_L();
-            _Cyl_Pull = false;
+    //--------------------------------------------------------------------------------------------------------------------------------
+    if(_piling_Mode){
+        if(joy->buttons[ButtonRightThumb] != 0.0){
+            Cylinder_Operation("R_Clutch",false);
+            if(_rb){
+                this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -15.0);
+            }else{
+                this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
+            }
         }else{
-            //Cyl_Off_Pull_LGR();
-            //Cyl_Off_Clutch_L();
-            //Cyl_Off_Clutch_L();
-            _Cyl_Pull = true;
+            Cylinder_Operation("R_Clutch",true);
+            this->Arm_R_move_Vel(0.0);
         }
-        _a_enable = false;
+        if(joy->buttons[ButtonLeftThumb] != 0.0){
+            Cylinder_Operation("L_Clutch",false);
+            if(_lb){
+                this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * 15.0);
+            }else{
+                this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
+            }
+        }else{
+            Cylinder_Operation("L_Clutch",true);
+            this->Arm_L_move_Vel(0.0);
+        }
+        if(_padx == 1 && _pady == -1){ //right upper
+            if(_b && _b_enable){
+                if(_Cyl_R_Upper_Grab){
+                    Cylinder_Operation("R_Upper_Grab",true);
+                    _Cyl_R_Upper_Grab = false;
+                }else{
+                    Cylinder_Operation("R_Upper_Grab",false);
+                    _Cyl_R_Upper_Grab = true;
+                }
+                _b_enable = false;
+            }
+            if(_x && _x_enable){
+                if(_Cyl_R_Upper_Rotate){
+                    Cylinder_Operation("R_Upper_Rotate",true);
+                    _Cyl_R_Upper_Rotate = false;
+                }else{
+                    Cylinder_Operation("R_Upper_Rotate",false);
+                    _Cyl_R_Upper_Rotate = true;
+                }
+                _x_enable = false;
+            }
+            if(_y && _y_enable){
+                Cylinder_Operation("R_Upper_Deploy",true);
+                _y_enable = false;
+            }
+            if(_a && _a_enable){
+                Cylinder_Operation("R_Upper_Deploy",false);
+                _a_enable = false;
+            }
+        }else if(_padx == 1 && _pady == 1){ //right lower
+            if(_b && _b_enable){
+                if(_Cyl_R_Lower_Grab){
+                    Cylinder_Operation("R_Lower_Grab",true);
+                    _Cyl_R_Lower_Grab = false;
+                }else{
+                    Cylinder_Operation("R_Lower_Grab",false);
+                    _Cyl_R_Lower_Grab = true;
+                }
+                _b_enable = false;
+            }
+            if(_y && _y_enable){
+                Cylinder_Operation("R_Lower_Deploy",true);
+                _y_enable = false;
+            }
+            if(_a && _a_enable){
+                Cylinder_Operation("R_Lower_Deploy",false);
+                _a_enable = false;
+            }
+        }else if(_padx == -1 && _pady == -1){ //left upper
+            if(_b && _b_enable){
+                if(_Cyl_L_Upper_Grab){
+                    Cylinder_Operation("L_Upper_Grab",true);
+                    _Cyl_L_Upper_Grab = false;
+                }else{
+                    Cylinder_Operation("L_Upper_Grab",false);
+                    _Cyl_L_Upper_Grab = true;
+                }
+                _b_enable = false;
+            }
+            if(_x && _x_enable){
+                if(_Cyl_L_Upper_Rotate){
+                    Cylinder_Operation("L_Upper_Rotate",true);
+                    _Cyl_L_Upper_Rotate = false;
+                }else{
+                    Cylinder_Operation("L_Upper_Rotate",false);
+                    _Cyl_L_Upper_Rotate = true;
+                }
+                _x_enable = false;
+            }
+            if(_y && _y_enable){
+                Cylinder_Operation("L_Upper_Deploy",true);
+                _y_enable = false;
+            }
+            if(_a && _a_enable){
+                Cylinder_Operation("L_Upper_Deploy",false);
+                _a_enable = false;
+            }
+        }else if(_padx == -1 && _pady == 1){ //left lower
+            if(_b && _b_enable){
+                if(_Cyl_L_Lower_Grab){
+                    Cylinder_Operation("L_Lower_Grab",true);
+                    _Cyl_L_Lower_Grab = false;
+                }else{
+                    Cylinder_Operation("L_Lower_Grab",false);
+                    _Cyl_L_Lower_Grab = true;
+                }
+                _b_enable = false;
+            }
+            if(_y && _y_enable){
+                Cylinder_Operation("L_Lower_Deploy",true);
+                _y_enable = false;
+            }
+            if(_a && _a_enable){
+                Cylinder_Operation("L_Lower_Deploy",false);
+                _a_enable = false;
+            }
+        }
+    }else if(_defence_Mode){ //------------------------------------------------------------------------------------------------------
+        if (_start && _padx == 1)
+        {
+            this-> _ballPick_Mode = true;
+            this-> _piling_Mode = false;
+            this-> _defence_Mode = false;
+            return;
+        }
+        if(_b && _b_enable){
+            if(_Cyl_Defend_Grab){
+                Cylinder_Operation("Defend_Grab",true);
+                _Cyl_Defend_Grab = false;
+            }else{
+                Cylinder_Operation("Defend_Grab",false);
+                _Cyl_Defend_Grab = true;
+            }
+            _b_enable = false;
+        }
+    }else if(_ballPick_Mode){ //------------------------------------------------------------------------------------------------------
+        if (_start && _padx == -1)
+        {
+            this-> _ballPick_Mode = true;
+            this-> _piling_Mode = false;
+            this-> _defence_Mode = false;
+            return;
+        }
     }
     if(!_a){
         _a_enable = true;
     }
-
-    if(_b && _b_enable){
-        if(_Cyl_Arm){
-            //Cyl_grab_Arm_R();
-            //Cyl_grab_Arm_L();
-            //Cyl_On_Clutch_R();
-            //Cyl_On_Clutch_L();
-            _Cyl_Arm = false;
-        }else{
-            //Cyl_release_Arm_R();
-            //Cyl_release_Arm_L();
-            //Cyl_Off_Clutch_R();
-            //Cyl_Off_Clutch_L();
-            _Cyl_Arm = true;
-        }
-        _b_enable = false;
-    }
     if(!_b){
         _b_enable = true;
-    }
-
-    if(_x && _x_enable){
-        if(_Cyl_Shelf){
-            //Cyl_On_Shelf_4();
-            _Cyl_Shelf = false;
-        }else{
-            //Cyl_Off_Shelf_4();
-            _Cyl_Shelf = true;
-        }
-        _x_enable = false;
     }
     if(!_x){
         _x_enable = true;
     }
-
-    if(_y && _y_enable){
-        if(_Cyl_Push){
-            //Cyl_On_Push_LGR();
-            _Cyl_Push = false;
-        }else{
-            //Cyl_Off_Push_LGR();
-            _Cyl_Push = true;
-        }
-        _y_enable = false;
-    }
-    if(!_x){
+    if(!_y){
         _y_enable = true;
     }
     
+    ///--------------------------------------------------------------------------------------------------------------------------------
     if (this->_is_manual_enabled)
     {
         static double recent_vel_x = 0.0;
