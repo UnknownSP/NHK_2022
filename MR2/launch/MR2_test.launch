@@ -24,43 +24,43 @@
 <!--Motor Driver-->
     <node pkg="nodelet" type="nodelet" name="motor0" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="510" /> 
-      <remap from="motor0_cmd" to="foot3_cmd"/>
-      <remap from="motor0_cmd_val" to="foot3_cmd_vel"/>      
+      <remap from="motor0_cmd" to="foot2_cmd"/>
+      <remap from="motor0_cmd_val" to="foot2_cmd_vel"/>      
     </node>
     <node pkg="nodelet" type="nodelet" name="motor1" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="520" /> 
-      <remap from="motor1_cmd" to="foot0_cmd"/>
-      <remap from="motor1_cmd_val" to="foot0_cmd_vel"/>
+      <remap from="motor1_cmd" to="foot1_cmd"/>
+      <remap from="motor1_cmd_val" to="foot1_cmd_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor2" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="530" /> 
-      <remap from="motor2_cmd" to="foot1_cmd"/>
-      <remap from="motor2_cmd_val" to="foot1_cmd_vel"/>
+      <remap from="motor2_cmd" to="foot0_cmd"/>
+      <remap from="motor2_cmd_val" to="foot0_cmd_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor3" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="540" /> 
-      <remap from="motor3_cmd" to="foot2_cmd"/>
-      <remap from="motor3_cmd_val" to="foot2_cmd_vel"/>
+      <remap from="motor3_cmd" to="foot3_cmd"/>
+      <remap from="motor3_cmd_val" to="foot3_cmd_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor4" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="410" /> 
-      <remap from="motor4_cmd" to="steer3_cmd"/>
-      <remap from="motor4_cmd_val" to="steer3_val"/>      
+      <remap from="motor4_cmd" to="steer2_cmd"/>
+      <remap from="motor4_cmd_val" to="steer2_val"/>      
     </node>
     <node pkg="nodelet" type="nodelet" name="motor5" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="420" />
-      <remap from="motor5_cmd" to="steer0_cmd"/>
-      <remap from="motor5_cmd_val" to="steer0_val"/>
+      <remap from="motor5_cmd" to="steer1_cmd"/>
+      <remap from="motor5_cmd_val" to="steer1_val"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor6" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="430" /> 
-      <remap from="motor6_cmd" to="steer1_cmd"/>
-      <remap from="motor6_cmd_val" to="steer1_val"/>
+      <remap from="motor6_cmd" to="steer0_cmd"/>
+      <remap from="motor6_cmd_val" to="steer0_val"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor7" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="440" /> 
-      <remap from="motor7_cmd" to="steer2_cmd"/>
-      <remap from="motor7_cmd_val" to="steer2_val"/>
+      <remap from="motor7_cmd" to="steer3_cmd"/>
+      <remap from="motor7_cmd_val" to="steer3_val"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor8" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="610" />
@@ -97,10 +97,10 @@
     
     <node pkg="nodelet" type="nodelet" name="MR2_nodelet_main" args="$(arg nodelet_mode) MR2/MR2_nodelet_main $(arg manager_name)" output="screen">
       
-      <param name="steer3_adjust" type="double" value="4.75" />
-      <param name="steer0_adjust" type="double" value="0.7" />
-      <param name="steer1_adjust" type="double" value="0.9" />
-      <param name="steer2_adjust" type="double" value="3.1" />
+      <!--<param name="steer3_adjust_sub" type="double" value="-0.9" />
+      <param name="steer0_adjust_sub" type="double" value="0.7" />
+      <param name="steer1_adjust_sub" type="double" value="0.9" />
+      <param name="steer2_adjust_sub" type="double" value="3.1" />-->
     </node>
     
 <!--Solenoid_Driver-->  
@@ -130,7 +130,7 @@
     </node>
     <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid5" >
       <param name="bid" type="string" value="180" />
-      <param name="name" value="solenoid2"/>
+      <param name="name" value="solenoid5"/>
       <remap from="solenoid5_cmd" to="solenoid5_cmd"/>
       <remap from="solenoid5_order" to="solenoid5_order"/>
     </node>
@@ -141,30 +141,7 @@
       <param name="deadzone" value="0.12" />
     </node>
     
-    <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Steering $(arg manager_name)" output="screen">
-      <param name="tire_max_acc" value="1000.0" />
-      <param name="tire_max_vel" value="3000.0" />
-      <param name="speed_coeff" value="1500.0" />
-      <param name="invert_x" value="false" />
-      <param name="invert_y" value="false" />
-      <param name="invert_z" value="true" />
-      <!-- <param name="steer3_adjust" value="4.75" />
-      <param name="steer0_adjust" value="0.7" />
-      <param name="steer1_adjust" value="0.9" />
-      <param name="steer2_adjust" value="3.1" />-->
-      <remap from="tire0_cmd_vel" to="foot0_cmd_vel" />
-      <remap from="tire1_cmd_vel" to="foot1_cmd_vel" />
-      <remap from="tire2_cmd_vel" to="foot2_cmd_vel" />
-      <remap from="tire3_cmd_vel" to="foot3_cmd_vel" />
-      <remap from="steer0_cmd_pos" to="steer0_val" />
-      <remap from="steer1_cmd_pos" to="steer1_val" />
-      <remap from="steer2_cmd_pos" to="steer2_val" />
-      <remap from="steer3_cmd_pos" to="steer3_val" />
-      
-    </node>
-  </group>
-
-  <!-- key&mouse -->
+<!-- key&mouse -->
   <arg name="mouse_vel" default="mouse_vel"/>
     <arg name="holonomic" default="false"/>
     <arg name="plot" default="false"/>
@@ -178,5 +155,29 @@
       <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot"
             args="$(arg mouse_vel)/linear/x $(arg mouse_vel)/linear/y $(arg mouse_vel)/angular/z"/>
     </group>
+
+    <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Steering $(arg manager_name)" output="screen">
+      <param name="tire_max_acc" value="1000.0" />
+      <param name="tire_max_vel" value="3000.0" />
+      <param name="speed_coeff" value="1500.0" />
+      <param name="invert_x" value="false" />
+      <param name="invert_y" value="false" />
+      <param name="invert_z" value="true" />
+      <param name="steer2_adjust_main" value="1.53" />
+      <param name="steer1_adjust_main" value="0.85" />
+      <param name="steer0_adjust_main" value="0.18" />
+      <param name="steer3_adjust_main" value="-0.65" />
+      <remap from="tire0_cmd_vel" to="foot0_cmd_vel" />
+      <remap from="tire1_cmd_vel" to="foot1_cmd_vel" />
+      <remap from="tire2_cmd_vel" to="foot2_cmd_vel" />
+      <remap from="tire3_cmd_vel" to="foot3_cmd_vel" />
+      <remap from="steer0_cmd_pos" to="steer0_val" />
+      <remap from="steer1_cmd_pos" to="steer1_val" />
+      <remap from="steer2_cmd_pos" to="steer2_val" />
+      <remap from="steer3_cmd_pos" to="steer3_val" />
+      
+    </node>
+  </group>
+
 </launch>   
     

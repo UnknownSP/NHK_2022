@@ -94,12 +94,12 @@ enum class SolenoidValveCommands : uint8_t
     shutdown_cmd      = 0b000000,
     recover_cmd       = 0b000001,
     
-    Cyl_R_Clutch_cmd        = 0b0000000,
-    Cyl_R_Upper_Rotate_cmd  = 0b0000000,
-    Cyl_R_Upper_Grab_cmd    = 0b0000000,
-    Cyl_R_Upper_Deploy_cmd  = 0b0000000,
-    Cyl_R_Lower_Grab_cmd    = 0b0000000,
-    Cyl_R_Lower_Deploy_cmd  = 0b0000000,
+    Cyl_R_Clutch_cmd        = 0b0010000,//0b0000010,
+    Cyl_R_Upper_Rotate_cmd  = 0b0100000,//0b0010000,
+    Cyl_R_Upper_Grab_cmd    = 0b0000100,
+    Cyl_R_Upper_Deploy_cmd  = 0b0001000,
+    Cyl_R_Lower_Grab_cmd    = 0b0000001,
+    Cyl_R_Lower_Deploy_cmd  = 0b0000010,
 
     Cyl_L_Clutch_cmd        = 0b0000000,
     Cyl_L_Upper_Rotate_cmd  = 0b0000000,
@@ -122,14 +122,14 @@ enum class SolenoidValveBoards : uint8_t
     Cyl_R_Clutch_board        = 0,
     Cyl_R_Upper_Rotate_board  = 0,
     Cyl_R_Upper_Grab_board    = 0,
-    Cyl_R_Upper_Deploy_board  = 1,
-    Cyl_R_Lower_Grab_board    = 1,
-    Cyl_R_Lower_Deploy_board  = 1,
+    Cyl_R_Upper_Deploy_board  = 0,
+    Cyl_R_Lower_Grab_board    = 0,
+    Cyl_R_Lower_Deploy_board  = 0,
 
     Cyl_L_Clutch_board        = 2,
     Cyl_L_Upper_Rotate_board  = 2,
     Cyl_L_Upper_Grab_board    = 2,
-    Cyl_L_Upper_Deploy_board  = 3,
+    Cyl_L_Upper_Deploy_board  = 2,
     Cyl_L_Lower_Grab_board    = 3,
     Cyl_L_Lower_Deploy_board  = 3,
 
@@ -137,9 +137,9 @@ enum class SolenoidValveBoards : uint8_t
     Cyl_Defend_Rise_board     = 4,
     Cyl_Defend_Press_board    = 4,
 
-    Cyl_Ball_Grab_board       = 5,
-    Cyl_Ball_Gather_board     = 5,
-    Cyl_Ball_Rise_board       = 5,
+    Cyl_Ball_Grab_board       = 4,
+    Cyl_Ball_Gather_board     = 4,
+    Cyl_Ball_Rise_board       = 4,
 
 };
 
@@ -222,10 +222,10 @@ private:
     ros::Publisher cmd_vel_pub;
     geometry_msgs::Twist cmd_vel_msg;
 
-    ros::Publisher Solenoid_Cmd_pub[6];
-    ros::Publisher Solenoid_Order_pub[6];
-	std_msgs::UInt8 solenoid_order_msg[6];
-    uint8_t lastSolenoid_Order[6] = {0b0000000};
+    ros::Publisher Solenoid_Cmd_pub[5];
+    ros::Publisher Solenoid_Order_pub[5];
+	std_msgs::UInt8 solenoid_order_msg[5];
+    uint8_t lastSolenoid_Order[5] = {0b0000000};
 
     //ros::Publisher Solenoid1_Cmd_pub;
     //ros::Publisher Solenoid1_Order_pub;
@@ -425,9 +425,9 @@ void MR2_nodelet_main::onInit(void)
     //this->Solenoid2_Cmd_pub = nh.advertise<std_msgs::UInt8>("solenoid2_cmd", 1);
     //this->Solenoid2_Order_pub = nh.advertise<std_msgs::UInt8>("solenoid2_order", 1);
 
-    for(int i=0;i<6;i++){
-        this->Solenoid_Cmd_pub[i] = nh.advertise<std_msgs::UInt8>("solenoid"+std::to_string(i)+"_cmd", 1);
-        this->Solenoid_Order_pub[i] = nh.advertise<std_msgs::UInt8>("solenoid"+std::to_string(i)+"_order", 1);
+    for(int i=0;i<5;i++){
+        this->Solenoid_Cmd_pub[i] = nh.advertise<std_msgs::UInt8>("solenoid"+std::to_string(i+1)+"_cmd", 1);
+        this->Solenoid_Order_pub[i] = nh.advertise<std_msgs::UInt8>("solenoid"+std::to_string(i+1)+"_order", 1);
     }
 
 	//this->SolenoidCmd_pub = nh.advertise<std_msgs::UInt8>("solenoid_cmd", 1);
@@ -459,10 +459,10 @@ void MR2_nodelet_main::onInit(void)
 
 	/*******************parameter*****************/
     //_nh.param("steer0_adjust", launch_long_vel, 0.0);
-    _nh.param("steer0_adjust", this->steer_adjust[0], 0.0);
-	_nh.param("steer1_adjust", this->steer_adjust[1], 0.0);
-	_nh.param("steer2_adjust", this->steer_adjust[2], 0.0);
-	_nh.param("steer3_adjust", this->steer_adjust[3], 0.0);
+    //_nh.param("steer0_adjust_sub", this->steer_adjust[0], 0.0);
+	//_nh.param("steer1_adjust_sub", this->steer_adjust[1], 0.0);
+	//_nh.param("steer2_adjust_sub", this->steer_adjust[2], 0.0);
+	//_nh.param("steer3_adjust_sub", this->steer_adjust[3], 0.0);
 
     this->adjust_pubData.data.resize(4);
     for(int i=0;i<4;i++){
@@ -488,8 +488,30 @@ void MR2_nodelet_main::KeyCallback(const std_msgs::String::ConstPtr& msg)
 {   
 
 	this->key_press = msg->data;
-    if(this->key_press == "a"){
-    }else if(this->key_press == "s"){
+    if(this->key_press == "q"){
+        Cylinder_Operation("R_Clutch",true);
+    }else if(this->key_press == "w"){
+        Cylinder_Operation("R_Clutch",false);
+    }else if(this->key_press == "e"){
+        Cylinder_Operation("R_Upper_Rotate",true);
+    }else if(this->key_press == "r"){
+        Cylinder_Operation("R_Upper_Rotate",false);
+    }else if(this->key_press == "t"){
+        Cylinder_Operation("R_Upper_Grab",true);
+    }else if(this->key_press == "y"){
+        Cylinder_Operation("R_Upper_Grab",false);
+    }else if(this->key_press == "u"){
+        Cylinder_Operation("R_Upper_Deploy",true);
+    }else if(this->key_press == "i"){
+        Cylinder_Operation("R_Upper_Deploy",false);
+    }else if(this->key_press == "d"){
+        Cylinder_Operation("R_Lower_Grab",true);
+    }else if(this->key_press == "f"){
+        Cylinder_Operation("R_Lower_Grab",false);
+    }else if(this->key_press == "g"){
+        Cylinder_Operation("R_Lower_Deploy",true);
+    }else if(this->key_press == "h"){
+        Cylinder_Operation("R_Lower_Deploy",false);
     }
     
     NODELET_INFO("keypress : %s", this->key_press.c_str());
@@ -520,7 +542,7 @@ void MR2_nodelet_main::PosCallback(const std_msgs::Float32::ConstPtr& msg)
 /**************************************************************************************/
 void MR2_nodelet_main::shutdown(void){
     act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
-    for(int i=0; i<6;i++){
+    for(int i=0; i<5;i++){
         Solenoid_Cmd_pub[i].publish(act_conf_cmd_msg);
     }
     foot_CmdPub0.publish(act_conf_cmd_msg);
@@ -539,7 +561,7 @@ void MR2_nodelet_main::shutdown(void){
 
 void MR2_nodelet_main::recover(void){
     act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_cmd;
-    for(int i=0; i<6;i++){
+    for(int i=0; i<5;i++){
         Solenoid_Cmd_pub[i].publish(act_conf_cmd_msg);
     }
     act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_position;
@@ -623,7 +645,9 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     this->_back  = joy->buttons[ButtonBack];
 
     //std::vector<double> throw_pos_fixed = { 0+this->throw_position_observed, 2*pi+this->throw_position_observed, -2*pi+this->throw_position_observed };
-
+    //NODELET_INFO("%d",_start);
+    //NODELET_INFO("%d",_y);
+    //NODELET_INFO("%d",_enable_steerAdjust);
     if(_enable_steerAdjust){
         if(_start && _y){
             _enable_steerAdjust = false;
@@ -640,7 +664,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             if(_x) this->adjust_pubData.data[2] -= 2.0*pi;
             if(_y) this->adjust_pubData.data[3] -= 2.0*pi;
         }
-
+        SteerAdjust_pub.publish(this->adjust_pubData);
         return;
     }
 
@@ -665,6 +689,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
     if(joy->buttons[ButtonRightThumb] != 0.0){
         //this->Cyl_Off_Clutch_R();
+        Cylinder_Operation("R_Clutch",false);
         if(_rb){
             this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -15.0);
         }else{
@@ -672,16 +697,20 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }
     }else{
         //this->Cyl_On_Clutch_R();
+        Cylinder_Operation("R_Clutch",true);
         this->Arm_R_move_Vel(0.0);
     }
     if(joy->buttons[ButtonLeftThumb] != 0.0){
         //this->Cyl_Off_Clutch_L();
+        Cylinder_Operation("R_Clutch",false);
         if(_lb){
             this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * 15.0);
         }else{
             this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
         }
     }else{
+
+        Cylinder_Operation("R_Clutch",true);
         //this->Cyl_On_Clutch_L();
         this->Arm_L_move_Vel(0.0);
     }

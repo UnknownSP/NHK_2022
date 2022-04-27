@@ -73,7 +73,8 @@ namespace base_controller_plugins{
 	std_msgs::Float64 steerCmdPosmsg[4];
 	bool tire_reverse[4] = {false};
 	bool tire_reverse_recent[4] = {false};
-	double steer_adjust[4] = {0.0};
+	double steer_adjust_sub[4] = {0.0};
+	double steer_adjust_main[4] = {0.0};
 	
 	double root_1par2 = 0.70710678118;
 	double pi_2 = 2.0 * M_PI;
@@ -94,10 +95,10 @@ namespace base_controller_plugins{
 	_nh.param("speed_coeff", this->speed_coeff, 0.0);
 	_nh.param("gear_ratio", this->gear_ratio, 2.4);
 
-	//_nh.param("steer0_adjust", this->steer_adjust[0], 0.0);
-	//_nh.param("steer1_adjust", this->steer_adjust[1], 0.0);
-	//_nh.param("steer2_adjust", this->steer_adjust[2], 0.0);
-	//_nh.param("steer3_adjust", this->steer_adjust[3], 0.0);
+	_nh.param("steer0_adjust_main", this->steer_adjust_main[0], 0.0);
+	_nh.param("steer1_adjust_main", this->steer_adjust_main[1], 0.0);
+	_nh.param("steer2_adjust_main", this->steer_adjust_main[2], 0.0);
+	_nh.param("steer3_adjust_main", this->steer_adjust_main[3], 0.0);
   
   	NODELET_INFO("tire_max_acc : %f", this->MaximumAcceleration);
   	NODELET_INFO("tire_max_vel : %f", this->MaximumVelocity);
@@ -181,8 +182,8 @@ namespace base_controller_plugins{
 
   void Steering::AdjustCallback(const std_msgs::Float64MultiArray::ConstPtr& msg){
 	for(int i=0;i<4;i++){
-		this->steer_adjust[i] = msg->data[i];
-  		NODELET_INFO("steer_adjust[%d],%f",i,this->steer_adjust[i]);
+		this->steer_adjust_sub[i] = msg->data[i];
+  		NODELET_INFO("steer_adjust[%d],%f",i,this->steer_adjust_sub[i]);
 	}
   }
 
@@ -288,7 +289,7 @@ namespace base_controller_plugins{
 		this->lastTarget_steer[i] = degree[i];
   		this->tireCmdVelmsg[i].data = speed[i];
 		if(tire_reverse[i]) this->tireCmdVelmsg[i].data *= -1.0;
-		this->steerCmdPosmsg[i].data = this->gear_ratio * degree[i] + steer_adjust[i];
+		this->steerCmdPosmsg[i].data = this->gear_ratio * degree[i] + steer_adjust_sub[i] + steer_adjust_main[i];
 		tire_reverse_recent[i] = tire_reverse[i];
   	}
   }
