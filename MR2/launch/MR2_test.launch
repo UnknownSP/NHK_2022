@@ -111,13 +111,13 @@
       <remap from="solenoid1_order" to="solenoid1_order"/>
     </node>
     <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid2" >
-      <param name="bid" type="string" value="120" />
+      <param name="bid" type="string" value="140" />
       <param name="name" value="solenoid2"/>
       <remap from="solenoid2_cmd" to="solenoid2_cmd"/>
       <remap from="solenoid2_order" to="solenoid2_order"/>
     </node>
     <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid3" >
-      <param name="bid" type="string" value="140" />
+      <param name="bid" type="string" value="150" />
       <param name="name" value="solenoid3"/>
       <remap from="solenoid3_cmd" to="solenoid3_cmd"/>
       <remap from="solenoid3_order" to="solenoid3_order"/>
@@ -127,12 +127,6 @@
       <param name="name" value="solenoid4"/>
       <remap from="solenoid4_cmd" to="solenoid4_cmd"/>
       <remap from="solenoid4_order" to="solenoid4_order"/>
-    </node>
-    <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid5" >
-      <param name="bid" type="string" value="180" />
-      <param name="name" value="solenoid5"/>
-      <remap from="solenoid5_cmd" to="solenoid5_cmd"/>
-      <remap from="solenoid5_order" to="solenoid5_order"/>
     </node>
 <!-- joy -->
     <rosparam file="$(find MR2)/param/logitech_f710_joy_assign.yaml" command="load" />

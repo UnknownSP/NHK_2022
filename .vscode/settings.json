@@ -5,6 +5,7 @@
         "*.tcc": "cpp",
         "deque": "cpp",
         "list": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "chrono": "cpp"
     }
 }
