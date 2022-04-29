@@ -181,32 +181,13 @@ private:
 
     void steer_homing();
     void send_steerAdjust(void);
-    
-    void Cyl_grab_Arm_R();
-    void Cyl_release_Arm_R();
-    void Cyl_grab_Arm_L();
-    void Cyl_release_Arm_L();
-    void Cyl_On_Clutch_R();
-    void Cyl_Off_Clutch_R();
-    void Cyl_On_Clutch_L();
-    void Cyl_Off_Clutch_L();
-    void Cyl_On_Push_LGR();
-    void Cyl_Off_Push_LGR();
-    void Cyl_On_Pull_LGR();
-    void Cyl_Off_Pull_LGR();
-    void Cyl_On_Shelf_4();
-    void Cyl_Off_Shelf_4();
-    void Cyl_On_B_Lift();
-    void Cyl_Off_B_Lift();
-    void Cyl_On_B_Catch();
-    void Cyl_Off_B_Catch();
-    void Cyl_On_B_Tilt();
-    void Cyl_Off_B_Tilt();
 
     void Cylinder_Operation(std::string CylName, bool state);
 
     void Arm_R_move_Vel(double target);
     void Arm_L_move_Vel(double target);
+    void Defence_Lift_move_Vel(double target);
+    void Defence_Roll_move_Vel(double target);
 
     /***********************Function**************************/
     
@@ -667,11 +648,13 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     this->_back  = joy->buttons[ButtonBack];
 
     //std::vector<double> throw_pos_fixed = { 0+this->throw_position_observed, 2*pi+this->throw_position_observed, -2*pi+this->throw_position_observed };
-    //NODELET_INFO("%d",_start);
+    NODELET_INFO("Pad X : %d",_padx);
+    NODELET_INFO("Pad Y %d",_pady);
     //NODELET_INFO("%d",_y);
     //NODELET_INFO("%d",_enable_steerAdjust);
     if(_enable_steerAdjust){
-        if(_start && _y){
+        if(_start)// && _y)
+        {
             _enable_steerAdjust = false;
             return;
         } 
@@ -698,14 +681,14 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this-> _enable_steerAdjust = true;
         }else if(_x){
             this->steer_homing();
-        }else if(_padx == 1 && !_defence_Mode){
-            this-> _ballPick_Mode = false;
+        }else if(_padx == -1 && !_defence_Mode){
             this-> _piling_Mode = false;
+            this-> _ballPick_Mode = false;
             this-> _defence_Mode = true;
             return;
-        }else if(_padx == -1 && !_ballPick_Mode){
-            this-> _ballPick_Mode = true;
+        }else if(_padx == 1 && !_ballPick_Mode){
             this-> _piling_Mode = false;
+            this-> _ballPick_Mode = true;
             this-> _defence_Mode = false;
             return;
         }
@@ -846,12 +829,26 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }
     }else if(_defence_Mode){ //------------------------------------------------------------------------------------------------------
         NODELET_INFO("Defence Mode");
-        if (_start && _padx == 1)
+        if (_start) //&& _padx == 1)
         {
-            this-> _ballPick_Mode = false;
             this-> _piling_Mode = true;
+            this-> _ballPick_Mode = false;
             this-> _defence_Mode = false;
             return;
+        }
+        if(joy->buttons[ButtonRightThumb] != 0.0){
+            this->Defence_Lift_move_Vel(joy->buttons[ButtonRightThumb] * -15.0);
+        }else if(_rb){
+            this->Defence_Lift_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
+        }else{
+            this->Defence_Lift_move_Vel(0.0);
+        }
+        if(joy->buttons[ButtonLeftThumb] != 0.0){
+            this->Defence_Roll_move_Vel(joy->buttons[ButtonLeftThumb] * -2.0);
+        }else if(_lb){
+            this->Defence_Roll_move_Vel(joy->buttons[ButtonLeftThumb] * 2.0);
+        }else{
+            this->Defence_Roll_move_Vel(0.0);
         }
         if(_b && _b_enable){
             if(_Cyl_Defend_Grab){
@@ -885,10 +882,10 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }
     }else if(_ballPick_Mode){ //------------------------------------------------------------------------------------------------------
         NODELET_INFO("Ball Pick Mode");
-        if (_start && _padx == -1)
+        if (_start)// && _padx == -1)
         {
-            this-> _ballPick_Mode = false;
             this-> _piling_Mode = true;
+            this-> _ballPick_Mode = false;
             this-> _defence_Mode = false;
             return;
         }
@@ -1102,6 +1099,14 @@ void MR2_nodelet_main::Arm_R_move_Vel(double target){
 void MR2_nodelet_main::Arm_L_move_Vel(double target){
     this->Arm_L_Value_msg.data = target;
     this->Arm_L_Value_pub.publish(this->Arm_L_Value_msg);
+}
+void MR2_nodelet_main::Defence_Lift_move_Vel(double target){
+    this->Defence_Lift_Value_msg.data = target;
+    this->Defence_Lift_Value_pub.publish(this->Defence_Lift_Value_msg);
+}
+void MR2_nodelet_main::Defence_Roll_move_Vel(double target){
+    this->Defence_Roll_Value_msg.data = target;
+    this->Defence_Roll_Value_pub.publish(this->Defence_Roll_Value_msg);
 }
 
 void MR2_nodelet_main::Cylinder_Operation(std::string CylName, bool state){
