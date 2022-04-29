@@ -94,23 +94,23 @@ enum class SolenoidValveCommands : uint8_t
     shutdown_cmd      = 0b000000,
     recover_cmd       = 0b000001,
 
-    Cyl_R_Clutch_cmd        = 0b0100000,
-    Cyl_R_Upper_Rotate_cmd  = 0b0010000,
-    Cyl_R_Upper_Grab_cmd    = 0b0000100,
-    Cyl_R_Upper_Deploy_cmd  = 0b0001000,
-    Cyl_R_Lower_Grab_cmd    = 0b0000001,
-    Cyl_R_Lower_Deploy_cmd  = 0b0000010,
+    Cyl_R_Clutch_cmd        = 0b0000100,
+    Cyl_R_Upper_Rotate_cmd  = 0b0000001,
+    Cyl_R_Upper_Grab_cmd    = 0b0001000,
+    Cyl_R_Upper_Deploy_cmd  = 0b0000010,
+    Cyl_R_Lower_Grab_cmd    = 0b1000000,
+    Cyl_R_Lower_Deploy_cmd  = 0b0100000,
 
-    Cyl_L_Clutch_cmd        = 0b0100000,//0b0000010,
-    Cyl_L_Upper_Rotate_cmd  = 0b0010000,//0b0010000,
-    Cyl_L_Upper_Grab_cmd    = 0b0000100,
-    Cyl_L_Upper_Deploy_cmd  = 0b0001000,
-    Cyl_L_Lower_Grab_cmd    = 0b0000001,
-    Cyl_L_Lower_Deploy_cmd  = 0b0000010,
+    Cyl_L_Clutch_cmd        = 0b0001000,//ok
+    Cyl_L_Upper_Rotate_cmd  = 0b0010000,//ok
+    Cyl_L_Upper_Grab_cmd    = 0b0000100,//ok
+    Cyl_L_Upper_Deploy_cmd  = 0b0100000,//ok
+    Cyl_L_Lower_Grab_cmd    = 0b0000010,
+    Cyl_L_Lower_Deploy_cmd  = 0b0000001,
 
     Cyl_Defend_Grab_cmd     = 0b0001000,
-    Cyl_Defend_Rise_cmd     = 0b0010000,
-    Cyl_Defend_Press_cmd    = 0b0100000,
+    Cyl_Defend_Rise_cmd     = 0b0100000,
+    Cyl_Defend_Press_cmd    = 0b0010000,
 
     Cyl_Ball_Grab_cmd       = 0b0000001,
     Cyl_Ball_Gather_cmd     = 0b0000001,
@@ -653,7 +653,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     //NODELET_INFO("%d",_y);
     //NODELET_INFO("%d",_enable_steerAdjust);
     if(_enable_steerAdjust){
-        if(_start)// && _y)
+        if(_start && _y)
         {
             _enable_steerAdjust = false;
             return;
@@ -709,28 +709,28 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     if(_piling_Mode){
         NODELET_INFO("Piling Mode");
         if(joy->buttons[ButtonRightThumb] != 0.0){
-            Cylinder_Operation("R_Clutch",false);
+            Cylinder_Operation("R_Clutch",true);
             if(_rb){
                 this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -15.0);
             }else{
                 this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
             }
         }else{
-            Cylinder_Operation("R_Clutch",true);
+            Cylinder_Operation("R_Clutch",false);
             this->Arm_R_move_Vel(0.0);
         }
         if(joy->buttons[ButtonLeftThumb] != 0.0){
-            Cylinder_Operation("L_Clutch",false);
+            Cylinder_Operation("L_Clutch",true);
             if(_lb){
                 this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * 15.0);
             }else{
                 this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
             }
         }else{
-            Cylinder_Operation("L_Clutch",true);
+            Cylinder_Operation("L_Clutch",false);
             this->Arm_L_move_Vel(0.0);
         }
-        if(_padx == 1 && _pady == -1){ //right upper
+        if(_padx == -1 && _pady == 1){ //right upper
             if(_b && _b_enable){
                 if(_Cyl_R_Upper_Grab){
                     Cylinder_Operation("R_Upper_Grab",true);
@@ -759,7 +759,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 Cylinder_Operation("R_Upper_Deploy",false);
                 _a_enable = false;
             }
-        }else if(_padx == 1 && _pady == 1){ //right lower
+        }else if(_padx == -1 && _pady == -1){ //right lower
             if(_b && _b_enable){
                 if(_Cyl_R_Lower_Grab){
                     Cylinder_Operation("R_Lower_Grab",true);
@@ -778,7 +778,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 Cylinder_Operation("R_Lower_Deploy",false);
                 _a_enable = false;
             }
-        }else if(_padx == -1 && _pady == -1){ //left upper
+        }else if(_padx == 1 && _pady == 1){ //left upper
             if(_b && _b_enable){
                 if(_Cyl_L_Upper_Grab){
                     Cylinder_Operation("L_Upper_Grab",true);
@@ -807,7 +807,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 Cylinder_Operation("L_Upper_Deploy",false);
                 _a_enable = false;
             }
-        }else if(_padx == -1 && _pady == 1){ //left lower
+        }else if(_padx == 1 && _pady == -1){ //left lower
             if(_b && _b_enable){
                 if(_Cyl_L_Lower_Grab){
                     Cylinder_Operation("L_Lower_Grab",true);
