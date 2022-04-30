@@ -837,16 +837,16 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             return;
         }
         if(joy->buttons[ButtonRightThumb] != 0.0){
-            this->Defence_Lift_move_Vel(joy->buttons[ButtonRightThumb] * -15.0);
+            this->Defence_Lift_move_Vel(joy->buttons[ButtonRightThumb] * -8.0);
         }else if(_rb){
-            this->Defence_Lift_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
+            this->Defence_Lift_move_Vel(8.0);
         }else{
             this->Defence_Lift_move_Vel(0.0);
         }
         if(joy->buttons[ButtonLeftThumb] != 0.0){
-            this->Defence_Roll_move_Vel(joy->buttons[ButtonLeftThumb] * -2.0);
+            this->Defence_Roll_move_Vel(joy->buttons[ButtonLeftThumb] * -5.0);
         }else if(_lb){
-            this->Defence_Roll_move_Vel(joy->buttons[ButtonLeftThumb] * 2.0);
+            this->Defence_Roll_move_Vel(5.0);
         }else{
             this->Defence_Roll_move_Vel(0.0);
         }
