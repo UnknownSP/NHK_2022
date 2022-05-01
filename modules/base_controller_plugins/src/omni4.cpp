@@ -60,8 +60,8 @@ namespace base_controller_plugins{
   	double lastTarget[4];
   	std_msgs::Float64 motorCmdVelmsg[4];
   
-    nav_msgs::Odometry odom_twist;
-  	ros::Publisher odom_twist_pub;
+    //nav_msgs::Odometry odom_twist;
+  	//ros::Publisher odom_twist_pub;
   };
   
   void Omni4::onInit(){
@@ -114,8 +114,8 @@ namespace base_controller_plugins{
   	motorCmdVelmsg[2].data = 0.0;
     motorCmdVelmsg[3].data = 0.0;
   
-    odom_twist = nav_msgs::Odometry();
-    odom_twist_pub = nh.advertise<nav_msgs::Odometry>("odom_twist", 10);
+    //odom_twist = nav_msgs::Odometry();
+    //odom_twist_pub = nh.advertise<nav_msgs::Odometry>("odom_twist", 10);
 
   	cmdVel_sub = nh.subscribe<geometry_msgs::Twist>("cmd_vel", 10, &Omni4::CmdVelCallback, this);
 	control_tim = nh.createTimer(ros::Duration(1.0 / ctrl_freq), &Omni4::TimerCallback, this);
@@ -153,18 +153,18 @@ namespace base_controller_plugins{
   
   	
   
-   odom_twist.header.frame_id = "/omni4/odom";
-   odom_twist.header.stamp = ros::Time::now();
-   odom_twist.child_frame_id = "/omni4/odom_link";
-   odom_twist.twist.covariance = {
-   0.5, 0, 0, 0, 0, 0,  // covariance on gps_x
-   0, 0.5, 0, 0, 0, 0,  // covariance on gps_y
-   0, 0, 0.5, 0, 0, 0,  // covariance on gps_z
-   0, 0, 0, 0.1, 0, 0,  // large covariance on rot x
-   0, 0, 0, 0, 0.1, 0,  // large covariance on rot y
-   0, 0, 0, 0, 0, 0.1}; // large covariance on rot z
-   odom_twist.twist.twist = *msg;
-   odom_twist_pub.publish(odom_twist);
+   //odom_twist.header.frame_id = "/omni4/odom";
+   //odom_twist.header.stamp = ros::Time::now();
+   //odom_twist.child_frame_id = "/omni4/odom_link";
+   //odom_twist.twist.covariance = {
+   //0.5, 0, 0, 0, 0, 0,  // covariance on gps_x
+   //0, 0.5, 0, 0, 0, 0,  // covariance on gps_y
+   //0, 0, 0.5, 0, 0, 0,  // covariance on gps_z
+   //0, 0, 0, 0.1, 0, 0,  // large covariance on rot x
+   //0, 0, 0, 0, 0.1, 0,  // large covariance on rot y
+   //0, 0, 0, 0, 0, 0.1}; // large covariance on rot z
+   //odom_twist.twist.twist = *msg;
+   //odom_twist_pub.publish(odom_twist);
   }
   
   void Omni4::CalcWheelSpeed(double actualDt){
@@ -197,15 +197,20 @@ namespace base_controller_plugins{
   		_k = 1.0;
   
   		for(int i = 0; i < 4; i++){
-  			double diffabs = fabs(t[i] - lastTarget[i]);
-  			if(diffabs * _k > maxVelDelta){
-  				_k = maxVelDelta / diffabs;
+  			double diff = t[i] - lastTarget[i];
+  			if(fabs(diff) * _k > maxVelDelta){
+				if(diff > 0.0){
+					_k = (lastTarget[i] + maxVelDelta) / t[i];
+				}else{
+					_k = (lastTarget[i] - maxVelDelta) / lastTarget[i];
+					t[i] = lastTarget[i];
+				}
   				NODELET_WARN("An infeasible acceleration detected! You might want to look into it.");
   			}
   		}
   
   		for(int i = 0; i < 4; i++){
-  			t[i] = _k*lastTarget[i] + ((t[i] - lastTarget[i]) * _k);
+  			t[i] = t[i] * _k;
   		}
   	}
   

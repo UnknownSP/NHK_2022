@@ -42,6 +42,7 @@
       <remap from="motor3_cmd" to="foot3_cmd"/>
       <remap from="motor3_cmd_val" to="foot3_cmd_vel"/>
     </node>
+    <!--
     <node pkg="nodelet" type="nodelet" name="motor4" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="410" /> 
       <remap from="motor4_cmd" to="steer2_cmd"/>
@@ -62,6 +63,8 @@
       <remap from="motor7_cmd" to="steer3_cmd"/>
       <remap from="motor7_cmd_val" to="steer3_val"/>
     </node>
+    -->
+
     <node pkg="nodelet" type="nodelet" name="motor8" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="610" />
       <remap from="motor8_cmd" to="arm_r_cmd"/>
@@ -150,6 +153,19 @@
             args="$(arg mouse_vel)/linear/x $(arg mouse_vel)/linear/y $(arg mouse_vel)/angular/z"/>
     </group>
 
+     <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Omni4 $(arg manager_name)" >
+      <param name="motor_max_acc" value="1000.0" />
+      <param name="motor_max_vel" value="4000.0" />
+      <param name="invert_x" value="false" />
+      <param name="invert_y" value="false" />
+      <param name="invert_z" value="false" />
+      <remap from="motor0_cmd_vel" to="foot0_cmd_vel" />
+      <remap from="motor1_cmd_vel" to="foot1_cmd_vel" />
+      <remap from="motor2_cmd_vel" to="foot2_cmd_vel" />
+      <remap from="motor3_cmd_vel" to="foot3_cmd_vel" />
+    </node>
+
+    <!--
     <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Steering $(arg manager_name)" output="screen">
       <param name="tire_max_acc" value="1000.0" />
       <param name="tire_max_vel" value="3000.0" />
@@ -169,9 +185,9 @@
       <remap from="steer1_cmd_pos" to="steer1_val" />
       <remap from="steer2_cmd_pos" to="steer2_val" />
       <remap from="steer3_cmd_pos" to="steer3_val" />
-      
     </node>
-  </group>
+    -->
 
+  </group>
 </launch>   
     

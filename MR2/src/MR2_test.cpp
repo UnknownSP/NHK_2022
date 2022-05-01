@@ -179,7 +179,7 @@ private:
     void set_delay(double delay_s);
     void delay_start(double delay_s);
 
-    void steer_homing();
+    //void steer_homing();
     void send_steerAdjust(void);
 
     void Cylinder_Operation(std::string CylName, bool state);
@@ -225,11 +225,10 @@ private:
     ros::Publisher foot_CmdPub1;
     ros::Publisher foot_CmdPub2;
 	ros::Publisher foot_CmdPub3;
-    ros::Publisher steer_CmdPub0;
-    //ros::Publisher steer_ValPub0;
-    ros::Publisher steer_CmdPub1;
-    ros::Publisher steer_CmdPub2;
-	ros::Publisher steer_CmdPub3;
+    //ros::Publisher steer_CmdPub0;
+    //ros::Publisher steer_CmdPub1;
+    //ros::Publisher steer_CmdPub2;
+	//ros::Publisher steer_CmdPub3;
 
     ros::Publisher Arm_R_Cmd_pub;
   	ros::Publisher Arm_R_Value_pub;
@@ -420,11 +419,10 @@ void MR2_nodelet_main::onInit(void)
     this->foot_CmdPub1 = nh.advertise<std_msgs::UInt8>("foot1_cmd", 1);
     this->foot_CmdPub2 = nh.advertise<std_msgs::UInt8>("foot2_cmd", 1);
 	this->foot_CmdPub3 = nh.advertise<std_msgs::UInt8>("foot3_cmd", 1);
-    this->steer_CmdPub0 = nh.advertise<std_msgs::UInt8>("steer0_cmd", 1);
-    //this->steer_ValPub0 = nh.advertise<std_msgs::Float64>("steer0_val", 1);
-    this->steer_CmdPub1 = nh.advertise<std_msgs::UInt8>("steer1_cmd", 1);
-    this->steer_CmdPub2 = nh.advertise<std_msgs::UInt8>("steer2_cmd", 1);
-	this->steer_CmdPub3 = nh.advertise<std_msgs::UInt8>("steer3_cmd", 1);
+    //this->steer_CmdPub0 = nh.advertise<std_msgs::UInt8>("steer0_cmd", 1);
+    //this->steer_CmdPub1 = nh.advertise<std_msgs::UInt8>("steer1_cmd", 1);
+    //this->steer_CmdPub2 = nh.advertise<std_msgs::UInt8>("steer2_cmd", 1);
+	//this->steer_CmdPub3 = nh.advertise<std_msgs::UInt8>("steer3_cmd", 1);
 
     this->Arm_R_Cmd_pub = nh.advertise<std_msgs::UInt8>("arm_r_cmd", 1);
   	this->Arm_R_Value_pub = nh.advertise<std_msgs::Float64>("arm_r_value", 1);
@@ -505,24 +503,6 @@ void MR2_nodelet_main::PosCallback(const std_msgs::Float32::ConstPtr& msg)
 	this->throw_position_observed = msg->data;
 }
 
-//void MR2_nodelet_main::Cyl_Arm_grab_arrow(void){
-//    this->lastSolenoidOrder |= (uint8_t)SolenoidValveCommands::Cyl_Arm_cmd;
-//    this->solenoid_order_msg.data = this->lastSolenoidOrder;
-//    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
-//    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
-//}
-//
-//void MR2_nodelet_main::Cyl_Arm_release_arrow(void){
-//    this->lastSolenoidOrder &= ~(uint8_t)SolenoidValveCommands::Cyl_Arm_cmd;
-//    this->solenoid_order_msg.data = this->lastSolenoidOrder;
-//    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
-//    this->SolenoidOrder_pub.publish(this->solenoid_order_msg);
-//}
-//void MR2_nodelet_main::ArmRotate_To_TargetPosi(double position){
-//    this->arm_position_msg.data = position;
-//    this->ArmVal_pub.publish(arm_position_msg);
-//}
-
 /**************************************************************************************/
 void MR2_nodelet_main::shutdown(void){
     act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
@@ -533,10 +513,10 @@ void MR2_nodelet_main::shutdown(void){
     foot_CmdPub1.publish(act_conf_cmd_msg);
     foot_CmdPub2.publish(act_conf_cmd_msg);
     foot_CmdPub3.publish(act_conf_cmd_msg);
-    steer_CmdPub0.publish(act_conf_cmd_msg);
-    steer_CmdPub1.publish(act_conf_cmd_msg);
-    steer_CmdPub2.publish(act_conf_cmd_msg);
-    steer_CmdPub3.publish(act_conf_cmd_msg);
+    //steer_CmdPub0.publish(act_conf_cmd_msg);
+    //steer_CmdPub1.publish(act_conf_cmd_msg);
+    //steer_CmdPub2.publish(act_conf_cmd_msg);
+    //steer_CmdPub3.publish(act_conf_cmd_msg);
     Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
     Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
     Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
@@ -548,11 +528,11 @@ void MR2_nodelet_main::recover(void){
     for(int i=0; i<4;i++){
         Solenoid_Cmd_pub[i].publish(act_conf_cmd_msg);
     }
-    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_position;
-    steer_CmdPub0.publish(act_conf_cmd_msg);
-    steer_CmdPub1.publish(act_conf_cmd_msg);
-    steer_CmdPub2.publish(act_conf_cmd_msg);
-    steer_CmdPub3.publish(act_conf_cmd_msg);
+    //act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_position;
+    //steer_CmdPub0.publish(act_conf_cmd_msg);
+    //steer_CmdPub1.publish(act_conf_cmd_msg);
+    //steer_CmdPub2.publish(act_conf_cmd_msg);
+    //steer_CmdPub3.publish(act_conf_cmd_msg);
     act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
     foot_CmdPub0.publish(act_conf_cmd_msg);
     foot_CmdPub1.publish(act_conf_cmd_msg);
@@ -652,35 +632,35 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     NODELET_INFO("Pad Y %d",_pady);
     //NODELET_INFO("%d",_y);
     //NODELET_INFO("%d",_enable_steerAdjust);
-    if(_enable_steerAdjust){
-        if(_start && _y)
-        {
-            _enable_steerAdjust = false;
-            return;
-        } 
-        if(_pady == 1){
-            if(_a) this->adjust_pubData.data[0] += 2.0*pi;
-            if(_b) this->adjust_pubData.data[1] += 2.0*pi;
-            if(_x) this->adjust_pubData.data[2] += 2.0*pi;
-            if(_y) this->adjust_pubData.data[3] += 2.0*pi;
-        }else if(_pady == -1){
-            if(_a) this->adjust_pubData.data[0] -= 2.0*pi;
-            if(_b) this->adjust_pubData.data[1] -= 2.0*pi;
-            if(_x) this->adjust_pubData.data[2] -= 2.0*pi;
-            if(_y) this->adjust_pubData.data[3] -= 2.0*pi;
-        }
-        SteerAdjust_pub.publish(this->adjust_pubData);
-        return;
-    }
+    //if(_enable_steerAdjust){
+    //    if(_start && _y)
+    //    {
+    //        _enable_steerAdjust = false;
+    //        return;
+    //    } 
+    //    if(_pady == 1){
+    //        if(_a) this->adjust_pubData.data[0] += 2.0*pi;
+    //        if(_b) this->adjust_pubData.data[1] += 2.0*pi;
+    //        if(_x) this->adjust_pubData.data[2] += 2.0*pi;
+    //        if(_y) this->adjust_pubData.data[3] += 2.0*pi;
+    //    }else if(_pady == -1){
+    //        if(_a) this->adjust_pubData.data[0] -= 2.0*pi;
+    //        if(_b) this->adjust_pubData.data[1] -= 2.0*pi;
+    //        if(_x) this->adjust_pubData.data[2] -= 2.0*pi;
+    //        if(_y) this->adjust_pubData.data[3] -= 2.0*pi;
+    //    }
+    //    SteerAdjust_pub.publish(this->adjust_pubData);
+    //    return;
+    //}
 
     if (_start)
     {
         if(_b){
             this->recover();
         }else if(_y){
-            this-> _enable_steerAdjust = true;
+            //this-> _enable_steerAdjust = true;
         }else if(_x){
-            this->steer_homing();
+            //this->steer_homing();
         }else if(_padx == -1 && !_defence_Mode){
             this-> _piling_Mode = false;
             this-> _ballPick_Mode = false;
@@ -1079,18 +1059,18 @@ void MR2_nodelet_main::send_steerAdjust(void){
     SteerAdjust_pub.publish(this->adjust_pubData);
 }
 
-void MR2_nodelet_main::steer_homing(void){
-    act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
-    steer_CmdPub0.publish(act_conf_cmd_msg);
-    steer_CmdPub1.publish(act_conf_cmd_msg);
-    steer_CmdPub2.publish(act_conf_cmd_msg);
-    steer_CmdPub3.publish(act_conf_cmd_msg);
-    act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
-    steer_CmdPub0.publish(act_conf_cmd_msg);
-    steer_CmdPub1.publish(act_conf_cmd_msg);
-    steer_CmdPub2.publish(act_conf_cmd_msg);
-    steer_CmdPub3.publish(act_conf_cmd_msg);
-}
+//void MR2_nodelet_main::steer_homing(void){
+//    act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
+//    steer_CmdPub0.publish(act_conf_cmd_msg);
+//    steer_CmdPub1.publish(act_conf_cmd_msg);
+//    steer_CmdPub2.publish(act_conf_cmd_msg);
+//    steer_CmdPub3.publish(act_conf_cmd_msg);
+//    act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
+//    steer_CmdPub0.publish(act_conf_cmd_msg);
+//    steer_CmdPub1.publish(act_conf_cmd_msg);
+//    steer_CmdPub2.publish(act_conf_cmd_msg);
+//    steer_CmdPub3.publish(act_conf_cmd_msg);
+//}
 
 void MR2_nodelet_main::Arm_R_move_Vel(double target){
     this->Arm_R_Value_msg.data = target;
