@@ -180,14 +180,25 @@ private:
     void delay_start(double delay_s);
 
     //void steer_homing();
+    void Arm_R_homing(void);
+    void Arm_L_homing(void);
+    void Defence_Lift_homing(void);
+    void Defence_Roll_homing(void);
+
     void send_steerAdjust(void);
 
     void Cylinder_Operation(std::string CylName, bool state);
 
     void Arm_R_move_Vel(double target);
     void Arm_L_move_Vel(double target);
+    void Arm_R_move_Pos(double target);
+    void Arm_L_move_Pos(double target);
+    void Defence_Lift_move_Pos(double target);
+    void Defence_Roll_move_Pos(double target);
     void Defence_Lift_move_Vel(double target);
     void Defence_Roll_move_Vel(double target);
+    void R_mode_Count(int cound);
+    void L_mode_Count(int cound);
 
     /***********************Function**************************/
     
@@ -308,8 +319,15 @@ private:
     double steer_adjust[4] = {0.0};
     bool _enable_steerAdjust = false;
     bool _ballPick_Mode = false;
-    bool _piling_Mode = true;
+    bool _piling_manual_Mode = true;
+    bool _piling_auto_Mode = false;
     bool _defence_Mode = false;
+    bool _homing_Mode = false;
+
+    int _autoPile_R_mode_count = -1;
+    int _autoPile_L_mode_count = -1;
+    int R_mode_count_max = 16;
+    int L_mode_count_max = 16;
     /***********************Valiables**************************/
 };
 
@@ -655,21 +673,44 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     //    return;
     //}
 
+    //Defence_Lift MAX 39.4
+
     if (_start)
     {
         if(_b){
             this->recover();
         }else if(_y){
-            //this-> _enable_steerAdjust = true;
+            //this->Arm_R_homing();
+            //this->Arm_L_homing();
+            this->Defence_Lift_homing();
+            this->Defence_Roll_homing();
         }else if(_x){
-            //this->steer_homing();
+            this->_homing_Mode = true;
+            this-> _piling_manual_Mode = false;
+            this-> _piling_auto_Mode = false;
+            this-> _ballPick_Mode = false;
+            this-> _defence_Mode = false;
+        }else if(_pady == -1 && !_piling_manual_Mode){
+            this-> _piling_manual_Mode = true;
+            this-> _piling_auto_Mode = false;
+            this-> _ballPick_Mode = false;
+            this-> _defence_Mode = false;
+            return;
+        }else if(_pady == 1 && !_piling_auto_Mode){
+            this-> _piling_manual_Mode = false;
+            this-> _piling_auto_Mode = true;
+            this-> _ballPick_Mode = false;
+            this-> _defence_Mode = false;
+            return;
         }else if(_padx == -1 && !_defence_Mode){
-            this-> _piling_Mode = false;
+            this-> _piling_manual_Mode = false;
+            this-> _piling_auto_Mode = false;
             this-> _ballPick_Mode = false;
             this-> _defence_Mode = true;
             return;
         }else if(_padx == 1 && !_ballPick_Mode){
-            this-> _piling_Mode = false;
+            this-> _piling_manual_Mode = false;
+            this-> _piling_auto_Mode = false;
             this-> _ballPick_Mode = true;
             this-> _defence_Mode = false;
             return;
@@ -688,8 +729,118 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
 
     //--------------------------------------------------------------------------------------------------------------------------------
-    if(_piling_Mode){
-        NODELET_INFO("Piling Mode");
+    if(_piling_auto_Mode){
+        NODELET_INFO("Piling Auto Mode");
+        if(_b && _b_enable){
+            if(_padx == -1){
+                R_mode_Count(-1);
+            }else{
+                R_mode_Count(1);
+            }
+        }
+        if(_x && _x_enable){
+            if(_padx == -1){
+                L_mode_Count(-1);
+            }else{
+                L_mode_Count(1);
+            }
+        }
+        if(joy->buttons[ButtonLeftThumb] != 0.0){
+            Cylinder_Operation("L_Clutch",true);
+            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
+        }else if(_lb){
+            Cylinder_Operation("L_Clutch",true);
+            this->Arm_L_move_Vel(15.0);
+        }else{
+            Cylinder_Operation("L_Clutch",false);
+            this->Arm_L_move_Vel(0.0);
+        }
+        if(_pady == 1){
+            if(_y){
+                this->Defence_Roll_move_Vel(3.0);
+            }else if(_a){
+                this->Defence_Roll_move_Vel(-3.0);
+            }else{
+                this->Defence_Roll_move_Vel(0);
+            }
+        }else if(_padx == 1 && _a){
+            this->Defence_Roll_move_Pos(0.0);
+        }else{
+            this->Defence_Roll_move_Vel(0);
+        } 
+        if(_pady == -1){
+            if(_y){
+                this->Defence_Lift_move_Vel(8.0);
+            }else if(_a){
+                this->Defence_Lift_move_Vel(-8.0);
+            }else{
+                this->Defence_Lift_move_Vel(0);    
+            }
+        }else{
+            this->Defence_Lift_move_Vel(0);
+        } 
+        switch (_autoPile_L_mode_count)
+        {
+        case 0:
+            Cylinder_Operation("L_Upper_Grab",false);
+            Cylinder_Operation("L_Upper_Deploy",false);
+            Cylinder_Operation("L_Upper_Rotate",false);
+            Cylinder_Operation("L_Lower_Grab",false);
+            Cylinder_Operation("L_Lower_Deploy",false);
+        case 1:
+            Cylinder_Operation("L_Upper_Grab",false);
+            break;
+        case 2:
+            Cylinder_Operation("L_Upper_Grab",true);
+            break;
+        //case 3:
+        //    Cylinder_Operation("L_Clutch",true);
+        //    this->_delay_s = ros::Time::now().toSec() + 0.6;
+        //    this->Arm_L_move_Vel(-15.0);
+        //    while(this->_delay_s > ros::Time::now().toSec());
+        //    this->Arm_L_move_Vel(0.0);
+        //    Cylinder_Operation("L_Clutch",false);
+        //    break;
+        case 3:
+            Cylinder_Operation("L_Lower_Grab",false);
+            break;
+        case 4:
+            Cylinder_Operation("L_Lower_Grab",true);
+            break;
+        //case 7:
+        //case 8:
+        //    //L_LIFT MOVE
+        //    break;
+        case 5:
+            Cylinder_Operation("L_Lower_Grab",true);
+            break;
+        case 6:
+            Cylinder_Operation("L_Lower_Grab",false);
+            break;
+        case 7:
+            Cylinder_Operation("L_Lower_Deploy",false);
+            break;
+        case 8:
+            Cylinder_Operation("L_Lower_Deploy",true);
+            break;
+        case 9:
+            Cylinder_Operation("L_Upper_Grab",true);
+            break;
+        case 10:
+            Cylinder_Operation("L_Upper_Grab",false);
+            break;
+        case 11:
+            Cylinder_Operation("L_Upper_Deploy",false);
+            break;
+        case 12:
+            Cylinder_Operation("L_Upper_Deploy",true);
+            break;
+        
+        default:
+            break;
+        }
+    }else if(_piling_manual_Mode){
+        NODELET_INFO("Piling Manual Mode");
         if(joy->buttons[ButtonRightThumb] != 0.0){
             Cylinder_Operation("R_Clutch",true);
             if(_rb){
@@ -763,9 +914,11 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }else if(_padx == 1 && _pady == 1){ //left upper
             if(_b && _b_enable){
                 if(_Cyl_L_Upper_Grab){
+                    NODELET_INFO("True");
                     Cylinder_Operation("L_Upper_Grab",true);
                     _Cyl_L_Upper_Grab = false;
                 }else{
+                    NODELET_INFO("False");
                     Cylinder_Operation("L_Upper_Grab",false);
                     _Cyl_L_Upper_Grab = true;
                 }
@@ -811,13 +964,13 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }
     }else if(_defence_Mode){ //------------------------------------------------------------------------------------------------------
         NODELET_INFO("Defence Mode");
-        if (_start) //&& _padx == 1)
-        {
-            this-> _piling_Mode = true;
-            this-> _ballPick_Mode = false;
-            this-> _defence_Mode = false;
-            return;
-        }
+        //if (_start) //&& _padx == 1)
+        //{
+        //    this-> _piling_Mode = true;
+        //    this-> _ballPick_Mode = false;
+        //    this-> _defence_Mode = false;
+        //    return;
+        //}
         if(joy->buttons[ButtonRightThumb] != 0.0){
             this->Defence_Lift_move_Vel(joy->buttons[ButtonRightThumb] * -8.0);
         }else if(_rb){
@@ -864,13 +1017,13 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }
     }else if(_ballPick_Mode){ //------------------------------------------------------------------------------------------------------
         NODELET_INFO("Ball Pick Mode");
-        if (_start)// && _padx == -1)
-        {
-            this-> _piling_Mode = true;
-            this-> _ballPick_Mode = false;
-            this-> _defence_Mode = false;
-            return;
-        }
+        //if (_start)// && _padx == -1)
+        //{
+        //    this-> _piling_Mode = true;
+        //    this-> _ballPick_Mode = false;
+        //    this-> _defence_Mode = false;
+        //    return;
+        //}
         if(_b && _b_enable){
             if(_Cyl_Ball_Grab){
                 Cylinder_Operation("Ball_Grab",true);
@@ -892,6 +1045,42 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 _Cyl_Ball_Rise = true;
             }
             _y_enable = false;
+        }
+    }else if(_homing_Mode){ //------------------------------------------------------------------------------------------------------
+        NODELET_INFO("Homing Mode");
+        if(joy->buttons[ButtonRightThumb] != 0.0){
+            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -5.0);
+            Cylinder_Operation("R_Clutch",true);
+        }else if(_rb){
+            this->Arm_R_move_Vel(5.0);
+            Cylinder_Operation("R_Clutch",true);
+        }else{
+            this->Arm_R_move_Vel(0.0);
+            Cylinder_Operation("R_Clutch",false);
+        }
+        if(joy->buttons[ButtonLeftThumb] != 0.0){
+            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -5.0);
+            Cylinder_Operation("L_Clutch",true);
+        }else if(_lb){
+            this->Arm_L_move_Vel(5.0);
+            Cylinder_Operation("L_Clutch",true);
+        }else{
+            this->Arm_L_move_Vel(0.0);
+            Cylinder_Operation("L_Clutch",false);
+        }
+        if(_y){
+            this->Defence_Lift_move_Vel(5.0);
+        }else if(_a){
+            this->Defence_Lift_move_Vel(-5.0);
+        }else{
+            this->Defence_Lift_move_Vel(0.0);
+        }
+        if(_x){
+            this->Defence_Roll_move_Vel(3.0);
+        }else if(_b){
+            this->Defence_Roll_move_Vel(-3.0);
+        }else{
+            this->Defence_Roll_move_Vel(0.0);
         }
     }
     if(!_a){
@@ -1074,21 +1263,103 @@ void MR2_nodelet_main::send_steerAdjust(void){
 //    steer_CmdPub3.publish(act_conf_cmd_msg);
 //}
 
+void MR2_nodelet_main::Arm_R_homing(void){
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
+    this->Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
+    this->Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
+}
+void MR2_nodelet_main::Arm_L_homing(void){
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
+    this->Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
+    this->Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
+}
+void MR2_nodelet_main::Defence_Lift_homing(void){
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
+    this->Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
+    this->Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
+}
+void MR2_nodelet_main::Defence_Roll_homing(void){
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
+    this->Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
+    this->Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
+}
+
 void MR2_nodelet_main::Arm_R_move_Vel(double target){
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
+    Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
     this->Arm_R_Value_msg.data = target;
     this->Arm_R_Value_pub.publish(this->Arm_R_Value_msg);
 }
 void MR2_nodelet_main::Arm_L_move_Vel(double target){
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
+    Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
     this->Arm_L_Value_msg.data = target;
     this->Arm_L_Value_pub.publish(this->Arm_L_Value_msg);
 }
 void MR2_nodelet_main::Defence_Lift_move_Vel(double target){
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
+    Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
+    this->Defence_Lift_Value_msg.data = target;
+    this->Defence_Lift_Value_pub.publish(this->Defence_Lift_Value_msg);
+}
+void MR2_nodelet_main::Defence_Lift_move_Pos(double target){
+    this->_delay_s = ros::Time::now().toSec() + 0.5;
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_position;
+    Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
+
+    while(this->_delay_s > ros::Time::now().toSec());
+    this->_delay_s = 0.0;
     this->Defence_Lift_Value_msg.data = target;
     this->Defence_Lift_Value_pub.publish(this->Defence_Lift_Value_msg);
 }
 void MR2_nodelet_main::Defence_Roll_move_Vel(double target){
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
+    Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
     this->Defence_Roll_Value_msg.data = target;
     this->Defence_Roll_Value_pub.publish(this->Defence_Roll_Value_msg);
+}
+void MR2_nodelet_main::Defence_Roll_move_Pos(double target){
+    this->_delay_s = ros::Time::now().toSec() + 0.5;
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_position;
+    Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
+
+    while(this->_delay_s > ros::Time::now().toSec());
+    this->_delay_s = 0.0;
+    this->Defence_Roll_Value_msg.data = target;
+    this->Defence_Roll_Value_pub.publish(this->Defence_Roll_Value_msg);
+}
+
+void MR2_nodelet_main::R_mode_Count(int count){
+    if(count == 0){
+        this->_autoPile_R_mode_count = 0;
+        NODELET_INFO("R_mode_count : %d",_autoPile_R_mode_count);
+        return;    
+    }
+    this->_autoPile_R_mode_count += count;
+    if(_autoPile_R_mode_count > R_mode_count_max){
+        this->_autoPile_R_mode_count = 0;
+    }else if(_autoPile_R_mode_count < 0){
+        this->_autoPile_R_mode_count = R_mode_count_max;
+    }
+    NODELET_INFO("R_mode_count : %d",_autoPile_R_mode_count);
+}
+void MR2_nodelet_main::L_mode_Count(int count){
+    if(count == 0){
+        this->_autoPile_L_mode_count = 0;
+        NODELET_INFO("L_mode_count : %d",_autoPile_L_mode_count);
+        return;    
+    }
+    this->_autoPile_L_mode_count += count;
+    if(_autoPile_L_mode_count > L_mode_count_max){
+        this->_autoPile_L_mode_count = 0;
+    }else if(_autoPile_L_mode_count < 0){
+        this->_autoPile_L_mode_count = L_mode_count_max;
+    }
+    NODELET_INFO("L_mode_count : %d",_autoPile_L_mode_count);
 }
 
 void MR2_nodelet_main::Cylinder_Operation(std::string CylName, bool state){
@@ -1164,106 +1435,5 @@ void MR2_nodelet_main::Cylinder_Operation(std::string CylName, bool state){
     }
     NODELET_INFO("send solenoid order");
 }
-//void MR2_nodelet_main::Cyl_grab_Arm_R(void){
-//    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Arm_R_cmd;
-//    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
-//    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_release_Arm_R(void){
-//    this->lastSolenoid_1_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Arm_R_cmd;
-//    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
-//    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_grab_Arm_L(void){
-//    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Arm_L_cmd;
-//    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-//    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_release_Arm_L(void){
-//    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Arm_L_cmd;
-//    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-//    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_On_Clutch_R(void){
-//    this->lastSolenoid_1_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Clutch_R_cmd;
-//    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
-//    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_Off_Clutch_R(void){
-//    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Clutch_R_cmd;
-//    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
-//    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_On_Clutch_L(void){
-//    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Clutch_L_cmd;
-//    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-//    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_Off_Clutch_L(void){
-//    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Clutch_L_cmd;
-//    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-//    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_On_Push_LGR(void){
-//    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Push_Lagori_cmd;
-//    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
-//    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_Off_Push_LGR(void){
-//    this->lastSolenoid_1_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Push_Lagori_cmd;
-//    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
-//    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_On_Pull_LGR(void){
-//    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Pull_Lagori_cmd;
-//    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
-//    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_Off_Pull_LGR(void){
-//    this->lastSolenoid_1_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Pull_Lagori_cmd;
-//    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
-//    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_On_Shelf_4(void){
-//    this->lastSolenoid_1_Order |= (uint8_t)SolenoidValveCommands::Cyl_Shelf_4_cmd;
-//    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
-//    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_Off_Shelf_4(void){
-//    this->lastSolenoid_1_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Shelf_4_cmd;
-//    this->solenoid1_order_msg.data = this->lastSolenoid_1_Order;
-//    this->Solenoid1_Order_pub.publish(this->solenoid1_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_On_B_Lift(void){
-//    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Ball_Lift_cmd;
-//    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-//    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_Off_B_Lift(void){
-//    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Ball_Lift_cmd;
-//    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-//    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_On_B_Catch(void){
-//    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Ball_Catch_cmd;
-//    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-//    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_Off_B_Catch(void){
-//    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Ball_Catch_cmd;
-//    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-//    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_On_B_Tilt(void){
-//    this->lastSolenoid_2_Order |= (uint8_t)SolenoidValveCommands::Cyl_Ball_Tilt_cmd;
-//    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-//    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
-//}
-//void MR2_nodelet_main::Cyl_Off_B_Tilt(void){
-//    this->lastSolenoid_2_Order &= ~(uint8_t)SolenoidValveCommands::Cyl_Ball_Tilt_cmd;
-//    this->solenoid2_order_msg.data = this->lastSolenoid_2_Order;
-//    this->Solenoid2_Order_pub.publish(this->solenoid2_order_msg);
-//}
-
 }
 PLUGINLIB_EXPORT_CLASS(MR2::MR2_nodelet_main, nodelet::Nodelet);
