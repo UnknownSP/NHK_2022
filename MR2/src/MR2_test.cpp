@@ -628,8 +628,10 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     this->_back  = joy->buttons[ButtonBack];
 
     //std::vector<double> throw_pos_fixed = { 0+this->throw_position_observed, 2*pi+this->throw_position_observed, -2*pi+this->throw_position_observed };
-    NODELET_INFO("Pad X : %d",_padx);
-    NODELET_INFO("Pad Y %d",_pady);
+    //NODELET_INFO("Pad X : %d",_padx);
+    //NODELET_INFO("Pad Y %d",_pady);
+    //NODELET_INFO("Left Thumb X %f",joy->axes[AxisLeftThumbX]);
+    //NODELET_INFO("Left Thumb Y %f",joy->axes[AxisLeftThumbY]);
     //NODELET_INFO("%d",_y);
     //NODELET_INFO("%d",_enable_steerAdjust);
     //if(_enable_steerAdjust){
@@ -945,9 +947,9 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         //    this->cmd_vel_msg.linear.y = vel_y;
         //    this->cmd_vel_msg.angular.z = -vel_yaw;
         //}
-        this->cmd_vel_msg.linear.x = vel_x;
-        this->cmd_vel_msg.linear.y = vel_y;
-        this->cmd_vel_msg.angular.z = -vel_yaw;
+        this->cmd_vel_msg.linear.x = vel_x * 3;
+        this->cmd_vel_msg.linear.y = vel_y * 3;
+        this->cmd_vel_msg.angular.z = -vel_yaw * 2;
 
         this->cmd_vel_pub.publish(this->cmd_vel_msg);
 

@@ -196,37 +196,47 @@ namespace base_controller_plugins{
   
   		_k = 1.0;
   
-  		for(int i = 0; i < 4; i++){
-  			double diff = t[i] - lastTarget[i];
-  			if(fabs(diff) * _k > maxVelDelta){
-				if(diff > 0.0){
-					_k = (lastTarget[i] + maxVelDelta) / t[i];
-				}else{
-					_k = (lastTarget[i] - maxVelDelta) / lastTarget[i];
-					t[i] = lastTarget[i];
-				}
-  				NODELET_WARN("An infeasible acceleration detected! You might want to look into it.");
-  			}
-  		}
+		double diff[4];
+		double max_diff_abs = 0.0;
+		int max_diff_idx = 0;
+		for(int i = 0; i < 4; i++){
+			diff[i] = t[i] - lastTarget[i];
+			if(fabs(diff[i]) >= max_diff_abs){
+				max_diff_abs = fabs(diff[i]);
+				max_diff_idx = i; 
+			}
+		}
+		if(max_diff_abs > maxVelDelta){
+			_k = fabs( maxVelDelta / diff[max_diff_idx] );
+			for(int i = 0; i < 4; i++){
+				t[i] = lastTarget[i] + _k * diff[i];
+			}
+			NODELET_WARN("An infeasible acceleration detected! You might want to look into it.");NODELET_WARN("An infeasible acceleration detected! You might want to look into it.");
+		}
+  		//for(int i = 0; i < 4; i++){
+  		//	double diff = t[i] - lastTarget[i];
+  		//	if(fabs(diff) * _k > maxVelDelta){
+		//		if(diff > 0.0){
+		//			if(fabs(lastTarget[i]) < 0.1){
+		//								
+		//			}else{
+		//				_k = (lastTarget[i] + maxVelDelta) / lastTarget[i];
+		//			}
+		//		}else{
+		//			_k = (lastTarget[i] - maxVelDelta) / lastTarget[i];
+		//		}																			
+		//		t[i] = lastTarget[i];
+  		//		NODELET_WARN("An infeasible acceleration detected! You might want to look into it.");
+  		//	}
+  		//}
   
-  		for(int i = 0; i < 4; i++){
-  			t[i] = t[i] * _k;
-  		}
+  		//for(int i = 0; i < 4; i++){
+  		//	t[i] = t[i] * _k;
+  		//}
   	}
-  
-	//double limit = 500.0;
+
   	for(int i = 0; i < 4; i++){
-		//if(i != 2){
-		//	t[i] *= 1.2;
-		//}	  
   		this->lastTarget[i] = t[i];
-		//if(fabs(t[i]) >= limit){
-		//	if(t[i] > 0.0){
-		//		t[i] = limit;
-		//	}else{
-		//		t[i] = -limit;
-		//	}
-		//}
   		this->motorCmdVelmsg[i].data = t[i];
   	}
   }
