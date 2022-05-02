@@ -24,17 +24,17 @@
 <!--Motor Driver-->
     <node pkg="nodelet" type="nodelet" name="motor0" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="510" /> 
-      <remap from="motor0_cmd" to="foot2_cmd"/>
+      <remap from="motor0_cmd" to="foot0_cmd"/>
       <remap from="motor0_cmd_val" to="foot2_cmd_vel"/>      
     </node>
     <node pkg="nodelet" type="nodelet" name="motor1" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="520" /> 
+      <param name="bid" type="string" value="420" /> 
       <remap from="motor1_cmd" to="foot1_cmd"/>
       <remap from="motor1_cmd_val" to="foot1_cmd_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor2" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
       <param name="bid" type="string" value="530" /> 
-      <remap from="motor2_cmd" to="foot0_cmd"/>
+      <remap from="motor2_cmd" to="foot2_cmd"/>
       <remap from="motor2_cmd_val" to="foot0_cmd_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor3" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
@@ -104,6 +104,10 @@
       <param name="steer0_adjust_sub" type="double" value="0.7" />
       <param name="steer1_adjust_sub" type="double" value="0.9" />
       <param name="steer2_adjust_sub" type="double" value="3.1" />-->
+      <param name="defence_lift_upper_pos" type="double" value="40.0" />
+      <param name="defence_lift_lower_pos" type="double" value="0.0" />
+      <param name="defence_lift_lagoribase_pos" type="double" value="8.0" />
+      <param name="defence_roll_horizontal_pos" type="double" value="0.0" />
     </node>
     
 <!--Solenoid_Driver-->  
@@ -154,7 +158,7 @@
     </group>
 
      <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Omni4 $(arg manager_name)" >
-      <param name="motor_max_acc" value="250.0" />
+      <param name="motor_max_acc" value="800.0" />
       <param name="motor_max_vel" value="4000.0" />
       <param name="invert_x" value="false" />
       <param name="invert_y" value="false" />
