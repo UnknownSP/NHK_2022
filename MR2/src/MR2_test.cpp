@@ -364,7 +364,7 @@ const std::vector<ControllerCommands> MR2_nodelet_main::Defence_Enable_commands(
         ControllerCommands::set_delay_500ms,
         ControllerCommands::delay,
         ControllerCommands::Cyl_Defend_Rise_On,
-        ControllerCommands::set_delay_250ms,
+        ControllerCommands::set_delay_500ms,
         ControllerCommands::delay,
         ControllerCommands::Cyl_Defend_Grab_On,
     }

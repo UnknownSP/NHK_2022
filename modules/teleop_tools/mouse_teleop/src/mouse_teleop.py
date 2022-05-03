@@ -112,7 +112,7 @@ class MouseTeleop():
         # If frequency is positive, use synchronous publishing mode:
         if self._frequency > 0.0:
             # Create timer for the given frequency to publish the twist:
-            period = rospy.Duration(1.0 / self._frequency)
+            period = rospy.Duration(10.0 / self._frequency)
 
             self._timer = rospy.Timer(period, self._publish_twist)
 

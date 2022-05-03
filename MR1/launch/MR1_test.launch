@@ -37,12 +37,12 @@
       <remap from="motor3_cmd_val" to="launch3_vel"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor4" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="430" />
+      <param name="bid" type="string" value="510" />
       <remap from="motor4_cmd" to="pitch_cmd"/>
       <remap from="motor4_cmd_val" to="pitch_pos"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor5" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="440" />
+      <param name="bid" type="string" value="520" />
       <remap from="motor5_cmd" to="yaw_cmd"/>
       <remap from="motor5_cmd_val" to="yaw_pos"/>
     </node>

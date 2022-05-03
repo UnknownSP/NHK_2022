@@ -182,6 +182,11 @@ private:
     std::string key_press = "";
 
     std_msgs::Float64 launch_VelMsg[3];
+    std_msgs::Float64 pitch_PosMsg;
+    std_msgs::Float64 yaw_PosMsg;
+
+    double pitch_deg = 0.0;
+    double yaw_deg = 0.0;
 
     bool _enableAim_fromJoy = false;
     bool _enableAim_fromKey = false;
@@ -339,7 +344,7 @@ void MR1_nodelet_main::onInit(void)
     launch_VelMsg[1].data = 0.0;
     launch_VelMsg[2].data = 0.0;
 
-    this->control_timer = nh.createTimer(ros::Duration(0.01), &MR1_nodelet_main::control_timer_callback, this);
+    this->control_timer = nh.createTimer(ros::Duration(0.05), &MR1_nodelet_main::control_timer_callback, this);
     NODELET_INFO("MR1 node has started.");
     
 }
@@ -349,7 +354,13 @@ void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
 	this->mouse_position_x = msg->linear.x;
 	this->mouse_position_y = msg->linear.y;
-    //NODELET_INFO("x : %f, y : %f", this->mouse_position_x, this->mouse_position_y);
+    NODELET_INFO("x : %f, y : %f", this->mouse_position_x, this->mouse_position_y);
+
+    yaw_PosMsg.data = (this->mouse_position_x-500.0) / 100.0;
+    pitch_PosMsg.data = pitch_deg;
+
+    pitch_PosPub.publish(this->pitch_PosMsg);
+    yaw_PosPub.publish(this->yaw_PosMsg);
 }
 
 void MR1_nodelet_main::KeyCallback(const std_msgs::String::ConstPtr& msg)
@@ -426,7 +437,7 @@ void MR1_nodelet_main::delay_start(double delay_s)
 void MR1_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 {
 
-    NODELET_INFO("%d",joy->buttons[ButtonA]);
+    //NODELET_INFO("%d",joy->buttons[ButtonA]);
     static bool control_invert = false;
     static bool last_start;
     static bool last_back;
@@ -532,11 +543,20 @@ void MR1_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     if(!_x){
         _x_enable = true;
     }
+    if(_padx == 1){
+        yaw_deg += 0.5;
+    }else if(_padx == -1){
+        yaw_deg -= 0.5;
+    }
+    if(_pady == 1){
+        pitch_deg += 0.5;
+    }else if(_pady == -1){
+        pitch_deg -= 0.5;
+    }
     
     launch1_VelPub.publish(this->launch_VelMsg[0]);
     launch2_VelPub.publish(this->launch_VelMsg[1]);
     launch3_VelPub.publish(this->launch_VelMsg[2]);
-
 
     if (this->_is_manual_enabled)
     {
