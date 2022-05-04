@@ -106,8 +106,12 @@
       <param name="steer2_adjust_sub" type="double" value="3.1" />-->
       <param name="defence_lift_upper_pos" type="double" value="40.0" />
       <param name="defence_lift_lower_pos" type="double" value="0.0" />
-      <param name="defence_lift_lagoribase_pos" type="double" value="8.0" />
+      <param name="defence_lift_lagoribase_pos" type="double" value="10.0" />
       <param name="defence_roll_horizontal_pos" type="double" value="0.0" />
+      <param name="arm_r_avoid1lagori_pos" type="double" value="20.0" />
+      <param name="arm_l_avoid1lagori_pos" type="double" value="-20.0" />
+      <param name="arm_r_avoidlagoribase_pos" type="double" value="55.0" />
+      <param name="arm_l_avoidlagoribase_pos" type="double" value="-55.0" />
     </node>
     
 <!--Solenoid_Driver-->  
