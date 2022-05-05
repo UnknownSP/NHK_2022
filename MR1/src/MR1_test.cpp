@@ -31,46 +31,6 @@ enum class ControllerCommands : uint16_t
     recover_position,
     arm_home,
     clear_flag,
-// collect the arrow
-
-    Cyl_Catch_grab,
-    Cyl_Catch_release,
-    Cyl_Lift_up,
-    Cyl_Lift_down,
-    Cyl_Arm_grab,
-    Cyl_Arm_release,
-
-    arm_rotate,
-    arm_rotate_to_grab_arrow,
-    arm_rotate_to_grab_table,
-    arm_rotate_to_load,
-    ArmRotate_to_RotStart,
-
-    ArmRotateToRotStart_Vel,
-    ArmRotateToRotStart_Pos,
-    ArmRotateToPickArrow,
-    ArmRotateToAdjustArrow,
-    ArmRotateToZeroDeg,
-    ArmRotateToPickRackArrow,
-    ArmRotateToAdjustRackArrow,
-    ArmRotateToAdjustRackArrow_high,
-
-    ArmRotateToAvoid,
-
-    ArmRotateToRotStandby,
-
-    WaitPickRackArrow,
-
-    launch_start,
-    launch_start_wait,
-    launch_start_waitstart,
-
-    adjust_arm_to_launch,
-// launch_and_home the arrow
-    launch_and_home,
-    launch_short_start,
-    launch_medium_start,
-    launch_long_start,
 // related to delay
     set_delay_10ms,
     set_delay_250ms,
@@ -79,13 +39,16 @@ enum class ControllerCommands : uint16_t
     delay,
     wait_next_pressed,
 
-    Pitch_Homing,
-    Pitch_MV_init,
-    Pitch_MV_launch,
-    Pitch_MV_fast_launch,
-    Pitch_MV_Zero,
-    Pitch_MV_avoid_arm,
-    Pitch_recover,
+    Cyl_R_load_ON,
+    Cyl_R_load_OFF,
+    Cyl_L_load_ON,
+    Cyl_L_load_OFF,
+    Cyl_Launch_ON,
+    Cyl_Launch_OFF,
+    Lift_mv_Upper,
+    Lift_mv_Lower,
+    Launcher_SpeedUp,
+    Launcher_SpeedDown,
 };
 
 enum class SolenoidValveCommands : uint8_t
@@ -93,10 +56,9 @@ enum class SolenoidValveCommands : uint8_t
     shutdown_cmd      = 0b000000,
     recover_cmd       = 0b000001,
     
-    Cyl_Catch_release_cmd   = 0b0100000,//default open
-    lift_arrow_cmd          = 0b1000000,//default down
-    Cyl_Arm_cmd             = 0b0000001,//default release
-    Cyl_GrabTable_cmd       = 0b0010000,
+    Cyl_Right_load_cmd   = 0b0000010,//default open
+    Cyl_Left_load_cmd    = 0b1000000,//default down
+    Cyl_Launch_cmd       = 0b0100000,//default release
 
 };
 
@@ -130,10 +92,14 @@ private:
 	void MouseCallback(const geometry_msgs::Twist::ConstPtr& msg);
     void KeyCallback(const std_msgs::String::ConstPtr& msg);
     void control_timer_callback(const ros::TimerEvent &event);
+    void Lift_PosCallback(const std_msgs::Float32::ConstPtr& msg);
     void shutdown();
     void recover();
     void set_delay(double delay_s);
     void delay_start(double delay_s);
+    void Lift_move_Vel(double target);
+    void Lift_homing(void);
+    void Cylinder_Operation(std::string CylName, bool state);
     /***********************Function**************************/
     
     
@@ -149,7 +115,7 @@ private:
     geometry_msgs::Twist cmd_vel_msg;
 
     ros::Publisher SolenoidCmd_pub;
-    ros::Publisher SolenoidOrder_pub;
+    ros::Publisher Solenoid_Order_pub;
 	std_msgs::UInt8 solenoid_order_msg;
     
     std_msgs::UInt8 act_conf_cmd_msg;
@@ -165,18 +131,21 @@ private:
     ros::Publisher yaw_CmdPub;
     ros::Publisher pitch_PosPub;
     ros::Publisher yaw_PosPub;
+    ros::Publisher lift_CmdPub;
+    ros::Publisher lift_VelPub;
 
 	ros::Subscriber Mouse_sub;
 	ros::Subscriber Key_sub;
+	ros::Subscriber Lift_sub;
     /***********************Pub&Sub**************************/
 
     /***********************Valiables**************************/
-    int _delay_s = 0;
+    double _delay_s = 0;
     bool _command_ongoing = false;
     bool _is_manual_enabled = true;
 
     double delay_time = 0.0;
-    uint8_t lastSolenoidOrder = 0b0000000;
+    uint8_t lastSolenoid_Order = 0b0000000;
     double mouse_position_x;
     double mouse_position_y;
     std::string key_press = "";
@@ -184,12 +153,18 @@ private:
     std_msgs::Float64 launch_VelMsg[3];
     std_msgs::Float64 pitch_PosMsg;
     std_msgs::Float64 yaw_PosMsg;
+    std_msgs::Float64 lift_VelMsg;
 
     double pitch_deg = 0.0;
     double yaw_deg = 0.0;
 
     bool _enableAim_fromJoy = false;
     bool _enableAim_fromKey = false;
+
+    double Lift_position = 0.0;
+    double lift_upper_pos;
+    double lift_lower_pos;
+    double launcher_first_speed;
     /***********************Valiables**************************/
 
     bool _a = false;
@@ -226,6 +201,14 @@ private:
     static int ButtonRightTrigger;
 
     int currentCommandIndex = 0;
+    static const std::vector<ControllerCommands> Right_Load_commands;
+    static const std::vector<ControllerCommands> Left_Load_commands;
+    static const std::vector<ControllerCommands> Shot_commands;
+    static const std::vector<ControllerCommands> LaunchSpeedUp_commands;
+    static const std::vector<ControllerCommands> LaunchSpeedDown_commands;
+    static const std::vector<ControllerCommands> LiftUp_commands;
+    static const std::vector<ControllerCommands> LiftDown_commands;
+
     static const std::vector<ControllerCommands> SetLaunchPosi_commands;
     static const std::vector<ControllerCommands> manual_all;
     const std::vector<ControllerCommands> *command_list;
@@ -263,33 +246,36 @@ const std::vector<ControllerCommands> MR1_nodelet_main::manual_all(
     }
 );
 
-const std::vector<ControllerCommands> MR1_nodelet_main::SetLaunchPosi_commands(
-    {
-        ControllerCommands::Cyl_Arm_grab,
-        ControllerCommands::Pitch_MV_Zero,
-        ControllerCommands::Pitch_MV_Zero,
-        //ControllerCommands::Pitch_Homing,
-        //ControllerCommands::Pitch_Homing,
-        //ControllerCommands::Pitch_Homing,
-        ControllerCommands::set_delay_1s,
-        ControllerCommands::delay,
-        //ControllerCommands::Pitch_Homing,
-        //ControllerCommands::set_delay_1s,
-        //ControllerCommands::delay,
-        ControllerCommands::set_delay_500ms,
-        ControllerCommands::delay,
-        ControllerCommands::recover_velocity,
-        ControllerCommands::ArmRotateToRotStart_Vel,
-        ControllerCommands::recover_position,
-        ControllerCommands::ArmRotateToRotStart_Pos,
-        ControllerCommands::set_delay_1s,
-        ControllerCommands::delay,
-        ControllerCommands::Cyl_Arm_release,
-        ControllerCommands::Pitch_recover,
-        //ControllerCommands::Pitch_MV_fast_launch,
-        ControllerCommands::Pitch_MV_launch,
-    }
-);
+const std::vector<ControllerCommands> MR1_nodelet_main::Right_Load_commands({
+    ControllerCommands::Cyl_R_load_ON,
+    ControllerCommands::set_delay_1s,
+    ControllerCommands::delay,
+    ControllerCommands::Cyl_R_load_OFF,
+});
+const std::vector<ControllerCommands> MR1_nodelet_main::Left_Load_commands({
+    ControllerCommands::Cyl_L_load_ON,
+    ControllerCommands::set_delay_1s,
+    ControllerCommands::delay,
+    ControllerCommands::Cyl_L_load_OFF,
+});
+const std::vector<ControllerCommands> MR1_nodelet_main::Shot_commands({
+    ControllerCommands::Cyl_Launch_ON,
+    ControllerCommands::set_delay_1s,
+    ControllerCommands::delay,
+    ControllerCommands::Cyl_Launch_OFF,
+});
+const std::vector<ControllerCommands> MR1_nodelet_main::LaunchSpeedUp_commands({
+    ControllerCommands::Launcher_SpeedUp,
+});
+const std::vector<ControllerCommands> MR1_nodelet_main::LaunchSpeedDown_commands({
+    ControllerCommands::Launcher_SpeedDown,
+});
+const std::vector<ControllerCommands> MR1_nodelet_main::LiftUp_commands({
+    ControllerCommands::Lift_mv_Upper,
+});
+const std::vector<ControllerCommands> MR1_nodelet_main::LiftDown_commands({
+    ControllerCommands::Lift_mv_Lower,
+});
 
 void MR1_nodelet_main::onInit(void)
 {
@@ -320,7 +306,7 @@ void MR1_nodelet_main::onInit(void)
     this->cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 1);
 
 	this->SolenoidCmd_pub = nh.advertise<std_msgs::UInt8>("solenoid_cmd", 1);
-    this->SolenoidOrder_pub = nh.advertise<std_msgs::UInt8>("solenoid_order", 1);
+    this->Solenoid_Order_pub = nh.advertise<std_msgs::UInt8>("solenoid_order", 1);
     this->launch1_CmdPub = nh.advertise<std_msgs::UInt8>("launch1_cmd", 1);
     this->launch2_CmdPub = nh.advertise<std_msgs::UInt8>("launch2_cmd", 1);
     this->launch3_CmdPub = nh.advertise<std_msgs::UInt8>("launch3_cmd", 1);
@@ -331,20 +317,26 @@ void MR1_nodelet_main::onInit(void)
     this->pitch_PosPub = nh.advertise<std_msgs::Float64>("pitch_pos", 1);
     this->yaw_CmdPub = nh.advertise<std_msgs::UInt8>("yaw_cmd", 1);
     this->yaw_PosPub = nh.advertise<std_msgs::Float64>("yaw_pos", 1);
+    this->lift_CmdPub = nh.advertise<std_msgs::UInt8>("lift_cmd", 1);
+    this->lift_VelPub = nh.advertise<std_msgs::Float64>("lift_vel", 1);
 
     this->Mouse_sub = nh.subscribe<geometry_msgs::Twist>("/mouse_vel", 10, &MR1_nodelet_main::MouseCallback, this);
     this->Key_sub = nh.subscribe<std_msgs::String>("/keypress", 10, &MR1_nodelet_main::KeyCallback, this);
+    this->Lift_sub = nh_MT.subscribe<std_msgs::Float32>("motor6_current_val", 10, &MR1_nodelet_main::Lift_PosCallback, this);
+
 	/*******************pub & sub*****************/
 
 	/*******************parameter*****************/
-    //_nh.param("launch_long_vel", launch_long_vel, 0.0);
+    _nh.param("lift_upper_pos", lift_upper_pos, 0.0);
+    _nh.param("lift_lower_pos", lift_lower_pos, 0.0);
+    _nh.param("launcher_first_speed", launcher_first_speed, 0.0);
 	/*******************parameter*****************/
 
     launch_VelMsg[0].data = 0.0;
     launch_VelMsg[1].data = 0.0;
     launch_VelMsg[2].data = 0.0;
 
-    this->control_timer = nh.createTimer(ros::Duration(0.05), &MR1_nodelet_main::control_timer_callback, this);
+    this->control_timer = nh.createTimer(ros::Duration(0.01), &MR1_nodelet_main::control_timer_callback, this);
     NODELET_INFO("MR1 node has started.");
     
 }
@@ -354,25 +346,69 @@ void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
 {
 	this->mouse_position_x = msg->linear.x;
 	this->mouse_position_y = msg->linear.y;
-    NODELET_INFO("x : %f, y : %f", this->mouse_position_x, this->mouse_position_y);
+    //NODELET_INFO("x : %f, y : %f", this->mouse_position_x, this->mouse_position_y);
 
-    yaw_PosMsg.data = (this->mouse_position_x-500.0) / 100.0;
-    pitch_PosMsg.data = pitch_deg;
-
-    pitch_PosPub.publish(this->pitch_PosMsg);
-    yaw_PosPub.publish(this->yaw_PosMsg);
+    if(_enableAim_fromKey){
+        yaw_PosMsg.data = (this->mouse_position_x-(1365.0/2.0)) / 100.0;
+        pitch_PosMsg.data = -(this->mouse_position_y-(767.0/2.0)) / 200.0;;
+        pitch_PosPub.publish(this->pitch_PosMsg);
+        yaw_PosPub.publish(this->yaw_PosMsg);
+    }else{
+        yaw_PosMsg.data = 0.0;
+        pitch_PosMsg.data = 0.0;
+        pitch_PosPub.publish(this->pitch_PosMsg);
+        yaw_PosPub.publish(this->yaw_PosMsg);
+    }
 }
 
 void MR1_nodelet_main::KeyCallback(const std_msgs::String::ConstPtr& msg)
 {
 	this->key_press = msg->data;
-    if(this->key_press == "a"){
+    //if(this->key_press == "a"){
+    //    this->_enableAim_fromKey = true;
+    //}else if(this->key_press == "s"){
+    //    this->_enableAim_fromKey = false;
+    //}else 
+    
+    if(this->key_press == "p"){
+        this->recover();
+    }else if(this->key_press == "o"){
+        this->shutdown();
+    }else if(this->key_press == "w"){
+        this->command_list = &Shot_commands;
+        _command_ongoing = true;   
+    }else if(this->key_press == "a"){
+        this->command_list = &Left_Load_commands;
+        _command_ongoing = true;   
+    }else if(this->key_press == "d"){
+        this->command_list = &Right_Load_commands;
+        _command_ongoing = true;   
+    }else if(this->key_press == "t"){
+        this->command_list = &LiftUp_commands;
+        _command_ongoing = true;   
+    }else if(this->key_press == "g"){
+        this->command_list = &LiftDown_commands;
+        _command_ongoing = true;   
+    }else if(this->key_press == "r"){
+        this->command_list = &LaunchSpeedUp_commands;
+        _command_ongoing = true;   
+    }else if(this->key_press == "f"){
+        this->command_list = &LaunchSpeedDown_commands;
+        _command_ongoing = true;   
+    }else if(this->key_press == "h"){
+        Lift_homing();
+    }else if(this->key_press == "m"){
         this->_enableAim_fromKey = true;
-    }else if(this->key_press == "s"){
+    }else if(this->key_press == "n"){
         this->_enableAim_fromKey = false;
     }
 
     NODELET_INFO("keypress : %s", this->key_press.c_str());
+}
+void MR1_nodelet_main::Lift_PosCallback(const std_msgs::Float32::ConstPtr& msg)
+{
+	this->Lift_position = msg->data;
+    NODELET_INFO("Lift_position : %f", this->Lift_position);
 }
 
 //void MR1_nodelet_main::Cyl_Arm_grab_arrow(void){
@@ -401,6 +437,7 @@ void MR1_nodelet_main::shutdown(void){
     launch3_CmdPub.publish(act_conf_cmd_msg);
     pitch_CmdPub.publish(act_conf_cmd_msg);
     yaw_CmdPub.publish(act_conf_cmd_msg);
+    lift_CmdPub.publish(act_conf_cmd_msg);
     SolenoidCmd_pub.publish(act_conf_cmd_msg);
 }
 
@@ -409,6 +446,7 @@ void MR1_nodelet_main::recover(void){
     launch1_CmdPub.publish(act_conf_cmd_msg);
     launch2_CmdPub.publish(act_conf_cmd_msg);
     launch3_CmdPub.publish(act_conf_cmd_msg);
+    lift_CmdPub.publish(act_conf_cmd_msg);
     act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_position;
     pitch_CmdPub.publish(act_conf_cmd_msg);
     yaw_CmdPub.publish(act_conf_cmd_msg);
@@ -497,12 +535,12 @@ void MR1_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
        
     }
 
-    if(_y && _y_enable){
-
-        _y_enable = false;
-    }
-    if(!_y){
-        _y_enable = true;
+    if(_pady == 1){
+        Lift_move_Vel(6);
+    }else if(_pady == -1){
+        Lift_move_Vel(-6);
+    }else{
+        Lift_move_Vel(0);
     }
 
     if(_rb){
@@ -652,7 +690,77 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
     //    this->currentCommandIndex++;
     //    NODELET_INFO("position");
     //}
-    if (currentCommand == ControllerCommands::set_delay_10ms)
+    if(currentCommand == ControllerCommands::Cyl_R_load_ON){
+        Cylinder_Operation("Right_load",true);
+        this->currentCommandIndex++;
+        NODELET_INFO("R_Load_ON");
+    }else if(currentCommand == ControllerCommands::Cyl_R_load_OFF){
+        Cylinder_Operation("Right_load",false);
+        this->currentCommandIndex++;
+        NODELET_INFO("R_Load_OFF");
+    }else if(currentCommand == ControllerCommands::Cyl_L_load_ON){
+        Cylinder_Operation("Left_load",true);
+        this->currentCommandIndex++;
+        NODELET_INFO("L_Load_ON");
+    }else if(currentCommand == ControllerCommands::Cyl_L_load_OFF){
+        Cylinder_Operation("Left_load",false);
+        this->currentCommandIndex++;
+        NODELET_INFO("L_Load_OFF");
+    }else if(currentCommand == ControllerCommands::Cyl_Launch_ON){
+        Cylinder_Operation("Launch",true);
+        this->currentCommandIndex++;
+        NODELET_INFO("Launch_ON");
+    }else if(currentCommand == ControllerCommands::Cyl_Launch_OFF){
+        Cylinder_Operation("Launch",false);
+        this->currentCommandIndex++;
+        NODELET_INFO("Launch_OFF");
+    }else if(currentCommand == ControllerCommands::Lift_mv_Upper){
+        if(Lift_position >= lift_upper_pos-1.0){
+            Lift_move_Vel(0.0);
+            this->currentCommandIndex++;
+            NODELET_INFO("Lift Move to Upper");
+        }else if(Lift_position >= lift_upper_pos-10.0){
+            Lift_move_Vel(8.0);
+        }else if(Lift_position >= lift_upper_pos-20.0){
+            Lift_move_Vel(15.0);
+        }else if(Lift_position >= lift_upper_pos-30.0){
+            Lift_move_Vel(30.0);
+        }else{
+            Lift_move_Vel(40.0);
+        }
+    }else if(currentCommand == ControllerCommands::Lift_mv_Lower){
+        if(Lift_position <= lift_lower_pos+1.0){
+            Lift_move_Vel(0.0);
+            this->currentCommandIndex++;
+            NODELET_INFO("Lift Move to Lower");
+        }else if(Lift_position <= lift_lower_pos+10.0){
+            Lift_move_Vel(-8.0);
+        }else{
+            Lift_move_Vel(-15.0);
+        }
+    }else if(currentCommand == ControllerCommands::Launcher_SpeedUp){
+        if(this->launch_VelMsg[0].data < launcher_first_speed){
+            this->launch_VelMsg[0].data += 1.0;
+            this->launch_VelMsg[1].data += 1.0;
+            this->launch_VelMsg[2].data += 1.0;
+        }else{
+            this->currentCommandIndex++;
+            NODELET_INFO("SpeedUp");
+        }
+    }else if(currentCommand == ControllerCommands::Launcher_SpeedDown){
+        if(this->launch_VelMsg[0].data > 0.0){
+            this->launch_VelMsg[0].data -= 1.0;
+            this->launch_VelMsg[1].data -= 1.0;
+            this->launch_VelMsg[2].data -= 1.0;
+        }else{
+            this->launch_VelMsg[0].data = 0.0;
+            this->launch_VelMsg[1].data = 0.0;
+            this->launch_VelMsg[2].data = 0.0;
+            this->currentCommandIndex++;
+            NODELET_INFO("SpeedDown");
+        }
+    }
+    else if (currentCommand == ControllerCommands::set_delay_10ms)
     {
         //set_delay(0.010);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -698,8 +806,45 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         this->command_list = &this->manual_all;
         currentCommandIndex = 0;
     }
+}
 
+void MR1_nodelet_main::Lift_move_Vel(double target){
+    //act_conf_cmd_msg2.data = (uint8_t)MotorCommands::recover_velocity;
+    //Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg2);
+    this->lift_VelMsg.data = target;
+    this->lift_VelPub.publish(this->lift_VelMsg);
+}
 
+void MR1_nodelet_main::Lift_homing(void){
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
+    this->lift_CmdPub.publish(act_conf_cmd_msg);
+    act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
+    this->lift_CmdPub.publish(act_conf_cmd_msg);
+}
+
+void MR1_nodelet_main::Cylinder_Operation(std::string CylName, bool state){
+    uint8_t Ctrl_solenoidCommand = 0;
+    
+    if(CylName == "Right_load"){
+        Ctrl_solenoidCommand = (uint8_t)SolenoidValveCommands::Cyl_Right_load_cmd;
+    }else if(CylName == "Left_load"){
+        Ctrl_solenoidCommand = (uint8_t)SolenoidValveCommands::Cyl_Left_load_cmd;
+    }else if(CylName == "Launch"){
+        Ctrl_solenoidCommand = (uint8_t)SolenoidValveCommands::Cyl_Launch_cmd;
+    }else{
+        NODELET_INFO("error control solenoid");
+        return;
+    }
+    if(state){
+        this->lastSolenoid_Order |= (uint8_t)Ctrl_solenoidCommand;
+        this->solenoid_order_msg.data = this->lastSolenoid_Order;
+        this->Solenoid_Order_pub.publish(this->solenoid_order_msg);
+    }else{
+        this->lastSolenoid_Order &= ~(uint8_t)Ctrl_solenoidCommand;
+        this->solenoid_order_msg.data = this->lastSolenoid_Order;
+        this->Solenoid_Order_pub.publish(this->solenoid_order_msg);
+    }
+    NODELET_INFO("send solenoid order");
 }
 
 }

@@ -46,11 +46,17 @@
       <remap from="motor5_cmd" to="yaw_cmd"/>
       <remap from="motor5_cmd_val" to="yaw_pos"/>
     </node>
+    <node pkg="nodelet" type="nodelet" name="motor6" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="530" />
+      <remap from="motor6_cmd" to="lift_cmd"/>
+      <remap from="motor6_cmd_val" to="lift_vel"/>
+    </node>
     
     
     <node pkg="nodelet" type="nodelet" name="MR1_nodelet_main" args="$(arg nodelet_mode) MR1/MR1_nodelet_main $(arg manager_name)"  output="screen">
-      
-      <param name="Arrow_Pick_Arm_deg" type="double" value="2.5" />
+      <param name="lift_upper_pos" type="double" value="103.3" />
+      <param name="lift_lower_pos" type="double" value="0.0" />
+      <param name="launch_first_speed" type="double" value="500.0" />
       
     </node>
 <!--Solenoid_Driver--> 

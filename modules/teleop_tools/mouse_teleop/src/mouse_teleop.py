@@ -37,8 +37,8 @@ class MouseTeleop():
         # Initialize twist components to zero:
         self._x = 0.0
         self._y = 0.0
-        self._recent_x = 500.0
-        self._recent_y = 500.0
+        self._recent_x = 1365.0 / 2.0
+        self._recent_y = 767.0 / 2.0
         self._enable_ctrl = False
 
         # Initialize mouse position (x, y) to None (unknown); it's initialized
@@ -112,7 +112,7 @@ class MouseTeleop():
         # If frequency is positive, use synchronous publishing mode:
         if self._frequency > 0.0:
             # Create timer for the given frequency to publish the twist:
-            period = rospy.Duration(10.0 / self._frequency)
+            period = rospy.Duration(1.0 / self._frequency)
 
             self._timer = rospy.Timer(period, self._publish_twist)
 
@@ -128,7 +128,7 @@ class MouseTeleop():
     def _keypress(self, event):
         pressedKey = event.keysym
         #rospy.loginfo(pressedKey)
-        if pressedKey == "w":
+        if pressedKey == "x":
             if self._enable_ctrl is False:
                 self._enable_ctrl = True
                 #rospy.loginfo("pushed a")

@@ -44,6 +44,7 @@ enum class ControllerCommands : uint16_t
     defenceLift_mv_Upper,
     defenceLift_mv_Lower,
     defenceLift_mv_LagoriBase,
+    defenceLift_mv_DodgeLagori_slowly,
     defenceLift_mv_Upper_slowly,
     defenceLift_mv_Lower_slowly,
     defenceLift_mv_LagoriBase_slowly,
@@ -281,9 +282,11 @@ private:
     static int ButtonRightTrigger;
 
     int currentCommandIndex = 0;
+    static const std::vector<ControllerCommands> Defence_Up_commands;
+    static const std::vector<ControllerCommands> Defence_Dodge_commands;
     static const std::vector<ControllerCommands> Defence_Enable_commands;
-    static const std::vector<ControllerCommands> Defence_Release_commands;
     static const std::vector<ControllerCommands> Defence_Down_commands;
+    static const std::vector<ControllerCommands> Defence_Release_commands;
     static const std::vector<ControllerCommands> Defence_Unable_commands;
     static const std::vector<ControllerCommands> SetLaunchPosi_commands;
     static const std::vector<ControllerCommands> manual_all;
@@ -320,6 +323,7 @@ private:
 
     double defence_lift_upper_pos = 0.0;
     double defence_lift_lower_pos = 0.0;
+    double defence_lift_dodgelagori_pos = 0.0;
     double defence_lift_lagoribase_pos = 0.0;
     double defence_roll_horizontal_pos = 0.0;
     double arm_r_avoid1lagori_pos = 0.0;
@@ -341,12 +345,14 @@ private:
     bool _L_mode_count_changed = false;
     int _Defend_mode_count = -1;
     int _recent_Defend_mode_count = -1;
-    int Defend_mode_count_max = 4;
+    int Defend_mode_count_max = 7;
     bool _Defend_mode_count_changed = false;
     bool _Arm_Deploy = false;
 
     bool _Arm_R_moving = false;
     bool _Arm_L_moving = false;
+
+    bool _reverse_control = false;
     /***********************Valiables**************************/
 };
 
@@ -398,7 +404,7 @@ const std::vector<ControllerCommands> MR2_nodelet_main::Defence_Enable_commands(
         ControllerCommands::set_delay_500ms,
         ControllerCommands::delay,
         ControllerCommands::Cyl_Defend_Rise_On,
-        ControllerCommands::set_delay_500ms,
+        ControllerCommands::set_delay_1s,
         ControllerCommands::delay,
         ControllerCommands::Cyl_Defend_Grab_On,
     }
@@ -419,6 +425,19 @@ const std::vector<ControllerCommands> MR2_nodelet_main::Defence_Unable_commands(
         ControllerCommands::set_delay_500ms,
         ControllerCommands::delay,
         ControllerCommands::Cyl_Defend_Grab_Off,
+        ControllerCommands::set_delay_500ms,
+        ControllerCommands::delay,
+        ControllerCommands::defenceLift_mv_Upper_slowly,
+    }
+);
+const std::vector<ControllerCommands> MR2_nodelet_main::Defence_Up_commands(
+    {
+        ControllerCommands::defenceLift_mv_Upper_slowly,
+    }
+);
+const std::vector<ControllerCommands> MR2_nodelet_main::Defence_Dodge_commands(
+    {
+        ControllerCommands::defenceLift_mv_DodgeLagori_slowly,
     }
 );
 const std::vector<ControllerCommands> MR2_nodelet_main::SetLaunchPosi_commands(
@@ -528,6 +547,7 @@ void MR2_nodelet_main::onInit(void)
 	//_nh.param("steer3_adjust_sub", this->steer_adjust[3], 0.0);
     _nh.param("defence_lift_upper_pos", this->defence_lift_upper_pos, 0.0);
     _nh.param("defence_lift_lower_pos", this->defence_lift_lower_pos, 0.0);
+    _nh.param("defence_lift_dodgelagori_pos", this->defence_lift_dodgelagori_pos, 0.0);
     _nh.param("defence_lift_lagoribase_pos", this->defence_lift_lagoribase_pos, 0.0);
     _nh.param("defence_roll_horizontal_pos", this->defence_roll_horizontal_pos, 0.0);
     _nh.param("arm_r_avoid1lagori_pos", this->arm_r_avoid1lagori_pos, 0.0);
@@ -820,6 +840,8 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         _arm_r_avoid1lagori = false;
         _arm_l_avoidlagoribase = false;
         _arm_l_avoid1lagori = false;
+        _Arm_Deploy = false;
+        _Defend_mode_count = -1;
     }
    
     //if (_righttrigger && (_padx != -1))
@@ -855,84 +877,135 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 this->Arm_R_move_Vel(0.0);
             }
         }
-        if(_pady != 1 && _padx != 1){
-            if(!_command_ongoing){
-                if(_y){
-                    this->Defence_Roll_move_Vel(3.0);
-                }else if(_a){
-                    this->Defence_Roll_move_Vel(-3.0);
-                }else{
-                    this->Defence_Roll_move_Vel(0);
-                }
-            }
-        }else if(_pady == 1){
-            if(_y && _y_enable){
-                if(_Cyl_Defend_Grab){
-                    Cylinder_Operation("Defend_Grab",true);
-                    _Cyl_Defend_Grab = false;
-                }else{
-                    Cylinder_Operation("Defend_Grab",false);
-                    _Cyl_Defend_Grab = true;
-                }
-                _y_enable = false;
-            }
-        }
-        if(_padx == 1 && !_command_ongoing){
-            if(_y){
-                this->Defence_Lift_move_Vel(3.0);
-            }else if(_a){
-                this->Defence_Lift_move_Vel(-3.0);
-            }else{
-                this->Defence_Lift_move_Vel(0);
-            }
-        }
+        //if(_pady != 1 && _padx != 1){
+        //    if(!_command_ongoing){
+        //        if(_y){
+        //            this->Defence_Roll_move_Vel(3.0);
+        //        }else if(_a){
+        //            this->Defence_Roll_move_Vel(-3.0);
+        //        }else{
+        //            this->Defence_Roll_move_Vel(0);
+        //        }
+        //    }
+        //}else if(_pady == 1){
+        //    if(_y && _y_enable){
+        //        if(_Cyl_Defend_Grab){
+        //            Cylinder_Operation("Defend_Grab",true);
+        //            _Cyl_Defend_Grab = false;
+        //        }else{
+        //            Cylinder_Operation("Defend_Grab",false);
+        //            _Cyl_Defend_Grab = true;
+        //        }
+        //        _y_enable = false;
+        //    }
+        //}
+        //if(_padx == 1 && !_command_ongoing){
+        //    if(_y){
+        //        this->Defence_Lift_move_Vel(3.0);
+        //    }else if(_a){
+        //        this->Defence_Lift_move_Vel(-3.0);
+        //    }else{
+        //        this->Defence_Lift_move_Vel(0);
+        //    }
+        //}
         //else if(_pady == -1){
         //    this->command_list = &Defence_Enable_commands;
         //    _command_ongoing = true;
         //}
-        if(_b && _b_enable && !_start){
-            if(_padx == -1){
-                R_mode_Count(-1);
-            }else{
+        if(_autoPile_L_mode_count == -1 && _autoPile_R_mode_count == -1){
+            if(!_start && ((_b && _b_enable) || (_x && _x_enable))){
                 R_mode_Count(1);
-            }
-            _b_enable = false;
-        }
-        if(_x && _x_enable && !_start){
-            if(_padx == -1){
-                L_mode_Count(-1);
-            }else{
                 L_mode_Count(1);
             }
-            _x_enable = false;
+        }else{
+            if(_b && _b_enable && !_start){
+                if(_pady == 1){
+                    if(_Cyl_R_Upper_Rotate){
+                        Cylinder_Operation("R_Upper_Rotate",true);
+                        _Cyl_R_Upper_Rotate = false;
+                    }else{
+                        Cylinder_Operation("R_Upper_Rotate",false);
+                        _Cyl_R_Upper_Rotate = true;
+                    }
+                }else if(_padx == -1){
+                    R_mode_Count(-1);
+                }else{
+                    R_mode_Count(1);
+                }
+                _b_enable = false;
+            }
+            if(_x && _x_enable && !_start){
+                if(_pady == 1){
+                    if(_Cyl_L_Upper_Rotate){
+                        Cylinder_Operation("L_Upper_Rotate",true);
+                        _Cyl_L_Upper_Rotate = false;
+                    }else{
+                        Cylinder_Operation("L_Upper_Rotate",false);
+                        _Cyl_L_Upper_Rotate = true;
+                    }
+                }else if(_padx == -1){
+                    L_mode_Count(-1);
+                }else{
+                    L_mode_Count(1);
+                }
+                _x_enable = false;
+            }
         }
-        if(_a && _a_enable && _padx != 1){
+        if(_y && _y_enable && !_start){
             if(_padx == -1){
                 Defend_mode_Count(-1);
             }else{
                 Defend_mode_Count(1);
             }
-            _a_enable = false;
+            _y_enable = false;
         }
+        if(_a && _a_enable && !_start){
+            if(_padx == 1){
+                if(!_reverse_control){
+                    _reverse_control = true;
+                }else{
+                    _reverse_control = false;
+                }
+            }else if(_padx == -1){
+                this->Defence_Lift_move_Vel(8.0);
+            }else{
+                this->Defence_Lift_move_Vel(-8.0);
+            }
+            _a_enable = false;
+        }else if(!_command_ongoing){
+            this->Defence_Lift_move_Vel(0);
+        }
+        
         if(_Defend_mode_count != _recent_Defend_mode_count){
             switch (_Defend_mode_count)
             {
             case 0:
-                
+                this->command_list = &Defence_Up_commands;
+                _command_ongoing = true;   
                 break;
             case 1:
-                this->command_list = &Defence_Enable_commands;
+                this->command_list = &Defence_Dodge_commands;
                 _command_ongoing = true;   
                 break;
             case 2:
+                Cylinder_Operation("Defend_Grab",false);   
+                break;
+            case 3:
+                Cylinder_Operation("Defend_Grab",true);   
+                break;
+            case 4:
+                this->command_list = &Defence_Enable_commands;
+                _command_ongoing = true;   
+                break;
+            case 5:
                 this->command_list = &Defence_Release_commands;
                 _command_ongoing = true;   
                 break;
-            case 3:
+            case 6:
                 this->command_list = &Defence_Unable_commands;
                 _command_ongoing = true;   
                 break;
-            case 4:
+            case 7:
                 this->command_list = &Defence_Down_commands;
                 _command_ongoing = true;   
                 break;
@@ -945,25 +1018,25 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     }else if(_piling_manual_Mode){
         NODELET_INFO("Piling Manual Mode");
         if(joy->buttons[ButtonRightThumb] != 0.0){
-            Cylinder_Operation("R_Clutch",true);
+            //Cylinder_Operation("R_Clutch",true);
             if(_rb){
                 this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * -15.0);
             }else{
                 this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
             }
         }else{
-            Cylinder_Operation("R_Clutch",false);
+            //Cylinder_Operation("R_Clutch",false);
             this->Arm_R_move_Vel(0.0);
         }
         if(joy->buttons[ButtonLeftThumb] != 0.0){
-            Cylinder_Operation("L_Clutch",true);
+            //Cylinder_Operation("L_Clutch",true);
             if(_lb){
                 this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * 15.0);
             }else{
                 this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
             }
         }else{
-            Cylinder_Operation("L_Clutch",false);
+            //Cylinder_Operation("L_Clutch",false);
             this->Arm_L_move_Vel(0.0);
         }
         if(_padx == -1 && _pady == 1){ //right upper
@@ -1241,9 +1314,15 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         //    this->cmd_vel_msg.linear.y = vel_y;
         //    this->cmd_vel_msg.angular.z = -vel_yaw;
         //}
-        this->cmd_vel_msg.linear.x = vel_x * 1;
-        this->cmd_vel_msg.linear.y = -1.0 * vel_y * 1;
-        this->cmd_vel_msg.angular.z = -vel_yaw * 1;
+        if(_reverse_control){
+            this->cmd_vel_msg.linear.x  = -1.0 * vel_x * 1;
+            this->cmd_vel_msg.linear.y  = -1.0 * -1.0 * vel_y * 1;
+            this->cmd_vel_msg.angular.z = -vel_yaw * 1;
+        }else{
+            this->cmd_vel_msg.linear.x  = vel_x * 1;
+            this->cmd_vel_msg.linear.y  = -1.0 * vel_y * 1;
+            this->cmd_vel_msg.angular.z = -vel_yaw * 1;
+        }
 
         this->cmd_vel_pub.publish(this->cmd_vel_msg);
 
@@ -1379,6 +1458,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             }else{
                 Cylinder_Operation("R_Lower_Deploy",false);
             }
+            Cylinder_Operation("R_Upper_Rotate",false);
             break;
         case 15:
             Cylinder_Operation("R_Lower_Grab",false);
@@ -1481,6 +1561,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             }else{
                 Cylinder_Operation("L_Lower_Deploy",false);
             }
+            Cylinder_Operation("L_Upper_Rotate",false);
             break;
         case 15:
             Cylinder_Operation("L_Lower_Grab",false);
@@ -1569,6 +1650,13 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             Defence_Lift_move_Vel(0.0);
             this->currentCommandIndex++;
             NODELET_INFO("Defence Lift Move to LagoriBase Slowly");
+        }
+    }else if(currentCommand == ControllerCommands::defenceLift_mv_DodgeLagori_slowly){
+        Defence_Lift_move_Vel(-8.0);
+        if(defenceLift_position <= defence_lift_dodgelagori_pos+2.0){
+            Defence_Lift_move_Vel(0.0);
+            this->currentCommandIndex++;
+            NODELET_INFO("Defence Lift Move to DodgeLagori Slowly");
         }
     }else if(currentCommand == ControllerCommands::defenceRoll_mv_Horizontal){
         Defence_Roll_move_Pos(this-> defence_roll_horizontal_pos);
@@ -1707,20 +1795,20 @@ void MR2_nodelet_main::Defence_Roll_homing(void){
 }
 
 void MR2_nodelet_main::Arm_R_move_Vel(double target){
-    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
-    Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
+    //act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
+    //Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
     this->Arm_R_Value_msg.data = target;
     this->Arm_R_Value_pub.publish(this->Arm_R_Value_msg);
 }
 void MR2_nodelet_main::Arm_L_move_Vel(double target){
-    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
-    Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
+    //act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
+    //Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
     this->Arm_L_Value_msg.data = target;
     this->Arm_L_Value_pub.publish(this->Arm_L_Value_msg);
 }
 void MR2_nodelet_main::Defence_Lift_move_Vel(double target){
-    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
-    Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
+    //act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
+    //Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
     this->Defence_Lift_Value_msg.data = target;
     this->Defence_Lift_Value_pub.publish(this->Defence_Lift_Value_msg);
 }
