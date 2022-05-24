@@ -33,12 +33,13 @@ class MouseTeleop():
         # Create twist publisher:
         self._pub_cmd = rospy.Publisher('/mouse_vel', Twist, queue_size=10)
         self._pub_key = rospy.Publisher('/keypress', String, queue_size=10)
+        self._pub_key_release = rospy.Publisher('/keyrelease', String, queue_size=10)
 
         # Initialize twist components to zero:
         self._x = 0.0
         self._y = 0.0
-        self._recent_x = 1365.0 / 2.0
-        self._recent_y = 767.0 / 2.0
+        self._recent_x = 2735.0 / 2.0
+        self._recent_y = 1823.0 / 2.0
         self._enable_ctrl = False
 
         # Initialize mouse position (x, y) to None (unknown); it's initialized
@@ -93,6 +94,7 @@ class MouseTeleop():
 
         # Bind event handlers:
         self._root.bind('<KeyPress>', self._keypress)
+        self._root.bind('<KeyRelease>', self._keyrelease)
         #self._root.bind('<KeyPress-s>', self._release)
 
         #self._canvas.bind('<Configure>', self._configure)
@@ -142,6 +144,11 @@ class MouseTeleop():
         
         pub_key = String(pressedKey)
         self._pub_key.publish(pub_key)
+
+    def _keyrelease(self, event):
+        releasedKey = event.keysym
+        pub_key_release = String(releasedKey)
+        self._pub_key_release.publish(pub_key_release)
         
 
     def _start(self, event):

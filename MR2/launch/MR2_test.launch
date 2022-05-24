@@ -95,7 +95,26 @@
       <remap from="motor11_cmd" to="pitch_left_cmd"/>
       <remap from="motor11_cmd_val" to="pitch_left_cmd_pos"/>
     </node> -->
-    
+    <node pkg="nodelet" type="nodelet" name="motor20" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="710" />
+      <remap from="motor20_cmd" to="odmetory_r_cmd"/>
+      <remap from="motor20_cmd_val" to="odmetory_r_value"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor21" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="720" />
+      <remap from="motor21_cmd" to="odmetory_l_cmd"/>
+      <remap from="motor21_cmd_val" to="odmetory_l_value"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor22" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="730" />
+      <remap from="motor22_cmd" to="odmetory_f_cmd"/>
+      <remap from="motor22_cmd_val" to="odmetory_f_value"/>
+    </node>
+    <node pkg="nodelet" type="nodelet" name="motor23" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
+      <param name="bid" type="string" value="740" />
+      <remap from="motor23_cmd" to="odmetory_b_cmd"/>
+      <remap from="motor23_cmd_val" to="odmetory_b_value"/>
+    </node>
     
     
     <node pkg="nodelet" type="nodelet" name="MR2_nodelet_main" args="$(arg nodelet_mode) MR2/MR2_nodelet_main $(arg manager_name)" output="screen">
@@ -104,9 +123,9 @@
       <param name="steer0_adjust_sub" type="double" value="0.7" />
       <param name="steer1_adjust_sub" type="double" value="0.9" />
       <param name="steer2_adjust_sub" type="double" value="3.1" />-->
-      <param name="defence_lift_upper_pos" type="double" value="40.0" />
+      <param name="defence_lift_upper_pos" type="double" value="39.5" />
       <param name="defence_lift_lower_pos" type="double" value="0.0" />
-      <param name="defence_lift_dodgelagori_pos" type="double" value="8.0" />
+      <param name="defence_lift_dodgelagori_pos" type="double" value="6.5" />
       <param name="defence_lift_lagoribase_pos" type="double" value="10.0" />
       <param name="defence_roll_horizontal_pos" type="double" value="0.0" />
       <param name="arm_r_avoid1lagori_pos" type="double" value="20.0" />
@@ -148,7 +167,7 @@
     </node>
     
 <!-- key&mouse -->
-  <arg name="mouse_vel" default="mouse_vel"/>
+ <!-- <arg name="mouse_vel" default="mouse_vel"/>
     <arg name="holonomic" default="false"/>
     <arg name="plot" default="false"/>
     <node pkg="mouse_teleop" type="mouse_teleop.py" name="mouse_teleop" output="screen">
@@ -161,6 +180,7 @@
       <node pkg="rqt_plot" type="rqt_plot" name="rqt_plot"
             args="$(arg mouse_vel)/linear/x $(arg mouse_vel)/linear/y $(arg mouse_vel)/angular/z"/>
     </group>
+  -->
 
      <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Omni4 $(arg manager_name)" >
       <param name="motor_max_acc" value="1000.0" />

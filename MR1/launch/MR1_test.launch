@@ -56,7 +56,7 @@
     <node pkg="nodelet" type="nodelet" name="MR1_nodelet_main" args="$(arg nodelet_mode) MR1/MR1_nodelet_main $(arg manager_name)"  output="screen">
       <param name="lift_upper_pos" type="double" value="103.3" />
       <param name="lift_lower_pos" type="double" value="0.0" />
-      <param name="launch_first_speed" type="double" value="500.0" />
+      <param name="launcher_first_speed" type="double" value="500.0" />
       
     </node>
 <!--Solenoid_Driver--> 
