@@ -14,6 +14,7 @@
 #include <geometry_msgs/Twist.h>
 #include <thread>     
 #include <chrono>
+#include <math.h>
 
 
 constexpr double pi = 3.141592653589793238462643383279502884L;
@@ -48,6 +49,10 @@ enum class ControllerCommands : uint16_t
     Lift_mv_Upper,
     Lift_mv_Lower,
     Lift_mv_Lower_start,
+    Lift_mv_R_Loadwait,
+    Lift_mv_R_Loading,
+    Lift_mv_L_Loadwait,
+    Lift_mv_L_Loading,
     Launcher_SpeedUp,
     Launcher_SpeedDown,
 };
@@ -170,6 +175,10 @@ private:
     double Lift_position = 0.0;
     double lift_upper_pos;
     double lift_lower_pos;
+    double lift_r_loadwait_pos;
+    double lift_r_loading_pos;
+    double lift_l_loadwait_pos;
+    double lift_l_loading_pos;
     double launcher_first_speed;
     bool _lift_mv_lower_start = false;
     bool _enable_homing = false;
@@ -217,6 +226,10 @@ private:
     static const std::vector<ControllerCommands> LaunchSpeedDown_commands;
     static const std::vector<ControllerCommands> LiftUp_commands;
     static const std::vector<ControllerCommands> LiftDown_commands;
+    static const std::vector<ControllerCommands> LiftMove_R_Loadwait_commands;
+    static const std::vector<ControllerCommands> LiftMove_R_Loading_commands;
+    static const std::vector<ControllerCommands> LiftMove_L_Loadwait_commands;
+    static const std::vector<ControllerCommands> LiftMove_L_Loading_commands;
 
     static const std::vector<ControllerCommands> SetLaunchPosi_commands;
     static const std::vector<ControllerCommands> manual_all;
@@ -284,6 +297,18 @@ const std::vector<ControllerCommands> MR1_nodelet_main::LiftUp_commands({
 });
 const std::vector<ControllerCommands> MR1_nodelet_main::LiftDown_commands({
     ControllerCommands::Lift_mv_Lower,
+});
+const std::vector<ControllerCommands> MR1_nodelet_main::LiftMove_R_Loadwait_commands({
+    ControllerCommands::Lift_mv_R_Loadwait,
+});
+const std::vector<ControllerCommands> MR1_nodelet_main::LiftMove_R_Loading_commands({
+    ControllerCommands::Lift_mv_R_Loading,
+});
+const std::vector<ControllerCommands> MR1_nodelet_main::LiftMove_L_Loadwait_commands({
+    ControllerCommands::Lift_mv_L_Loadwait,
+});
+const std::vector<ControllerCommands> MR1_nodelet_main::LiftMove_L_Loading_commands({
+    ControllerCommands::Lift_mv_L_Loading,
 });
 const std::vector<ControllerCommands> MR1_nodelet_main::AutoLoading_commands({
     ControllerCommands::Cyl_Launch_OFF,
@@ -356,6 +381,10 @@ void MR1_nodelet_main::onInit(void)
 	/*******************parameter*****************/
     _nh.param("lift_upper_pos", lift_upper_pos, 0.0);
     _nh.param("lift_lower_pos", lift_lower_pos, 0.0);
+    _nh.param("lift_r_loadwait_pos", lift_r_loadwait_pos, 0.0);
+    _nh.param("lift_r_loading_pos", lift_r_loading_pos, 0.0);
+    _nh.param("lift_l_loadwait_pos", lift_l_loadwait_pos, 0.0);
+    _nh.param("lift_l_loading_pos", lift_l_loading_pos, 0.0);
     _nh.param("launcher_first_speed", launcher_first_speed, 0.0);
 	/*******************parameter*****************/
 
@@ -386,8 +415,8 @@ void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
 
     if(!_enable_homing){
         if(_enableAim_fromKey){
-            yaw_PosMsg.data = -(this->mouse_position_x-(2735.0/2.0)) / 500.0;
-            pitch_PosMsg.data = -(this->mouse_position_y-(1823.0/2.0)) / 500.0;;
+            yaw_PosMsg.data = (this->mouse_position_x-(2735.0/2.0)) / 1000.0;
+            pitch_PosMsg.data = (this->mouse_position_y-(1823.0/2.0)) / 1200.0;;
             pitch_PosPub.publish(this->pitch_PosMsg);
             yaw_PosPub.publish(this->yaw_PosMsg);
         }else{
@@ -444,12 +473,14 @@ void MR1_nodelet_main::KeyPressCallback(const std_msgs::String::ConstPtr& msg)
         }
     }else if(this->key_press == "a"){
         if(!_command_ongoing){
-            this->command_list = &Left_Load_commands;
+            //this->command_list = &Left_Load_commands;
+            this->command_list = &LiftMove_L_Loadwait_commands;
             _command_ongoing = true;      
         }
     }else if(this->key_press == "d"){
         if(!_command_ongoing){
-            this->command_list = &Right_Load_commands;
+            //this->command_list = &Right_Load_commands;
+            this->command_list = &LiftMove_R_Loadwait_commands;
             _command_ongoing = true;   
         }
     }else if(this->key_press == "t"){
@@ -497,24 +528,32 @@ void MR1_nodelet_main::KeyPressCallback(const std_msgs::String::ConstPtr& msg)
         this->launch_VelMsg[1].data -= 100.0;
         this->launch_VelMsg[2].data -= 100.0;
     }else if(this->key_press == "u"){
-        Lift_move_Vel(6);
-    }else if(this->key_press == "j"){
         Lift_move_Vel(-6);
+    }else if(this->key_press == "j"){
+        Lift_move_Vel(6);
     }else if(this->key_press == "q"){
-        if(_Cyl_Left){
-            Cylinder_Operation("Left_load",false);
-            _Cyl_Left = false;
-        }else{
-            Cylinder_Operation("Left_load",true);
-            _Cyl_Left = true;
+        //if(_Cyl_Left){
+        //    Cylinder_Operation("Left_load",false);
+        //    _Cyl_Left = false;
+        //}else{
+        //    Cylinder_Operation("Left_load",true);
+        //    _Cyl_Left = true;
+        //}
+        if(!_command_ongoing){
+            this->command_list = &LiftMove_L_Loading_commands;
+            _command_ongoing = true;      
         }
     }else if(this->key_press == "e"){
-        if(_Cyl_Right){
-            Cylinder_Operation("Right_load",false);
-            _Cyl_Right = false;
-        }else{
-            Cylinder_Operation("Right_load",true);
-            _Cyl_Right = true;
+        //if(_Cyl_Right){
+        //    Cylinder_Operation("Right_load",false);
+        //    _Cyl_Right = false;
+        //}else{
+        //    Cylinder_Operation("Right_load",true);
+        //    _Cyl_Right = true;
+       // }
+       if(!_command_ongoing){
+            this->command_list = &LiftMove_R_Loading_commands;
+            _command_ongoing = true;      
         }
     }
 
@@ -811,14 +850,18 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
     //    NODELET_INFO("position");
     //}
     if(_lift_mv_lower_start){
-        if(Lift_position <= lift_lower_pos+1.0){
+        if(Lift_position >= lift_lower_pos-0.5){
             Lift_move_Vel(0.0);
             NODELET_INFO("Lift Move to Lower end");
             _lift_mv_lower_start = false;
-        }else if(Lift_position <= lift_lower_pos+10.0){
-            Lift_move_Vel(-8.0);
+        }else if(Lift_position >= lift_lower_pos-10.0){
+            Lift_move_Vel(8.0);
+        }else if(Lift_position >= lift_lower_pos-20.0){
+            Lift_move_Vel(15.0);
+        }else if(Lift_position >= lift_lower_pos-30.0){
+            Lift_move_Vel(30.0);
         }else{
-            Lift_move_Vel(-15.0);
+            Lift_move_Vel(40.0);
         }
     }
 
@@ -847,39 +890,78 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         this->currentCommandIndex++;
         NODELET_INFO("Launch_OFF");
     }else if(currentCommand == ControllerCommands::Lift_mv_Upper){
-        if(Lift_position >= lift_upper_pos-1.0){
+        if(Lift_position <= lift_upper_pos+1.0){
             Lift_move_Vel(0.0);
             this->currentCommandIndex++;
             NODELET_INFO("Lift Move to Upper");
-        }else if(Lift_position >= lift_upper_pos-10.0){
-            Lift_move_Vel(8.0);
-        }else if(Lift_position >= lift_upper_pos-20.0){
-            Lift_move_Vel(15.0);
-        }else if(Lift_position >= lift_upper_pos-30.0){
-            Lift_move_Vel(30.0);
+        }else if(Lift_position <= lift_upper_pos+10.0){
+            Lift_move_Vel(-8.0);
+        }else if(Lift_position <= lift_upper_pos+20.0){
+            Lift_move_Vel(-15.0);
+        }else if(Lift_position <= lift_upper_pos+30.0){
+            Lift_move_Vel(-30.0);
         }else{
-            Lift_move_Vel(40.0);
+            Lift_move_Vel(-40.0);
         }
     }else if(currentCommand == ControllerCommands::Lift_mv_Lower){
-        if(Lift_position <= lift_lower_pos+1.0){
+        if(Lift_position >= lift_lower_pos-0.5){
             Lift_move_Vel(0.0);
             this->currentCommandIndex++;
             NODELET_INFO("Lift Move to Lower");
-        }else if(Lift_position <= lift_lower_pos+10.0){
-            Lift_move_Vel(-8.0);
+        }else if(Lift_position >= lift_lower_pos-10.0){
+            Lift_move_Vel(8.0);
         }else{
-            Lift_move_Vel(-15.0);
+            Lift_move_Vel(15.0);
         }
     }else if(currentCommand == ControllerCommands::Lift_mv_Lower_start){
-        if(Lift_position <= lift_lower_pos+1.0){
+        if(Lift_position >= lift_lower_pos-1.0){
             Lift_move_Vel(0.0);
             _lift_mv_lower_start = false;
         }else{
             _lift_mv_lower_start = true;
-            Lift_move_Vel(-15.0);
+            //Lift_move_Vel(15.0);
         }
         this->currentCommandIndex++;
         NODELET_INFO("Lift Move to Lower start");
+    }else if(currentCommand == ControllerCommands::Lift_mv_R_Loadwait || currentCommand == ControllerCommands::Lift_mv_R_Loading || currentCommand == ControllerCommands::Lift_mv_L_Loadwait || currentCommand == ControllerCommands::Lift_mv_L_Loading){
+        double diff = 0.0;
+        if(currentCommand == ControllerCommands::Lift_mv_R_Loadwait){
+            diff = Lift_position - lift_r_loadwait_pos;
+        }else if(currentCommand == ControllerCommands::Lift_mv_R_Loading){
+            diff = Lift_position - lift_r_loading_pos;
+        }else if(currentCommand == ControllerCommands::Lift_mv_L_Loadwait){
+            diff = Lift_position - lift_l_loadwait_pos;
+        }else if(currentCommand == ControllerCommands::Lift_mv_L_Loading){
+            diff = Lift_position - lift_l_loading_pos;
+        }  
+        double diff_abs = fabs(diff);
+        if(diff_abs <= 0.2){
+            Lift_move_Vel(0.0);
+            this->currentCommandIndex++;
+            NODELET_INFO("Lift Move");
+        }else if(diff > 0.0){ // lift is positioning at under pos
+            if(diff_abs < 10.0){
+                Lift_move_Vel(-8.0);
+            }else if(diff_abs < 20.0){
+                Lift_move_Vel(-15.0);
+            }else if(diff_abs < 30.0){
+                Lift_move_Vel(-30.0);
+            }else{
+                Lift_move_Vel(-40.0);
+            }
+        }else if(diff < 0.0){ // lift is positioning at upper pos
+            if(diff_abs < 10.0){
+                Lift_move_Vel(8.0);
+            }else if(diff_abs < 20.0){
+                Lift_move_Vel(15.0);
+            }else if(diff_abs < 30.0){
+                Lift_move_Vel(30.0);
+            }else{
+                Lift_move_Vel(40.0);
+            }
+        }else{
+            Lift_move_Vel(0.0);
+        }
     }else if(currentCommand == ControllerCommands::Launcher_SpeedUp){
         if(this->launch_VelMsg[0].data < launcher_first_speed){
             this->launch_VelMsg[0].data += 1.0;

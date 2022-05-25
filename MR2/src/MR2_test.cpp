@@ -758,39 +758,27 @@ void MR2_nodelet_main::Odmetory_position(bool reset){
 
 void MR2_nodelet_main::Odmetory_reset(int odm_num, bool _all){
     std_msgs::UInt8 Cmd_Msg;
-    Cmd_Msg.data = (uint8_t)MotorCommands::shutdown_cmd;
+    Cmd_Msg.data = (uint8_t)MotorCommands::homing_cmd;
     if(_all){
         this->Odmetory_R_CmdPub.publish(Cmd_Msg);
         this->Odmetory_L_CmdPub.publish(Cmd_Msg);
         this->Odmetory_F_CmdPub.publish(Cmd_Msg);
         this->Odmetory_B_CmdPub.publish(Cmd_Msg);
-        Cmd_Msg.data = (uint8_t)MotorCommands::homing_cmd;
-        this->Odmetory_R_CmdPub.publish(Cmd_Msg);
-        this->Odmetory_L_CmdPub.publish(Cmd_Msg);
-        this->Odmetory_F_CmdPub.publish(Cmd_Msg);
-        this->Odmetory_B_CmdPub.publish(Cmd_Msg);
+        NODELET_INFO("Odmetory reset all");
         return;
     }
     switch (odm_num)
     {
     case 0: //R
         this->Odmetory_R_CmdPub.publish(Cmd_Msg);
-        Cmd_Msg.data = (uint8_t)MotorCommands::homing_cmd;
-        this->Odmetory_R_CmdPub.publish(Cmd_Msg);
         break;
     case 1: //L
-        this->Odmetory_L_CmdPub.publish(Cmd_Msg);
-        Cmd_Msg.data = (uint8_t)MotorCommands::homing_cmd;
         this->Odmetory_L_CmdPub.publish(Cmd_Msg);
         break;
     case 2: //F
         this->Odmetory_F_CmdPub.publish(Cmd_Msg);
-        Cmd_Msg.data = (uint8_t)MotorCommands::homing_cmd;
-        this->Odmetory_F_CmdPub.publish(Cmd_Msg);
         break;
     case 3: //B
-        this->Odmetory_B_CmdPub.publish(Cmd_Msg);
-        Cmd_Msg.data = (uint8_t)MotorCommands::homing_cmd;
         this->Odmetory_B_CmdPub.publish(Cmd_Msg);
         break;
     default:
@@ -969,6 +957,8 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
         if(_b){
             this->recover();
+        }else if(_a){
+            this->Odmetory_reset(0,true);
         }else if(_y){
             this->Arm_R_homing();
             this->Arm_L_homing();
