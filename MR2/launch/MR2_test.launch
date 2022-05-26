@@ -96,17 +96,17 @@
       <remap from="motor11_cmd_val" to="pitch_left_cmd_pos"/>
     </node> -->
     <node pkg="nodelet" type="nodelet" name="motor20" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="710" />
+      <param name="bid" type="string" value="730" />
       <remap from="motor20_cmd" to="odmetory_r_cmd"/>
       <remap from="motor20_cmd_val" to="odmetory_r_value"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor21" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="720" />
+      <param name="bid" type="string" value="710" />
       <remap from="motor21_cmd" to="odmetory_l_cmd"/>
       <remap from="motor21_cmd_val" to="odmetory_l_value"/>
     </node>
     <node pkg="nodelet" type="nodelet" name="motor22" args="$(arg nodelet_mode) can_plugins/Md201xNode $(arg manager_name)" >
-      <param name="bid" type="string" value="730" />
+      <param name="bid" type="string" value="720" />
       <remap from="motor22_cmd" to="odmetory_f_cmd"/>
       <remap from="motor22_cmd_val" to="odmetory_f_value"/>
     </node>

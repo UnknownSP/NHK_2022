@@ -583,10 +583,10 @@ void MR2_nodelet_main::onInit(void)
     this->Arm_R_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor8_current_val", 10, &MR2_nodelet_main::Arm_R_PosCallback, this);
     this->Arm_L_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor9_current_val", 10, &MR2_nodelet_main::Arm_L_PosCallback, this);
 
-    this->Odmetory_R_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor2_current_val", 10, &MR2_nodelet_main::Odmetory_R_PosCallback, this);
-    this->Odmetory_L_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor0_current_val", 10, &MR2_nodelet_main::Odmetory_L_PosCallback, this);
-    this->Odmetory_F_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor3_current_val", 10, &MR2_nodelet_main::Odmetory_F_PosCallback, this);
-    this->Odmetory_B_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor1_current_val", 10, &MR2_nodelet_main::Odmetory_B_PosCallback, this);
+    this->Odmetory_R_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor20_current_val", 10, &MR2_nodelet_main::Odmetory_R_PosCallback, this);
+    this->Odmetory_L_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor21_current_val", 10, &MR2_nodelet_main::Odmetory_L_PosCallback, this);
+    this->Odmetory_F_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor22_current_val", 10, &MR2_nodelet_main::Odmetory_F_PosCallback, this);
+    this->Odmetory_B_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor23_current_val", 10, &MR2_nodelet_main::Odmetory_B_PosCallback, this);
 
 	/*******************pub & sub*****************/
 
@@ -757,9 +757,11 @@ void MR2_nodelet_main::Odmetory_B_PosCallback(const std_msgs::Float32::ConstPtr&
 }
 
 void MR2_nodelet_main::Odmetory_position(bool reset){
-    double gear_ratio = 33.0;
-    double omni_pos_radius = 540.0; //d = 1079.9
-    double omni_radius = 125.0/2.0;
+    double gear_ratio = 1.0;
+    //double omni_pos_radius = 540.0; //d = 1079.9
+    double omni_pos_radius = 411.0; //d = 824
+    //double omni_radius = 125.0/2.0;
+    double omni_radius = 50.0/2.0 * 1.013;
     geometry_msgs::Twist odm_cal_position;
     geometry_msgs::Twist odm_inclined_position;
     geometry_msgs::Twist odm_caldist_position;
@@ -773,15 +775,16 @@ void MR2_nodelet_main::Odmetory_position(bool reset){
     odm_now_position.linear.y = odm_recent_position.linear.y - odm_cal_position.linear.x * sin(odm_recent_position.angular.z) + odm_cal_position.linear.y * cos(odm_recent_position.angular.z);
     odm_now_position.angular.z = odm_recent_position.angular.z + odm_cal_position.angular.z;
 
-    odm_inclined_position.linear.y = - odm_now_position.linear.x * cos(pi/4.0) + odm_now_position.linear.y * sin(pi/4.0);
-    odm_inclined_position.linear.x = odm_now_position.linear.x * sin(pi/4.0) + odm_now_position.linear.y * cos(pi/4.0);
-    odm_inclined_position.angular.z = odm_now_position.angular.z;
+    //odm_inclined_position.linear.y = - odm_now_position.linear.x * cos(pi/4.0) + odm_now_position.linear.y * sin(pi/4.0);
+    //odm_inclined_position.linear.x = odm_now_position.linear.x * sin(pi/4.0) + odm_now_position.linear.y * cos(pi/4.0);
+    //odm_inclined_position.angular.z = odm_now_position.angular.z;
 
     odm_recent_position.linear.x = odm_now_position.linear.x;
     odm_recent_position.linear.y = odm_now_position.linear.y;
     odm_recent_position.angular.z = odm_now_position.angular.z;
 
-    NODELET_INFO("x : %f,  y : %f,  z : %f",odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
+    //NODELET_INFO("x : %f,  y : %f,  z : %f",odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
+    NODELET_INFO("x : %f,  y : %f,  z : %f",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z);
 }
 
 void MR2_nodelet_main::Odmetory_reset(int odm_num, bool _all){
