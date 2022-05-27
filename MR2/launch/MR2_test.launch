@@ -142,7 +142,8 @@
       <param name="autoMaxSpeed_angular" type="double" value="1.2" />
       <param name="autoMinSpeed_angular" type="double" value="0.1" />
       <param name="autoMaxSpeed_distance_angular" type="double" value="0.4" />
-
+      <param name="autoOmni_MaxAccel" type="double" value="2000" />
+      <param name="manualOmni_MaxAccel" type="double" value="1200" />
 
       <param name="leftPoint_1_x" type="double" value="-200" />
       <param name="leftPoint_1_y" type="double" value="-3500" />

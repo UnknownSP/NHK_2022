@@ -10,6 +10,7 @@
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Int16MultiArray.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/Float32.h>
 #include <math.h>
 
 #include <nodelet/nodelet.h>
@@ -23,6 +24,7 @@ namespace base_controller_plugins{
     virtual void onInit();
   
   private:
+  	void CmdAccelCallback(const std_msgs::Float32::ConstPtr& msg);
   	void CmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg);
   	void TimerCallback(const ros::TimerEvent& event);
   	void CalcWheelSpeed(double actualDt);
@@ -41,7 +43,8 @@ namespace base_controller_plugins{
   
   	ros::NodeHandle nh;
   	ros::NodeHandle _nh;
-  
+	
+  	ros::Subscriber cmdAccel_sub;
   	ros::Subscriber cmdVel_sub;
   	ros::Timer control_tim;
   
@@ -117,6 +120,7 @@ namespace base_controller_plugins{
     //odom_twist = nav_msgs::Odometry();
     //odom_twist_pub = nh.advertise<nav_msgs::Odometry>("odom_twist", 10);
 
+  	cmdAccel_sub = nh.subscribe<std_msgs::Float32>("cmd_accel", 10, &Omni4::CmdAccelCallback, this);
   	cmdVel_sub = nh.subscribe<geometry_msgs::Twist>("cmd_vel", 10, &Omni4::CmdVelCallback, this);
 	control_tim = nh.createTimer(ros::Duration(1.0 / ctrl_freq), &Omni4::TimerCallback, this);
     //main
@@ -132,6 +136,10 @@ namespace base_controller_plugins{
     motor3CmdVel_pub.publish(motorCmdVelmsg[3]);
   }
   
+	void Omni4::CmdAccelCallback(const std_msgs::Float32::ConstPtr& msg){
+		this->MaximumAcceleration = msg->data;
+	}
+
   void Omni4::CmdVelCallback(const geometry_msgs::Twist::ConstPtr& msg)
   {
   	this->targetVelX = static_cast<double>(msg->linear.x);

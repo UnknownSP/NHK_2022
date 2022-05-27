@@ -59,6 +59,10 @@ enum class ControllerCommands : uint16_t
     Cyl_Defend_Grab_Off,
     Cyl_Defend_Rise_Off,
     Cyl_Defend_Press_Off,
+    Cyl_Ball_Grab_On,
+    Cyl_Ball_Grab_Off,
+
+    wait_joyInput_B,
 
     autoMove_leftPoint_1,
     autoMove_leftPoint_2,
@@ -214,6 +218,8 @@ private:
     ros::Subscriber joy_sub;
 
     ros::Publisher cmd_vel_pub;
+    ros::Publisher cmd_accel_pub;
+    std_msgs::Float32 cmd_accel_msg;
     geometry_msgs::Twist cmd_vel_msg;
 
     ros::Publisher Solenoid_Cmd_pub[4];
@@ -329,6 +335,7 @@ private:
 
     static const std::vector<ControllerCommands> autoMove_leftBallLack_commands;
     static const std::vector<ControllerCommands> autoMove_loadPos_fromLeft_commands;
+    static const std::vector<ControllerCommands> autoMove_leftBall_PickUp_commands;
 
     /***********************Valiables**************************/
     int _delay_s = 0;
@@ -427,10 +434,12 @@ private:
     double autoMaxSpeed_angular;
     double autoMinSpeed_angular;
     double autoMaxSpeed_distance_angular;
+    double autoOmni_MaxAccel;
+    double manualOmni_MaxAccel;
     geometry_msgs::Twist autoTarget_position;
 
-    double _autoMove_enable = false;
-    double _autoMove_notStop = false;
+    bool _autoMove_enable = false;
+    bool _autoMove_notStop = false;
 
     geometry_msgs::Twist leftPoint_1;
     geometry_msgs::Twist leftPoint_2;
@@ -440,6 +449,8 @@ private:
     geometry_msgs::Twist leftPoint_12;
     geometry_msgs::Twist leftPoint_13;
     geometry_msgs::Twist leftPoint_14;
+
+    bool _manualInput = false;
     /***********************Valiables**************************/
 };
 
@@ -571,6 +582,22 @@ const std::vector<ControllerCommands> MR2_nodelet_main::autoMove_loadPos_fromLef
         ControllerCommands::autoMove_Stop,
     }
 );
+const std::vector<ControllerCommands> MR2_nodelet_main::autoMove_leftBall_PickUp_commands(
+    {
+        ControllerCommands::autoMove_leftPoint_1,
+        ControllerCommands::autoMove_leftPoint_2,
+        ControllerCommands::autoMove_leftPoint_3,
+        ControllerCommands::wait_joyInput_B,
+        ControllerCommands::Cyl_Ball_Grab_On,
+        ControllerCommands::set_delay_250ms,
+        ControllerCommands::delay,
+        ControllerCommands::autoMove_leftPoint_11,
+        ControllerCommands::autoMove_leftPoint_12,
+        ControllerCommands::autoMove_leftPoint_13,
+        ControllerCommands::wait_joyInput_B,
+        ControllerCommands::Cyl_Ball_Grab_Off,
+    }
+);
 
 void MR2_nodelet_main::onInit(void)
 {
@@ -600,6 +627,7 @@ void MR2_nodelet_main::onInit(void)
 	/*******************pub & sub*****************/
     this->joy_sub = nh.subscribe<sensor_msgs::Joy>("joy", 10, &MR2_nodelet_main::joyCallback, this);
     this->cmd_vel_pub = nh.advertise<geometry_msgs::Twist>("cmd_vel", 1);
+    this->cmd_accel_pub = nh.advertise<std_msgs::Float32>("cmd_accel", 1);
 
     //this->Solenoid1_Cmd_pub = nh.advertise<std_msgs::UInt8>("solenoid1_cmd", 1);
     //this->Solenoid1_Order_pub = nh.advertise<std_msgs::UInt8>("solenoid1_order", 1);
@@ -678,6 +706,8 @@ void MR2_nodelet_main::onInit(void)
     _nh.param("autoMaxSpeed_angular", this->autoMaxSpeed_angular, 0.0);
     _nh.param("autoMinSpeed_angular", this->autoMinSpeed_angular, 0.0);
     _nh.param("autoMaxSpeed_distance_angular", this->autoMaxSpeed_distance_angular, 0.0);
+    _nh.param("autoOmni_MaxAccel", this->autoOmni_MaxAccel, 0.0);
+    _nh.param("manualOmni_MaxAccel", this->manualOmni_MaxAccel, 0.0);
     _nh.param("leftPoint_1_x", this->leftPoint_1.linear.x, 0.0);
     _nh.param("leftPoint_1_y", this->leftPoint_1.linear.y, 0.0);
     _nh.param("leftPoint_1_z", this->leftPoint_1.angular.z, 0.0);
@@ -934,6 +964,8 @@ void MR2_nodelet_main::Auto_OmniSuspension(geometry_msgs::Twist control_input, d
     }else{
         cmd_vel_msg.angular.z = control_input.angular.z;
     }
+    cmd_accel_msg.data = autoOmni_MaxAccel;
+    this->cmd_accel_pub.publish(this->cmd_accel_msg);
     this->cmd_vel_pub.publish(this->cmd_vel_msg);
     //NODELET_INFO("AutoControlInput x:%f,  y:%f,  z:%f",cmd_vel_msg.linear.x,cmd_vel_msg.linear.y,cmd_vel_msg.angular.z);
 }
@@ -1148,6 +1180,12 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     this->_start = joy->buttons[ButtonStart];
     this->_back  = joy->buttons[ButtonBack];
 
+    if(joy->axes[AxisLeftThumbX] != 0.0 || joy->axes[AxisLeftThumbY] != 0.0 || joy->axes[AxisRightThumbX] != 0.0){
+        _manualInput = true;
+    }else{
+        _manualInput = false;
+    }
+
     //std::vector<double> throw_pos_fixed = { 0+this->throw_position_observed, 2*pi+this->throw_position_observed, -2*pi+this->throw_position_observed };
     //NODELET_INFO("Pad X : %d",_padx);
     //NODELET_INFO("Pad Y %d",_pady);
@@ -1270,7 +1308,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     if(_autoMoving_Mode){
         NODELET_INFO("Auto Moving Mode");
         geometry_msgs::Twist target_pos;
-        if(_b){
+        if(_x){
             autoTarget_position.linear.x = 0.0;
             autoTarget_position.linear.y = 0.0;
             autoTarget_position.angular.z = 0.0;
@@ -1279,9 +1317,11 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             _is_manual_enabled = false;
         }else if(_a && _rb){
             this->command_list = &autoMove_leftBallLack_commands;
+            _is_manual_enabled = false;
             _command_ongoing = true;   
         }else if(_y && _rb){
             this->command_list = &autoMove_loadPos_fromLeft_commands;
+            _is_manual_enabled = false;
             _command_ongoing = true;   
         }
 
@@ -1768,7 +1808,8 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this->cmd_vel_msg.linear.y  = -1.0 * vel_y * 1;
             this->cmd_vel_msg.angular.z = -vel_yaw * 1;
         }
-
+        cmd_accel_msg.data = manualOmni_MaxAccel;
+        this->cmd_accel_pub.publish(this->cmd_accel_msg);
         this->cmd_vel_pub.publish(this->cmd_vel_msg);
 
         recent_vel_x = vel_x;
@@ -2142,6 +2183,19 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         Cylinder_Operation("Defend_Press", false);
         this->currentCommandIndex++;
         NODELET_INFO("Defende_Press Unabled");
+    }else if(currentCommand == ControllerCommands::Cyl_Ball_Grab_On){
+        Cylinder_Operation("Ball_Grab", true);
+        this->currentCommandIndex++;
+        NODELET_INFO("Ball_Grab Enabled");
+    }else if(currentCommand == ControllerCommands::Cyl_Ball_Grab_Off){
+        Cylinder_Operation("Ball_Grab", false);
+        this->currentCommandIndex++;
+        NODELET_INFO("Ball_Grab Unabled");
+    }else if(currentCommand == ControllerCommands::wait_joyInput_B){
+        if(_b){
+            this->currentCommandIndex++;
+            NODELET_INFO("waited input B");
+        }
     }else if(currentCommand == ControllerCommands::wait_defenceLift_Upper){
         if(defenceLift_position >= defence_lift_upper_pos - 1.0){
             this->currentCommandIndex++;
@@ -2161,42 +2215,60 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         autoTarget_position.linear.x = leftPoint_1.linear.x;
         autoTarget_position.linear.y = leftPoint_1.linear.y;
         autoTarget_position.angular.z = leftPoint_1.angular.z;
-        if(GoToTarget(autoTarget_position, true) <= 900.0){
+        if(_manualInput){
+            this->currentCommandIndex++;
+            _is_manual_enabled = true;
+        }else if(GoToTarget(autoTarget_position, true) <= 900.0){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_leftPoint_2){
         autoTarget_position.linear.x = leftPoint_2.linear.x;
         autoTarget_position.linear.y = leftPoint_2.linear.y;
         autoTarget_position.angular.z = leftPoint_2.angular.z;
-        if(GoToTarget(autoTarget_position, true) <= 900.0){
+        if(_manualInput){
+            this->currentCommandIndex++;
+            _is_manual_enabled = true;
+        }else if(GoToTarget(autoTarget_position, true) <= 900.0){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_leftPoint_3){
         autoTarget_position.linear.x = leftPoint_3.linear.x;
         autoTarget_position.linear.y = leftPoint_3.linear.y;
         autoTarget_position.angular.z = leftPoint_3.angular.z;
-        if(GoToTarget(autoTarget_position, false) <= 20.0){
+        if(_manualInput){
+            this->currentCommandIndex++;
+            _is_manual_enabled = true;
+        }else if(GoToTarget(autoTarget_position, false) <= 20.0){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_leftPoint_11){
         autoTarget_position.linear.x = leftPoint_11.linear.x;
         autoTarget_position.linear.y = leftPoint_11.linear.y;
         autoTarget_position.angular.z = leftPoint_11.angular.z;
-        if(GoToTarget(autoTarget_position, true) <= 1000.0){
+        if(_manualInput){
+            this->currentCommandIndex++;
+            _is_manual_enabled = true;
+        }else if(GoToTarget(autoTarget_position, true) <= 1000.0){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_leftPoint_12){
         autoTarget_position.linear.x = leftPoint_12.linear.x;
         autoTarget_position.linear.y = leftPoint_12.linear.y;
         autoTarget_position.angular.z = leftPoint_12.angular.z;
-        if(GoToTarget(autoTarget_position, true) <= 1000.0){
+        if(_manualInput){
+            this->currentCommandIndex++;
+            _is_manual_enabled = true;
+        }else if(GoToTarget(autoTarget_position, true) <= 1000.0){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_leftPoint_13){
         autoTarget_position.linear.x = leftPoint_13.linear.x;
         autoTarget_position.linear.y = leftPoint_13.linear.y;
         autoTarget_position.angular.z = leftPoint_13.angular.z;
-        if(GoToTarget(autoTarget_position, false) <= 20.0){
+        if(_manualInput){
+            this->currentCommandIndex++;
+            _is_manual_enabled = true;
+        }else if(GoToTarget(autoTarget_position, false) <= 20.0){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_Stop){
@@ -2204,6 +2276,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         cmd_vel_msg.linear.x = 0.0;
         cmd_vel_msg.angular.z = 0.0;
         this->cmd_vel_pub.publish(this->cmd_vel_msg);
+        _is_manual_enabled = true;
         this->currentCommandIndex++;
         
     }
