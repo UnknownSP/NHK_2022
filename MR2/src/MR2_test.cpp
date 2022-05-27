@@ -15,6 +15,7 @@
 #include <geometry_msgs/Twist.h>
 #include <thread>     
 #include <chrono>
+#include <cmath>
 
 
 constexpr double pi = 3.141592653589793238462643383279502884L;
@@ -59,6 +60,16 @@ enum class ControllerCommands : uint16_t
     Cyl_Defend_Rise_Off,
     Cyl_Defend_Press_Off,
 
+    autoMove_leftPoint_1,
+    autoMove_leftPoint_2,
+    autoMove_leftPoint_3,
+    autoMove_leftPoint_4,
+    autoMove_leftPoint_11,
+    autoMove_leftPoint_12,
+    autoMove_leftPoint_13,
+    autoMove_leftPoint_14,
+
+    autoMove_Stop,
 };
 
 enum class SolenoidValveCommands : uint8_t
@@ -155,6 +166,10 @@ private:
     void Odmetory_L_PosCallback(const std_msgs::Float32::ConstPtr& msg);
     void Odmetory_F_PosCallback(const std_msgs::Float32::ConstPtr& msg);
     void Odmetory_B_PosCallback(const std_msgs::Float32::ConstPtr& msg);
+    void Auto_OmniSuspension(geometry_msgs::Twist control_input, double max_speed_linear, double max_speed_angular);
+    double GoToTarget(geometry_msgs::Twist target_position, bool not_stop);
+    double GetLinearInputSpeed(geometry_msgs::Twist now_diff);
+    double GetAngularInputSpeed(geometry_msgs::Twist now_diff);
 
     void shutdown();
     void recover();
@@ -312,6 +327,9 @@ private:
     const std::vector<ControllerCommands> *command_list;
 
 
+    static const std::vector<ControllerCommands> autoMove_leftBallLack_commands;
+    static const std::vector<ControllerCommands> autoMove_loadPos_fromLeft_commands;
+
     /***********************Valiables**************************/
     int _delay_s = 0;
     double _delay_s_r = 0.0;
@@ -339,6 +357,7 @@ private:
     bool _piling_auto_Mode = false;
     bool _defence_Mode = false;
     bool _homing_Mode = false;
+    bool _autoMoving_Mode = false;
 
     double defence_lift_upper_pos = 0.0;
     bool _defence_lift_upper_speeddown = false;
@@ -394,6 +413,33 @@ private:
 
     geometry_msgs::Twist odm_now_position;
     geometry_msgs::Twist odm_recent_position;
+
+    //double maxCtrlInput_linear;
+    //double maxCtrlInput_angular;
+
+    double stopRange_linear;
+    double stopRange_angular;
+    double accelarating_coeff;
+
+    double autoMaxSpeed_linear;
+    double autoMinSpeed_linear;
+    double autoMaxSpeed_distance_linear;
+    double autoMaxSpeed_angular;
+    double autoMinSpeed_angular;
+    double autoMaxSpeed_distance_angular;
+    geometry_msgs::Twist autoTarget_position;
+
+    double _autoMove_enable = false;
+    double _autoMove_notStop = false;
+
+    geometry_msgs::Twist leftPoint_1;
+    geometry_msgs::Twist leftPoint_2;
+    geometry_msgs::Twist leftPoint_3;
+    geometry_msgs::Twist leftPoint_4;
+    geometry_msgs::Twist leftPoint_11;
+    geometry_msgs::Twist leftPoint_12;
+    geometry_msgs::Twist leftPoint_13;
+    geometry_msgs::Twist leftPoint_14;
     /***********************Valiables**************************/
 };
 
@@ -508,6 +554,23 @@ const std::vector<ControllerCommands> MR2_nodelet_main::SetLaunchPosi_commands(
         //ControllerCommands::Pitch_MV_launch,
     }
 );
+const std::vector<ControllerCommands> MR2_nodelet_main::autoMove_leftBallLack_commands(
+    {
+        ControllerCommands::autoMove_leftPoint_1,
+        ControllerCommands::autoMove_leftPoint_2,
+        ControllerCommands::autoMove_leftPoint_3,
+        ControllerCommands::autoMove_Stop,
+    }
+);
+
+const std::vector<ControllerCommands> MR2_nodelet_main::autoMove_loadPos_fromLeft_commands(
+    {
+        ControllerCommands::autoMove_leftPoint_11,
+        ControllerCommands::autoMove_leftPoint_12,
+        ControllerCommands::autoMove_leftPoint_13,
+        ControllerCommands::autoMove_Stop,
+    }
+);
 
 void MR2_nodelet_main::onInit(void)
 {
@@ -605,6 +668,40 @@ void MR2_nodelet_main::onInit(void)
     _nh.param("arm_l_avoid1lagori_pos", this->arm_l_avoid1lagori_pos, 0.0);
     _nh.param("arm_r_avoidlagoribase_pos", this->arm_r_avoidlagoribase_pos, 0.0);
     _nh.param("arm_l_avoidlagoribase_pos", this->arm_l_avoidlagoribase_pos, 0.0);
+
+    _nh.param("stopRange_linear", this->stopRange_linear, 0.0);
+    _nh.param("stopRange_angular", this->stopRange_angular, 0.0);
+    _nh.param("accelarating_coeff", this->accelarating_coeff, 0.0);
+    _nh.param("autoMaxSpeed_linear", this->autoMaxSpeed_linear, 0.0);
+    _nh.param("autoMinSpeed_linear", this->autoMinSpeed_linear, 0.0);
+    _nh.param("autoMaxSpeed_distance_linear", this->autoMaxSpeed_distance_linear, 0.0);
+    _nh.param("autoMaxSpeed_angular", this->autoMaxSpeed_angular, 0.0);
+    _nh.param("autoMinSpeed_angular", this->autoMinSpeed_angular, 0.0);
+    _nh.param("autoMaxSpeed_distance_angular", this->autoMaxSpeed_distance_angular, 0.0);
+    _nh.param("leftPoint_1_x", this->leftPoint_1.linear.x, 0.0);
+    _nh.param("leftPoint_1_y", this->leftPoint_1.linear.y, 0.0);
+    _nh.param("leftPoint_1_z", this->leftPoint_1.angular.z, 0.0);
+    _nh.param("leftPoint_2_x", this->leftPoint_2.linear.x, 0.0);
+    _nh.param("leftPoint_2_y", this->leftPoint_2.linear.y, 0.0);
+    _nh.param("leftPoint_2_z", this->leftPoint_2.angular.z, 0.0);
+    _nh.param("leftPoint_3_x", this->leftPoint_3.linear.x, 0.0);
+    _nh.param("leftPoint_3_y", this->leftPoint_3.linear.y, 0.0);
+    _nh.param("leftPoint_3_z", this->leftPoint_3.angular.z, 0.0);
+    _nh.param("leftPoint_4_x", this->leftPoint_4.linear.x, 0.0);
+    _nh.param("leftPoint_4_y", this->leftPoint_4.linear.y, 0.0);
+    _nh.param("leftPoint_4_z", this->leftPoint_4.angular.z, 0.0);
+    _nh.param("leftPoint_11_x", this->leftPoint_11.linear.x, 0.0);
+    _nh.param("leftPoint_11_y", this->leftPoint_11.linear.y, 0.0);
+    _nh.param("leftPoint_11_z", this->leftPoint_11.angular.z, 0.0);
+    _nh.param("leftPoint_12_x", this->leftPoint_12.linear.x, 0.0);
+    _nh.param("leftPoint_12_y", this->leftPoint_12.linear.y, 0.0);
+    _nh.param("leftPoint_12_z", this->leftPoint_12.angular.z, 0.0);
+    _nh.param("leftPoint_13_x", this->leftPoint_13.linear.x, 0.0);
+    _nh.param("leftPoint_13_y", this->leftPoint_13.linear.y, 0.0);
+    _nh.param("leftPoint_13_z", this->leftPoint_13.angular.z, 0.0);
+    _nh.param("leftPoint_14_x", this->leftPoint_14.linear.x, 0.0);
+    _nh.param("leftPoint_14_y", this->leftPoint_14.linear.y, 0.0);
+    _nh.param("leftPoint_14_z", this->leftPoint_14.angular.z, 0.0);
 
     this->adjust_pubData.data.resize(4);
     for(int i=0;i<4;i++){
@@ -764,7 +861,6 @@ void MR2_nodelet_main::Odmetory_position(bool reset){
     double omni_radius = 50.0/2.0 * 1.013;
     geometry_msgs::Twist odm_cal_position;
     geometry_msgs::Twist odm_inclined_position;
-    geometry_msgs::Twist odm_caldist_position;
 
     odm_cal_position.linear.x = 0.5 * (-odm_f_diff+odm_b_diff) * (1.0 / gear_ratio) * omni_radius;
     odm_cal_position.linear.y = 0.5 * (-odm_l_diff+odm_r_diff) * (1.0 / gear_ratio) * omni_radius;
@@ -784,7 +880,7 @@ void MR2_nodelet_main::Odmetory_position(bool reset){
     odm_recent_position.angular.z = odm_now_position.angular.z;
 
     //NODELET_INFO("x : %f,  y : %f,  z : %f",odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
-    NODELET_INFO("x : %f,  y : %f,  z : %f",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z);
+    //NODELET_INFO("x : %f,  y : %f,  z : %f",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z);
 }
 
 void MR2_nodelet_main::Odmetory_reset(int odm_num, bool _all){
@@ -795,6 +891,12 @@ void MR2_nodelet_main::Odmetory_reset(int odm_num, bool _all){
         this->Odmetory_L_CmdPub.publish(Cmd_Msg);
         this->Odmetory_F_CmdPub.publish(Cmd_Msg);
         this->Odmetory_B_CmdPub.publish(Cmd_Msg);
+        odm_now_position.linear.x = 0.0;
+        odm_now_position.linear.y = 0.0;
+        odm_now_position.angular.z = 0.0;
+        odm_recent_position.linear.x = 0.0;
+        odm_recent_position.linear.y = 0.0;
+        odm_recent_position.angular.z = 0.0;
         NODELET_INFO("Odmetory reset all");
         return;
     }
@@ -817,6 +919,106 @@ void MR2_nodelet_main::Odmetory_reset(int odm_num, bool _all){
     }
 }
 
+void MR2_nodelet_main::Auto_OmniSuspension(geometry_msgs::Twist control_input, double max_speed_linear, double max_speed_angular){
+    double hypotenuse = hypot(control_input.linear.x,control_input.linear.y);
+    if(hypotenuse < 0.01) hypotenuse = 0.01;
+    if(hypotenuse > max_speed_linear){
+        cmd_vel_msg.linear.x = control_input.linear.x * (max_speed_linear/hypotenuse);
+        cmd_vel_msg.linear.y = control_input.linear.y * (max_speed_linear/hypotenuse);
+    }else{
+        cmd_vel_msg.linear.x = control_input.linear.x;
+        cmd_vel_msg.linear.y = control_input.linear.y;
+    }
+    if(fabs(control_input.angular.z) > max_speed_linear){
+        cmd_vel_msg.angular.z = control_input.angular.z * (max_speed_linear/fabs(control_input.angular.z));
+    }else{
+        cmd_vel_msg.angular.z = control_input.angular.z;
+    }
+    this->cmd_vel_pub.publish(this->cmd_vel_msg);
+    //NODELET_INFO("AutoControlInput x:%f,  y:%f,  z:%f",cmd_vel_msg.linear.x,cmd_vel_msg.linear.y,cmd_vel_msg.angular.z);
+}
+
+double MR2_nodelet_main::GoToTarget(geometry_msgs::Twist target_position, bool not_stop){
+    geometry_msgs::Twist now_position_fromTargetZero;
+    geometry_msgs::Twist now_position_fromTargetZero_rotate;
+    geometry_msgs::Twist omniControl_input;
+    static double recent_inputDuty_linear;
+
+    now_position_fromTargetZero.linear.x = odm_now_position.linear.x - target_position.linear.x;
+    now_position_fromTargetZero.linear.y = odm_now_position.linear.y - target_position.linear.y;
+    now_position_fromTargetZero.angular.z = odm_now_position.angular.z - target_position.angular.z;
+
+    now_position_fromTargetZero_rotate.linear.x = now_position_fromTargetZero.linear.x*cos(odm_now_position.angular.z) - now_position_fromTargetZero.linear.y*sin(odm_now_position.angular.z);
+    now_position_fromTargetZero_rotate.linear.y = now_position_fromTargetZero.linear.x*sin(odm_now_position.angular.z) + now_position_fromTargetZero.linear.y*cos(odm_now_position.angular.z);;
+    now_position_fromTargetZero_rotate.angular.z = now_position_fromTargetZero.angular.z;
+
+    if(fabs(now_position_fromTargetZero_rotate.angular.z) >= autoMaxSpeed_distance_angular){
+        if(now_position_fromTargetZero_rotate.angular.z > 0.0){
+            omniControl_input.angular.z = -autoMaxSpeed_angular;
+        }else{
+            omniControl_input.angular.z = autoMaxSpeed_angular;
+        }
+    }else if(fabs(now_position_fromTargetZero_rotate.angular.z) < stopRange_angular){
+        omniControl_input.angular.z = 0.0;
+    }else{
+        omniControl_input.angular.z = GetAngularInputSpeed(now_position_fromTargetZero_rotate);
+    }
+
+    double hypotenuse = hypot(now_position_fromTargetZero_rotate.linear.x,now_position_fromTargetZero_rotate.linear.y);
+    if(hypotenuse < 0.01) hypotenuse = 0.01;
+    double get_linear_input = GetLinearInputSpeed(now_position_fromTargetZero_rotate);
+    if(not_stop){
+        omniControl_input.linear.x = now_position_fromTargetZero_rotate.linear.x * (autoMaxSpeed_linear/hypotenuse);
+        omniControl_input.linear.y = now_position_fromTargetZero_rotate.linear.y * (autoMaxSpeed_linear/hypotenuse);
+    }else{
+        if(hypotenuse >= autoMaxSpeed_distance_linear){
+            omniControl_input.linear.x = now_position_fromTargetZero_rotate.linear.x * (autoMaxSpeed_linear/hypotenuse);
+            omniControl_input.linear.y = now_position_fromTargetZero_rotate.linear.y * (autoMaxSpeed_linear/hypotenuse);
+        }else if(hypotenuse < stopRange_linear){
+            omniControl_input.linear.x = 0.0;
+            omniControl_input.linear.y = 0.0;
+        }else{
+            omniControl_input.linear.x = now_position_fromTargetZero_rotate.linear.x * (get_linear_input/hypotenuse);
+            omniControl_input.linear.y = now_position_fromTargetZero_rotate.linear.y * (get_linear_input/hypotenuse);
+        }
+    }
+    double control_hypotenuse = hypot(omniControl_input.linear.x,omniControl_input.linear.y);
+    if(control_hypotenuse - recent_inputDuty_linear > accelarating_coeff){
+        omniControl_input.linear.x = now_position_fromTargetZero_rotate.linear.x * (recent_inputDuty_linear + accelarating_coeff/control_hypotenuse);
+        omniControl_input.linear.y = now_position_fromTargetZero_rotate.linear.y * (recent_inputDuty_linear + accelarating_coeff/control_hypotenuse);
+        control_hypotenuse = recent_inputDuty_linear + accelarating_coeff;
+    }
+
+    recent_inputDuty_linear = control_hypotenuse;
+    Auto_OmniSuspension(omniControl_input,autoMaxSpeed_linear,autoMaxSpeed_angular);
+    //migikaiten ga sei // right turn is plus
+
+    NODELET_INFO("distance from target : %f",hypotenuse);
+    return hypotenuse;
+}
+
+double MR2_nodelet_main::GetLinearInputSpeed(geometry_msgs::Twist now_diff){
+    double target_speed;
+    target_speed = autoMaxSpeed_linear * (- std::pow((hypot(now_diff.linear.x,now_diff.linear.y)/autoMaxSpeed_distance_linear)-1.0,2.0) + 1.0);
+    if(target_speed < autoMinSpeed_linear){
+        target_speed = autoMinSpeed_linear;
+    }
+    return target_speed;
+}
+double MR2_nodelet_main::GetAngularInputSpeed(geometry_msgs::Twist now_diff){
+    double angular_coeff;
+    double target_speed;
+    if(now_diff.angular.z >= 0.0){
+        angular_coeff = -1.0;
+    }else if(now_diff.angular.z < 0.0){
+        angular_coeff = 1.0;
+    }
+    target_speed = autoMaxSpeed_angular * (- std::pow((fabs(now_diff.angular.z)/autoMaxSpeed_distance_angular)-1.0,4.0) + 1.0);
+    if(target_speed < autoMinSpeed_angular){
+        target_speed = autoMinSpeed_angular;
+    }
+    return target_speed * angular_coeff;
+}
 /**********************************************************************************************************/
 
 void MR2_nodelet_main::shutdown(void){
@@ -997,36 +1199,49 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this->Defence_Roll_homing();
             NODELET_INFO("Complete Homing");
         }else if(_x){
+            this->_autoMoving_Mode = false;
             this->_homing_Mode = true;
             this-> _piling_manual_Mode = false;
             this-> _piling_auto_Mode = false;
             this-> _ballPick_Mode = false;
             this-> _defence_Mode = false;
         }else if(_pady == -1 && !_piling_manual_Mode){
+            this->_autoMoving_Mode = false;
             this-> _piling_manual_Mode = true;
             this-> _piling_auto_Mode = false;
             this-> _ballPick_Mode = false;
             this-> _defence_Mode = false;
             return;
         }else if(_pady == 1 && !_piling_auto_Mode){
+            this->_autoMoving_Mode = false;
             this-> _piling_manual_Mode = false;
             this-> _piling_auto_Mode = true;
             this-> _ballPick_Mode = false;
             this-> _defence_Mode = false;
             return;
         }else if(_padx == -1 && !_defence_Mode){
+            this->_autoMoving_Mode = false;
             this-> _piling_manual_Mode = false;
             this-> _piling_auto_Mode = false;
             this-> _ballPick_Mode = false;
             this-> _defence_Mode = true;
             return;
         }else if(_padx == 1 && !_ballPick_Mode){
+            this->_autoMoving_Mode = false;
             this-> _piling_manual_Mode = false;
             this-> _piling_auto_Mode = false;
             this-> _ballPick_Mode = true;
             this-> _defence_Mode = false;
             return;
+        }else if(_rb && _lb && !_autoMoving_Mode){
+            this->_autoMoving_Mode = true;
+            this-> _piling_manual_Mode = false;
+            this-> _piling_auto_Mode = false;
+            this-> _ballPick_Mode = false;
+            this-> _defence_Mode = false;
+            return;
         }
+        return;
     }
     if (_back)
     {
@@ -1052,7 +1267,26 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
 
     //--------------------------------------------------------------------------------------------------------------------------------
-    if(_piling_auto_Mode){
+    if(_autoMoving_Mode){
+        NODELET_INFO("Auto Moving Mode");
+        geometry_msgs::Twist target_pos;
+        if(_b){
+            autoTarget_position.linear.x = 0.0;
+            autoTarget_position.linear.y = 0.0;
+            autoTarget_position.angular.z = 0.0;
+            _autoMove_notStop = false;
+            _autoMove_enable = true;
+            _is_manual_enabled = false;
+        }else if(_a && _rb){
+            this->command_list = &autoMove_leftBallLack_commands;
+            _command_ongoing = true;   
+        }else if(_y && _rb){
+            this->command_list = &autoMove_loadPos_fromLeft_commands;
+            _command_ongoing = true;   
+        }
+
+
+    }else if(_piling_auto_Mode){
         NODELET_INFO("Piling Auto Mode");
         if(!(_autoPile_L_mode_count == 3 && !_arm_l_avoid1lagori) && !(_autoPile_L_mode_count == 6 && !_arm_l_avoidlagoribase)){
             if(joy->buttons[ButtonLeftThumb] != 0.0){
@@ -1585,6 +1819,9 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         }
     }
 
+    if(_autoMove_enable){
+        GoToTarget(autoTarget_position,_autoMove_notStop);
+    }
 
     if(_recent_R_mode_count != _autoPile_R_mode_count || _autoPile_R_mode_count == 3 || _autoPile_R_mode_count == 6){
         switch (_autoPile_R_mode_count)
@@ -1920,6 +2157,55 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             this->currentCommandIndex++;
             NODELET_INFO("DefenceRoll reached Horizontal");
         }
+    }else if(currentCommand == ControllerCommands::autoMove_leftPoint_1){
+        autoTarget_position.linear.x = leftPoint_1.linear.x;
+        autoTarget_position.linear.y = leftPoint_1.linear.y;
+        autoTarget_position.angular.z = leftPoint_1.angular.z;
+        if(GoToTarget(autoTarget_position, true) <= 900.0){
+            this->currentCommandIndex++;
+        }
+    }else if(currentCommand == ControllerCommands::autoMove_leftPoint_2){
+        autoTarget_position.linear.x = leftPoint_2.linear.x;
+        autoTarget_position.linear.y = leftPoint_2.linear.y;
+        autoTarget_position.angular.z = leftPoint_2.angular.z;
+        if(GoToTarget(autoTarget_position, true) <= 900.0){
+            this->currentCommandIndex++;
+        }
+    }else if(currentCommand == ControllerCommands::autoMove_leftPoint_3){
+        autoTarget_position.linear.x = leftPoint_3.linear.x;
+        autoTarget_position.linear.y = leftPoint_3.linear.y;
+        autoTarget_position.angular.z = leftPoint_3.angular.z;
+        if(GoToTarget(autoTarget_position, false) <= 20.0){
+            this->currentCommandIndex++;
+        }
+    }else if(currentCommand == ControllerCommands::autoMove_leftPoint_11){
+        autoTarget_position.linear.x = leftPoint_11.linear.x;
+        autoTarget_position.linear.y = leftPoint_11.linear.y;
+        autoTarget_position.angular.z = leftPoint_11.angular.z;
+        if(GoToTarget(autoTarget_position, true) <= 1000.0){
+            this->currentCommandIndex++;
+        }
+    }else if(currentCommand == ControllerCommands::autoMove_leftPoint_12){
+        autoTarget_position.linear.x = leftPoint_12.linear.x;
+        autoTarget_position.linear.y = leftPoint_12.linear.y;
+        autoTarget_position.angular.z = leftPoint_12.angular.z;
+        if(GoToTarget(autoTarget_position, true) <= 1000.0){
+            this->currentCommandIndex++;
+        }
+    }else if(currentCommand == ControllerCommands::autoMove_leftPoint_13){
+        autoTarget_position.linear.x = leftPoint_13.linear.x;
+        autoTarget_position.linear.y = leftPoint_13.linear.y;
+        autoTarget_position.angular.z = leftPoint_13.angular.z;
+        if(GoToTarget(autoTarget_position, false) <= 20.0){
+            this->currentCommandIndex++;
+        }
+    }else if(currentCommand == ControllerCommands::autoMove_Stop){
+        cmd_vel_msg.linear.x = 0.0;
+        cmd_vel_msg.linear.x = 0.0;
+        cmd_vel_msg.angular.z = 0.0;
+        this->cmd_vel_pub.publish(this->cmd_vel_msg);
+        this->currentCommandIndex++;
+        
     }
     else if (currentCommand == ControllerCommands::set_delay_10ms)
     {

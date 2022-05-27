@@ -132,6 +132,42 @@
       <param name="arm_l_avoid1lagori_pos" type="double" value="-20.0" />
       <param name="arm_r_avoidlagoribase_pos" type="double" value="55.0" />
       <param name="arm_l_avoidlagoribase_pos" type="double" value="-55.0" />
+
+      <param name="stopRange_linear" type="double" value="30.0" />
+      <param name="stopRange_angular" type="double" value="0.03" />
+      <param name="accelarating_coeff" type="double" value="1.0" />
+      <param name="autoMaxSpeed_linear" type="double" value="1.7" />
+      <param name="autoMinSpeed_linear" type="double" value="0.2" />
+      <param name="autoMaxSpeed_distance_linear" type="double" value="3500.0" />
+      <param name="autoMaxSpeed_angular" type="double" value="1.2" />
+      <param name="autoMinSpeed_angular" type="double" value="0.1" />
+      <param name="autoMaxSpeed_distance_angular" type="double" value="0.4" />
+
+
+      <param name="leftPoint_1_x" type="double" value="-200" />
+      <param name="leftPoint_1_y" type="double" value="-3500" />
+      <param name="leftPoint_1_z" type="double" value="0.0" />
+      <param name="leftPoint_2_x" type="double" value="-2000." />
+      <param name="leftPoint_2_y" type="double" value="-4500" />
+      <param name="leftPoint_2_z" type="double" value="0.0" />
+      <param name="leftPoint_3_x" type="double" value="-5400" />
+      <param name="leftPoint_3_y" type="double" value="-4900" />
+      <param name="leftPoint_3_z" type="double" value="0.0" />
+      <param name="leftPoint_4_x" type="double" value="0.0" />
+      <param name="leftPoint_4_y" type="double" value="0.0" />
+      <param name="leftPoint_4_z" type="double" value="0.0" />
+      <param name="leftPoint_11_x" type="double" value="-2800" />
+      <param name="leftPoint_11_y" type="double" value="-5300" />
+      <param name="leftPoint_11_z" type="double" value="0.0" />
+      <param name="leftPoint_12_x" type="double" value="-3400" />
+      <param name="leftPoint_12_y" type="double" value="-4200" />
+      <param name="leftPoint_12_z" type="double" value="1.5708" />
+      <param name="leftPoint_13_x" type="double" value="-200.0" />
+      <param name="leftPoint_13_y" type="double" value="0.0" />
+      <param name="leftPoint_13_z" type="double" value="1.5708" />
+      <param name="leftPoint_14_x" type="double" value="0.0" />
+      <param name="leftPoint_14_y" type="double" value="0.0" />
+      <param name="leftPoint_14_z" type="double" value="0.0" />
     </node>
     
 <!--Solenoid_Driver-->  
@@ -183,7 +219,7 @@
   -->
 
      <node pkg="nodelet" type="nodelet" name="base_controller" args="$(arg nodelet_mode) base_controller_plugins/Omni4 $(arg manager_name)" >
-      <param name="motor_max_acc" value="1000.0" />
+      <param name="motor_max_acc" value="1200.0" />
       <param name="motor_max_vel" value="4000.0" />
       <param name="invert_x" value="false" />
       <param name="invert_y" value="false" />
