@@ -61,6 +61,26 @@
       <param name="lift_l_loadwait_pos" type="double" value="-111" />
       <param name="lift_l_loading_pos" type="double" value="-114" />
       <param name="launcher_first_speed" type="double" value="500.0" />
+
+      <!-- 上側左
+      <param name="LagoriBrake_pos_1_yaw" type="double" value="-0.025" />
+      <param name="LagoriBrake_pos_1_pitch" type="double" value="-0.09" />
+      <param name="LagoriBrake_pos_1_speed" type="double" value="1060.0" />
+      -->
+      <!-- 下下
+      <param name="LagoriBrake_pos_1_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_1_pitch" type="double" value="0.0125" />
+      <param name="LagoriBrake_pos_1_speed" type="double" value="1060.0" />
+      <param name="LagoriBrake_pos_2_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_2_pitch" type="double" value="0.0125" />
+      <param name="LagoriBrake_pos_2_speed" type="double" value="1060.0" />
+      -->
+      <param name="LagoriBrake_pos_1_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_1_pitch" type="double" value="-0.05" />
+      <param name="LagoriBrake_pos_1_speed" type="double" value="1000.0" />  <!--十の位絶対偶数-->
+      <param name="LagoriBrake_pos_2_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_2_pitch" type="double" value="0.0125" />
+      <param name="LagoriBrake_pos_2_speed" type="double" value="1120.0" /> <!--十の位絶対偶数-->
       
     </node>
 <!--Solenoid_Driver--> 

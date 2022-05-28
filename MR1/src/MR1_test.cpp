@@ -34,6 +34,7 @@ enum class ControllerCommands : uint16_t
     clear_flag,
 // related to delay
     set_delay_10ms,
+    set_delay_100ms,
     set_delay_250ms,
     set_delay_500ms,
     set_delay_1s,
@@ -55,6 +56,11 @@ enum class ControllerCommands : uint16_t
     Lift_mv_L_Loading,
     Launcher_SpeedUp,
     Launcher_SpeedDown,
+
+    Launcher_SpeedUp_BreakPos_1,
+    Launcher_Move_BreakPos_1,
+    Launcher_SpeedUp_BreakPos_2,
+    Launcher_Move_BreakPos_2,
 };
 
 enum class SolenoidValveCommands : uint8_t
@@ -182,6 +188,14 @@ private:
     double launcher_first_speed;
     bool _lift_mv_lower_start = false;
     bool _enable_homing = false;
+    bool _enable_autoMove = false;
+
+    double LagoriBrake_pos_1_yaw;
+    double LagoriBrake_pos_1_pitch;
+    double LagoriBrake_pos_1_speed;
+    double LagoriBrake_pos_2_yaw;
+    double LagoriBrake_pos_2_pitch;
+    double LagoriBrake_pos_2_speed;
     /***********************Valiables**************************/
 
     bool _a = false;
@@ -230,6 +244,7 @@ private:
     static const std::vector<ControllerCommands> LiftMove_R_Loading_commands;
     static const std::vector<ControllerCommands> LiftMove_L_Loadwait_commands;
     static const std::vector<ControllerCommands> LiftMove_L_Loading_commands;
+    static const std::vector<ControllerCommands> AutoLagoriBreak_commands;
 
     static const std::vector<ControllerCommands> SetLaunchPosi_commands;
     static const std::vector<ControllerCommands> manual_all;
@@ -327,6 +342,32 @@ const std::vector<ControllerCommands> MR1_nodelet_main::AutoLoading_commands({
     ControllerCommands::Cyl_L_load_ON,
     ControllerCommands::Cyl_R_load_ON,
 });
+const std::vector<ControllerCommands> MR1_nodelet_main::AutoLagoriBreak_commands({
+    ControllerCommands::Launcher_Move_BreakPos_1,
+    ControllerCommands::Launcher_SpeedUp_BreakPos_1,
+    ControllerCommands::set_delay_100ms,
+    ControllerCommands::delay,
+    ControllerCommands::Cyl_Launch_ON,
+    ControllerCommands::set_delay_250ms,
+    ControllerCommands::delay,
+    ControllerCommands::Launcher_Move_BreakPos_2,
+    //ControllerCommands::set_delay_100ms,
+    //ControllerCommands::delay,
+    ControllerCommands::Cyl_Launch_OFF,
+    ControllerCommands::Launcher_SpeedUp_BreakPos_2,
+    ControllerCommands::set_delay_500ms,
+    ControllerCommands::delay,
+    //ControllerCommands::set_delay_100ms,
+    //ControllerCommands::delay,
+    ControllerCommands::set_delay_250ms,
+    ControllerCommands::delay,
+    ControllerCommands::Cyl_Launch_ON,
+    ControllerCommands::set_delay_250ms,
+    ControllerCommands::delay,
+    ControllerCommands::set_delay_250ms,
+    ControllerCommands::delay,
+    ControllerCommands::Cyl_Launch_OFF,
+});
 
 void MR1_nodelet_main::onInit(void)
 {
@@ -386,6 +427,12 @@ void MR1_nodelet_main::onInit(void)
     _nh.param("lift_l_loadwait_pos", lift_l_loadwait_pos, 0.0);
     _nh.param("lift_l_loading_pos", lift_l_loading_pos, 0.0);
     _nh.param("launcher_first_speed", launcher_first_speed, 0.0);
+    _nh.param("LagoriBrake_pos_1_yaw", LagoriBrake_pos_1_yaw, 0.0);
+    _nh.param("LagoriBrake_pos_1_pitch", LagoriBrake_pos_1_pitch, 0.0);
+    _nh.param("LagoriBrake_pos_1_speed", LagoriBrake_pos_1_speed, 0.0);
+    _nh.param("LagoriBrake_pos_2_yaw", LagoriBrake_pos_2_yaw, 0.0); 
+    _nh.param("LagoriBrake_pos_2_pitch", LagoriBrake_pos_2_pitch, 0.0);
+    _nh.param("LagoriBrake_pos_2_speed", LagoriBrake_pos_2_speed, 0.0);
 	/*******************parameter*****************/
 
     launch_VelMsg[0].data = 0.0;
@@ -413,7 +460,7 @@ void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
         _debug_count = 0;
     }
 
-    if(!_enable_homing){
+    if(!_enable_homing && !_enable_autoMove){
         if(_enableAim_fromKey){
             yaw_PosMsg.data = (this->mouse_position_x-(2735.0/2.0)) / 1000.0;
             pitch_PosMsg.data = (this->mouse_position_y-(1823.0/2.0)) / 1200.0;;
@@ -446,19 +493,19 @@ void MR1_nodelet_main::KeyPressCallback(const std_msgs::String::ConstPtr& msg)
     //}else 
     if(this->key_press == "Right"){
         _enable_homing = true;
-        yaw_PosMsg.data -= 0.1;
+        yaw_PosMsg.data += 0.0125;
         yaw_PosPub.publish(this->yaw_PosMsg);
     }else if(this->key_press == "Left"){
         _enable_homing = true;
-        yaw_PosMsg.data += 0.1;
+        yaw_PosMsg.data -= 0.0125;
         yaw_PosPub.publish(this->yaw_PosMsg);
     }else if(this->key_press == "Up"){
         _enable_homing = true;
-        pitch_PosMsg.data += 0.1;
+        pitch_PosMsg.data -= 0.0125;
         pitch_PosPub.publish(this->pitch_PosMsg);
     }else if(this->key_press == "Down"){
         _enable_homing = true;
-        pitch_PosMsg.data -= 0.1;
+        pitch_PosMsg.data += 0.0125;
         pitch_PosPub.publish(this->pitch_PosMsg);
     }
 
@@ -508,6 +555,11 @@ void MR1_nodelet_main::KeyPressCallback(const std_msgs::String::ConstPtr& msg)
             this->command_list = &AutoLoading_commands;
             _command_ongoing = true;   
         }   
+    }else if(this->key_press == "v"){
+        if(!_command_ongoing){
+            this->command_list = &AutoLagoriBreak_commands;
+            _command_ongoing = true;
+        }   
     }else if(this->key_press == "h"){
         Lift_homing();
         Pitch_homing();
@@ -517,6 +569,8 @@ void MR1_nodelet_main::KeyPressCallback(const std_msgs::String::ConstPtr& msg)
         _enable_homing = false;
     }else if(this->key_press == "m"){
         this->_enableAim_fromKey = true;
+        _enable_homing = false;
+        _enable_autoMove = false;
     }else if(this->key_press == "n"){
         this->_enableAim_fromKey = false;
     }else if(this->key_press == "1"){
@@ -976,9 +1030,9 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         }
     }else if(currentCommand == ControllerCommands::Launcher_SpeedDown){
         if(this->launch_VelMsg[0].data > 0.0){
-            this->launch_VelMsg[0].data -= 1.0;
-            this->launch_VelMsg[1].data -= 1.0;
-            this->launch_VelMsg[2].data -= 1.0;
+            this->launch_VelMsg[0].data -= 10.0;
+            this->launch_VelMsg[1].data -= 10.0;
+            this->launch_VelMsg[2].data -= 10.0;
             launch1_VelPub.publish(this->launch_VelMsg[0]);
             launch2_VelPub.publish(this->launch_VelMsg[1]);
             launch3_VelPub.publish(this->launch_VelMsg[2]);
@@ -993,12 +1047,75 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             NODELET_INFO("SpeedDown");
         }
     }
+    else if(currentCommand == ControllerCommands::Launcher_SpeedUp_BreakPos_1){
+        if(this->launch_VelMsg[0].data < LagoriBrake_pos_1_speed - 0.1){
+            this->launch_VelMsg[0].data += 20.0;
+            this->launch_VelMsg[1].data += 20.0;
+            this->launch_VelMsg[2].data += 20.0;
+            launch1_VelPub.publish(this->launch_VelMsg[0]);
+            launch2_VelPub.publish(this->launch_VelMsg[1]);
+            launch3_VelPub.publish(this->launch_VelMsg[2]);
+        }else if(this->launch_VelMsg[0].data > LagoriBrake_pos_1_speed + 0.1){
+            this->launch_VelMsg[0].data -= 20.0;
+            this->launch_VelMsg[1].data -= 20.0;
+            this->launch_VelMsg[2].data -= 20.0;
+            launch1_VelPub.publish(this->launch_VelMsg[0]);
+            launch2_VelPub.publish(this->launch_VelMsg[1]);
+            launch3_VelPub.publish(this->launch_VelMsg[2]);
+        }else{
+            this->currentCommandIndex++;
+            NODELET_INFO("SpeedUp");
+        }
+    }
+    else if(currentCommand == ControllerCommands::Launcher_SpeedUp_BreakPos_2){
+        if(this->launch_VelMsg[0].data < LagoriBrake_pos_2_speed - 0.1){
+            this->launch_VelMsg[0].data += 20.0;
+            this->launch_VelMsg[1].data += 20.0;
+            this->launch_VelMsg[2].data += 20.0;
+            launch1_VelPub.publish(this->launch_VelMsg[0]);
+            launch2_VelPub.publish(this->launch_VelMsg[1]);
+            launch3_VelPub.publish(this->launch_VelMsg[2]);
+        }else if(this->launch_VelMsg[0].data > LagoriBrake_pos_2_speed + 0.1){
+            this->launch_VelMsg[0].data -= 20.0;
+            this->launch_VelMsg[1].data -= 20.0;
+            this->launch_VelMsg[2].data -= 20.0;
+            launch1_VelPub.publish(this->launch_VelMsg[0]);
+            launch2_VelPub.publish(this->launch_VelMsg[1]);
+            launch3_VelPub.publish(this->launch_VelMsg[2]);
+        }else{
+            this->currentCommandIndex++;
+            NODELET_INFO("SpeedUp");
+        }
+    }
+    else if(currentCommand == ControllerCommands::Launcher_Move_BreakPos_1){
+        _enable_autoMove = true;
+        yaw_PosMsg.data = LagoriBrake_pos_1_yaw;
+        pitch_PosMsg.data = LagoriBrake_pos_1_pitch;
+        pitch_PosPub.publish(this->pitch_PosMsg);
+        yaw_PosPub.publish(this->yaw_PosMsg);
+        this->currentCommandIndex++;
+        NODELET_INFO("Move Launcher to Break Pos 1");
+    }
+    else if(currentCommand == ControllerCommands::Launcher_Move_BreakPos_2){
+        _enable_autoMove = true;
+        yaw_PosMsg.data = LagoriBrake_pos_2_yaw;
+        pitch_PosMsg.data = LagoriBrake_pos_2_pitch;
+        pitch_PosPub.publish(this->pitch_PosMsg);
+        yaw_PosPub.publish(this->yaw_PosMsg);
+        this->currentCommandIndex++;
+    }
     else if (currentCommand == ControllerCommands::set_delay_10ms)
     {
         //set_delay(0.010);
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
         this->currentCommandIndex++;
         NODELET_INFO("set_delay_250ms");
+    }
+    else if (currentCommand == ControllerCommands::set_delay_100ms)
+    {
+        set_delay(0.100);
+        this->currentCommandIndex++;
+        NODELET_INFO("set_delay_100ms");
     }
     else if (currentCommand == ControllerCommands::set_delay_250ms)
     {
