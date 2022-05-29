@@ -169,6 +169,7 @@ private:
     std::string key_release = "";
 
     std_msgs::Float64 launch_VelMsg[3];
+    std_msgs::Float64 launch_VelMsg_inverse[3];
     std_msgs::Float64 pitch_PosMsg;
     std_msgs::Float64 yaw_PosMsg;
     std_msgs::Float64 lift_VelMsg;
@@ -356,8 +357,8 @@ const std::vector<ControllerCommands> MR1_nodelet_main::AutoLagoriBreak_commands
     ControllerCommands::set_delay_250ms,
     ControllerCommands::delay,
     ControllerCommands::Launcher_Move_BreakPos_2,
-    //ControllerCommands::set_delay_100ms,
-    //ControllerCommands::delay,
+    ControllerCommands::set_delay_100ms,
+    ControllerCommands::delay,
     ControllerCommands::Cyl_Launch_OFF,
     ControllerCommands::Launcher_SpeedUp_BreakPos_2,
     ControllerCommands::set_delay_500ms,
@@ -616,8 +617,9 @@ void MR1_nodelet_main::KeyPressCallback(const std_msgs::String::ConstPtr& msg)
         }
     }
 
+    this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
     launch1_VelPub.publish(this->launch_VelMsg[0]);
-    launch2_VelPub.publish(this->launch_VelMsg[1]);
+    launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
     launch3_VelPub.publish(this->launch_VelMsg[2]);
 
     NODELET_INFO("keypress : %s", this->key_press.c_str());
@@ -809,9 +811,9 @@ void MR1_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         pitch_deg -= 0.5;
     }
 
-
+    this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
     launch1_VelPub.publish(this->launch_VelMsg[0]);
-    launch2_VelPub.publish(this->launch_VelMsg[1]);
+    launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
     launch3_VelPub.publish(this->launch_VelMsg[2]);
 
     if (this->_is_manual_enabled)
@@ -1050,8 +1052,10 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             this->launch_VelMsg[0].data += 1.0;
             this->launch_VelMsg[1].data += 1.0;
             this->launch_VelMsg[2].data += 1.0;
+
+            this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
             launch1_VelPub.publish(this->launch_VelMsg[0]);
-            launch2_VelPub.publish(this->launch_VelMsg[1]);
+            launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
             launch3_VelPub.publish(this->launch_VelMsg[2]);
         }else{
             this->currentCommandIndex++;
@@ -1062,15 +1066,19 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             this->launch_VelMsg[0].data -= 10.0;
             this->launch_VelMsg[1].data -= 10.0;
             this->launch_VelMsg[2].data -= 10.0;
+
+            this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
             launch1_VelPub.publish(this->launch_VelMsg[0]);
-            launch2_VelPub.publish(this->launch_VelMsg[1]);
+            launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
             launch3_VelPub.publish(this->launch_VelMsg[2]);
         }else{
             this->launch_VelMsg[0].data = 0.0;
             this->launch_VelMsg[1].data = 0.0;
             this->launch_VelMsg[2].data = 0.0;
+
+            this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
             launch1_VelPub.publish(this->launch_VelMsg[0]);
-            launch2_VelPub.publish(this->launch_VelMsg[1]);
+            launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
             launch3_VelPub.publish(this->launch_VelMsg[2]);
             this->currentCommandIndex++;
             NODELET_INFO("SpeedDown");
@@ -1081,15 +1089,19 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             this->launch_VelMsg[0].data += 20.0;
             this->launch_VelMsg[1].data += 20.0;
             this->launch_VelMsg[2].data += 20.0;
+            
+            this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
             launch1_VelPub.publish(this->launch_VelMsg[0]);
-            launch2_VelPub.publish(this->launch_VelMsg[1]);
+            launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
             launch3_VelPub.publish(this->launch_VelMsg[2]);
         }else if(this->launch_VelMsg[0].data > LagoriBrake_pos_1_speed + 0.1){
             this->launch_VelMsg[0].data -= 20.0;
             this->launch_VelMsg[1].data -= 20.0;
             this->launch_VelMsg[2].data -= 20.0;
+
+            this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
             launch1_VelPub.publish(this->launch_VelMsg[0]);
-            launch2_VelPub.publish(this->launch_VelMsg[1]);
+            launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
             launch3_VelPub.publish(this->launch_VelMsg[2]);
         }else{
             this->currentCommandIndex++;
@@ -1101,15 +1113,19 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             this->launch_VelMsg[0].data += 20.0;
             this->launch_VelMsg[1].data += 20.0;
             this->launch_VelMsg[2].data += 20.0;
+
+            this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
             launch1_VelPub.publish(this->launch_VelMsg[0]);
-            launch2_VelPub.publish(this->launch_VelMsg[1]);
+            launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
             launch3_VelPub.publish(this->launch_VelMsg[2]);
         }else if(this->launch_VelMsg[0].data > LagoriBrake_pos_2_speed + 0.1){
             this->launch_VelMsg[0].data -= 20.0;
             this->launch_VelMsg[1].data -= 20.0;
             this->launch_VelMsg[2].data -= 20.0;
+
+            this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
             launch1_VelPub.publish(this->launch_VelMsg[0]);
-            launch2_VelPub.publish(this->launch_VelMsg[1]);
+            launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
             launch3_VelPub.publish(this->launch_VelMsg[2]);
         }else{
             this->currentCommandIndex++;

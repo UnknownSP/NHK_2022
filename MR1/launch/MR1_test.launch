@@ -83,12 +83,28 @@
       <param name="LagoriBrake_pos_2_pitch" type="double" value="0.0125" />
       <param name="LagoriBrake_pos_2_speed" type="double" value="1120.0" />
       -->
+      <!-- ちょい上下理想1
       <param name="LagoriBrake_pos_1_yaw" type="double" value="0.0" />
       <param name="LagoriBrake_pos_1_pitch" type="double" value="-0.05" />
-      <param name="LagoriBrake_pos_1_speed" type="double" value="1000.0" />  <!--十の位絶対偶数-->
+      <param name="LagoriBrake_pos_1_speed" type="double" value="900.0" /> 
       <param name="LagoriBrake_pos_2_yaw" type="double" value="0.0" />
       <param name="LagoriBrake_pos_2_pitch" type="double" value="0.0125" />
-      <param name="LagoriBrake_pos_2_speed" type="double" value="1120.0" /> <!--十の位絶対偶数-->
+      <param name="LagoriBrake_pos_2_speed" type="double" value="980.0" />
+      -->
+      <!-- 下下遅め理想2 あまり広がらない
+      <param name="LagoriBrake_pos_1_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_1_pitch" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_1_speed" type="double" value="920.0" />
+      <param name="LagoriBrake_pos_2_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_2_pitch" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_2_speed" type="double" value="920.0" />
+      -->
+      <param name="LagoriBrake_pos_1_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_1_pitch" type="double" value="-0.5" />
+      <param name="LagoriBrake_pos_1_speed" type="double" value="580.0" />  <!--十の位絶対偶数-->
+      <param name="LagoriBrake_pos_2_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_2_pitch" type="double" value="0.0750" />
+      <param name="LagoriBrake_pos_2_speed" type="double" value="1320.0" /> <!--十の位絶対偶数-->
       
     </node>
 <!--Solenoid_Driver--> 
