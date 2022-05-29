@@ -171,9 +171,9 @@ private:
     void Odmetory_F_PosCallback(const std_msgs::Float32::ConstPtr& msg);
     void Odmetory_B_PosCallback(const std_msgs::Float32::ConstPtr& msg);
     void Auto_OmniSuspension(geometry_msgs::Twist control_input, double max_speed_linear, double max_speed_angular);
-    double GoToTarget(geometry_msgs::Twist target_position, bool not_stop);
-    double GetLinearInputSpeed(geometry_msgs::Twist now_diff);
-    double GetAngularInputSpeed(geometry_msgs::Twist now_diff);
+    double GoToTarget(geometry_msgs::Twist target_position, double max_speed_linear, double max_speed_angular, bool not_stop);
+    double GetLinearInputSpeed(geometry_msgs::Twist now_diff, double max_speed);
+    double GetAngularInputSpeed(geometry_msgs::Twist now_diff, double max_speed);
 
     void shutdown();
     void recover();
@@ -450,6 +450,32 @@ private:
     geometry_msgs::Twist leftPoint_13;
     geometry_msgs::Twist leftPoint_14;
 
+    double  leftPoint_1_maxSpeed_linear;
+    double  leftPoint_1_maxSpeed_angular;
+    double  leftPoint_2_maxSpeed_linear;
+    double  leftPoint_2_maxSpeed_angular;
+    double  leftPoint_3_maxSpeed_linear;
+    double  leftPoint_3_maxSpeed_angular;
+    double  leftPoint_4_maxSpeed_linear;
+    double  leftPoint_4_maxSpeed_angular;
+    double  leftPoint_11_maxSpeed_linear;
+    double  leftPoint_11_maxSpeed_angular;
+    double  leftPoint_12_maxSpeed_linear;
+    double  leftPoint_12_maxSpeed_angular;
+    double  leftPoint_13_maxSpeed_linear;
+    double  leftPoint_13_maxSpeed_angular;
+    double  leftPoint_14_maxSpeed_linear;
+    double  leftPoint_14_maxSpeed_angular;
+
+    double  leftPoint_1_toleranceRange;
+    double  leftPoint_2_toleranceRange;
+    double  leftPoint_3_toleranceRange;
+    double  leftPoint_4_toleranceRange;
+    double  leftPoint_11_toleranceRange;
+    double  leftPoint_12_toleranceRange;
+    double  leftPoint_13_toleranceRange;
+    double  leftPoint_14_toleranceRange;
+
     bool _manualInput = false;
     /***********************Valiables**************************/
 };
@@ -588,6 +614,7 @@ const std::vector<ControllerCommands> MR2_nodelet_main::autoMove_leftBall_PickUp
         ControllerCommands::autoMove_leftPoint_1,
         ControllerCommands::autoMove_leftPoint_2,
         ControllerCommands::autoMove_leftPoint_3,
+        ControllerCommands::autoMove_leftPoint_4,
         ControllerCommands::wait_joyInput_B,
         ControllerCommands::Cyl_Ball_Grab_On,
         ControllerCommands::set_delay_250ms,
@@ -595,6 +622,7 @@ const std::vector<ControllerCommands> MR2_nodelet_main::autoMove_leftBall_PickUp
         ControllerCommands::autoMove_leftPoint_11,
         ControllerCommands::autoMove_leftPoint_12,
         ControllerCommands::autoMove_leftPoint_13,
+        ControllerCommands::autoMove_leftPoint_14,
         ControllerCommands::autoMove_Stop,
         ControllerCommands::wait_joyInput_B,
         ControllerCommands::Cyl_Ball_Grab_Off,
@@ -734,6 +762,32 @@ void MR2_nodelet_main::onInit(void)
     _nh.param("leftPoint_14_x", this->leftPoint_14.linear.x, 0.0);
     _nh.param("leftPoint_14_y", this->leftPoint_14.linear.y, 0.0);
     _nh.param("leftPoint_14_z", this->leftPoint_14.angular.z, 0.0);
+
+    _nh.param("leftPoint_1_maxSpeed_linear", this->leftPoint_1_maxSpeed_linear, 0.0);
+    _nh.param("leftPoint_1_maxSpeed_angular", this->leftPoint_1_maxSpeed_angular, 0.0);
+    _nh.param("leftPoint_2_maxSpeed_linear", this->leftPoint_2_maxSpeed_linear, 0.0);
+    _nh.param("leftPoint_2_maxSpeed_angular", this->leftPoint_2_maxSpeed_angular, 0.0);
+    _nh.param("leftPoint_3_maxSpeed_linear", this->leftPoint_3_maxSpeed_linear, 0.0);
+    _nh.param("leftPoint_3_maxSpeed_angular", this->leftPoint_3_maxSpeed_angular, 0.0);
+    _nh.param("leftPoint_4_maxSpeed_linear", this->leftPoint_4_maxSpeed_linear, 0.0);
+    _nh.param("leftPoint_4_maxSpeed_angular", this->leftPoint_4_maxSpeed_angular, 0.0);
+    _nh.param("leftPoint_11_maxSpeed_linear", this->leftPoint_11_maxSpeed_linear, 0.0);
+    _nh.param("leftPoint_11_maxSpeed_angular", this->leftPoint_11_maxSpeed_angular, 0.0);
+    _nh.param("leftPoint_12_maxSpeed_linear", this->leftPoint_12_maxSpeed_linear, 0.0);
+    _nh.param("leftPoint_12_maxSpeed_angular", this->leftPoint_12_maxSpeed_angular, 0.0);
+    _nh.param("leftPoint_13_maxSpeed_linear", this->leftPoint_13_maxSpeed_linear, 0.0);
+    _nh.param("leftPoint_13_maxSpeed_angular", this->leftPoint_13_maxSpeed_angular, 0.0);
+    _nh.param("leftPoint_14_maxSpeed_linear", this->leftPoint_14_maxSpeed_linear, 0.0);
+    _nh.param("leftPoint_14_maxSpeed_angular", this->leftPoint_14_maxSpeed_angular, 0.0);
+
+    _nh.param("leftPoint_1_toleranceRange", this->leftPoint_1_toleranceRange, 0.0);
+    _nh.param("leftPoint_2_toleranceRange", this->leftPoint_2_toleranceRange, 0.0);
+    _nh.param("leftPoint_3_toleranceRange", this->leftPoint_3_toleranceRange, 0.0);
+    _nh.param("leftPoint_4_toleranceRange", this->leftPoint_4_toleranceRange, 0.0);
+    _nh.param("leftPoint_11_toleranceRange", this->leftPoint_11_toleranceRange, 0.0);
+    _nh.param("leftPoint_12_toleranceRange", this->leftPoint_12_toleranceRange, 0.0);
+    _nh.param("leftPoint_13_toleranceRange", this->leftPoint_13_toleranceRange, 0.0);
+    _nh.param("leftPoint_14_toleranceRange", this->leftPoint_14_toleranceRange, 0.0);
 
     this->adjust_pubData.data.resize(4);
     for(int i=0;i<4;i++){
@@ -961,8 +1015,8 @@ void MR2_nodelet_main::Auto_OmniSuspension(geometry_msgs::Twist control_input, d
         cmd_vel_msg.linear.x = control_input.linear.x;
         cmd_vel_msg.linear.y = control_input.linear.y;
     }
-    if(fabs(control_input.angular.z) > max_speed_linear){
-        cmd_vel_msg.angular.z = control_input.angular.z * (max_speed_linear/fabs(control_input.angular.z));
+    if(fabs(control_input.angular.z) > max_speed_angular){
+        cmd_vel_msg.angular.z = control_input.angular.z * (max_speed_angular/fabs(control_input.angular.z));
     }else{
         cmd_vel_msg.angular.z = control_input.angular.z;
     }
@@ -972,7 +1026,7 @@ void MR2_nodelet_main::Auto_OmniSuspension(geometry_msgs::Twist control_input, d
     //NODELET_INFO("AutoControlInput x:%f,  y:%f,  z:%f",cmd_vel_msg.linear.x,cmd_vel_msg.linear.y,cmd_vel_msg.angular.z);
 }
 
-double MR2_nodelet_main::GoToTarget(geometry_msgs::Twist target_position, bool not_stop){
+double MR2_nodelet_main::GoToTarget(geometry_msgs::Twist target_position, double max_speed_linear, double max_speed_angular, bool not_stop){
     geometry_msgs::Twist now_position_fromTargetZero;
     geometry_msgs::Twist now_position_fromTargetZero_rotate;
     geometry_msgs::Twist omniControl_input;
@@ -988,26 +1042,26 @@ double MR2_nodelet_main::GoToTarget(geometry_msgs::Twist target_position, bool n
 
     if(fabs(now_position_fromTargetZero_rotate.angular.z) >= autoMaxSpeed_distance_angular){
         if(now_position_fromTargetZero_rotate.angular.z > 0.0){
-            omniControl_input.angular.z = -autoMaxSpeed_angular;
+            omniControl_input.angular.z = -max_speed_angular;//-autoMaxSpeed_angular;
         }else{
-            omniControl_input.angular.z = autoMaxSpeed_angular;
+            omniControl_input.angular.z = max_speed_angular;//autoMaxSpeed_angular;
         }
     }else if(fabs(now_position_fromTargetZero_rotate.angular.z) < stopRange_angular){
         omniControl_input.angular.z = 0.0;
     }else{
-        omniControl_input.angular.z = GetAngularInputSpeed(now_position_fromTargetZero_rotate);
+        omniControl_input.angular.z = GetAngularInputSpeed(now_position_fromTargetZero_rotate, max_speed_angular);
     }
 
     double hypotenuse = hypot(now_position_fromTargetZero_rotate.linear.x,now_position_fromTargetZero_rotate.linear.y);
     if(hypotenuse < 0.01) hypotenuse = 0.01;
-    double get_linear_input = GetLinearInputSpeed(now_position_fromTargetZero_rotate);
+    double get_linear_input = GetLinearInputSpeed(now_position_fromTargetZero_rotate, max_speed_linear);
     if(not_stop){
-        omniControl_input.linear.x = now_position_fromTargetZero_rotate.linear.x * (autoMaxSpeed_linear/hypotenuse);
-        omniControl_input.linear.y = now_position_fromTargetZero_rotate.linear.y * (autoMaxSpeed_linear/hypotenuse);
+        omniControl_input.linear.x = now_position_fromTargetZero_rotate.linear.x * (max_speed_linear/hypotenuse);
+        omniControl_input.linear.y = now_position_fromTargetZero_rotate.linear.y * (max_speed_linear/hypotenuse);
     }else{
         if(hypotenuse >= autoMaxSpeed_distance_linear){
-            omniControl_input.linear.x = now_position_fromTargetZero_rotate.linear.x * (autoMaxSpeed_linear/hypotenuse);
-            omniControl_input.linear.y = now_position_fromTargetZero_rotate.linear.y * (autoMaxSpeed_linear/hypotenuse);
+            omniControl_input.linear.x = now_position_fromTargetZero_rotate.linear.x * (max_speed_linear/hypotenuse);
+            omniControl_input.linear.y = now_position_fromTargetZero_rotate.linear.y * (max_speed_linear/hypotenuse);
         }else if(hypotenuse < stopRange_linear){
             omniControl_input.linear.x = 0.0;
             omniControl_input.linear.y = 0.0;
@@ -1024,22 +1078,22 @@ double MR2_nodelet_main::GoToTarget(geometry_msgs::Twist target_position, bool n
     }
 
     recent_inputDuty_linear = control_hypotenuse;
-    Auto_OmniSuspension(omniControl_input,autoMaxSpeed_linear,autoMaxSpeed_angular);
+    Auto_OmniSuspension(omniControl_input,max_speed_linear,max_speed_angular);
     //migikaiten ga sei // right turn is plus
 
     NODELET_INFO("distance from target : %f",hypotenuse);
     return hypotenuse;
 }
 
-double MR2_nodelet_main::GetLinearInputSpeed(geometry_msgs::Twist now_diff){
+double MR2_nodelet_main::GetLinearInputSpeed(geometry_msgs::Twist now_diff, double max_speed){
     double target_speed;
-    target_speed = autoMaxSpeed_linear * (- std::pow((hypot(now_diff.linear.x,now_diff.linear.y)/autoMaxSpeed_distance_linear)-1.0,2.0) + 1.0);
+    target_speed = max_speed * (- std::pow((hypot(now_diff.linear.x,now_diff.linear.y)/autoMaxSpeed_distance_linear)-1.0,2.0) + 1.0);
     if(target_speed < autoMinSpeed_linear){
         target_speed = autoMinSpeed_linear;
     }
     return target_speed;
 }
-double MR2_nodelet_main::GetAngularInputSpeed(geometry_msgs::Twist now_diff){
+double MR2_nodelet_main::GetAngularInputSpeed(geometry_msgs::Twist now_diff, double max_speed){
     double angular_coeff;
     double target_speed;
     if(now_diff.angular.z >= 0.0){
@@ -1047,7 +1101,7 @@ double MR2_nodelet_main::GetAngularInputSpeed(geometry_msgs::Twist now_diff){
     }else if(now_diff.angular.z < 0.0){
         angular_coeff = 1.0;
     }
-    target_speed = autoMaxSpeed_angular * (- std::pow((fabs(now_diff.angular.z)/autoMaxSpeed_distance_angular)-1.0,4.0) + 1.0);
+    target_speed = max_speed * (- std::pow((fabs(now_diff.angular.z)/autoMaxSpeed_distance_angular)-1.0,4.0) + 1.0);
     if(target_speed < autoMinSpeed_angular){
         target_speed = autoMinSpeed_angular;
     }
@@ -1878,7 +1932,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
     }
 
     if(_autoMove_enable){
-        GoToTarget(autoTarget_position,_autoMove_notStop);
+        GoToTarget(autoTarget_position,autoMaxSpeed_linear,autoMaxSpeed_angular,_autoMove_notStop);
     }
 
     if(_recent_R_mode_count != _autoPile_R_mode_count || _autoPile_R_mode_count == 3 || _autoPile_R_mode_count == 6){
@@ -2237,7 +2291,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         if(_manualInput/* || _b*/){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
-        }else if(GoToTarget(autoTarget_position, true) <= 700.0){
+        }else if(GoToTarget(autoTarget_position, leftPoint_1_maxSpeed_linear, leftPoint_1_maxSpeed_angular, true) <= leftPoint_1_toleranceRange){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_leftPoint_2){
@@ -2248,7 +2302,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         if(_manualInput || _b){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
-        }else if(GoToTarget(autoTarget_position, true) <= 700.0){
+        }else if(GoToTarget(autoTarget_position, leftPoint_2_maxSpeed_linear, leftPoint_2_maxSpeed_angular, true) <= leftPoint_2_toleranceRange){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_leftPoint_3){
@@ -2259,7 +2313,18 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         if(_manualInput || _b){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
-        }else if(GoToTarget(autoTarget_position, false) <= 20.0){
+        }else if(GoToTarget(autoTarget_position, leftPoint_3_maxSpeed_linear, leftPoint_3_maxSpeed_angular, true) <= leftPoint_3_toleranceRange){
+            this->currentCommandIndex++;
+        }
+    }else if(currentCommand == ControllerCommands::autoMove_leftPoint_4){
+        autoTarget_position.linear.x = leftPoint_4.linear.x;
+        autoTarget_position.linear.y = leftPoint_4.linear.y;
+        autoTarget_position.angular.z = leftPoint_4.angular.z;
+        _is_manual_enabled = false;
+        if(_manualInput || _b){
+            this->currentCommandIndex++;
+            _is_manual_enabled = true;
+        }else if(GoToTarget(autoTarget_position, leftPoint_4_maxSpeed_linear, leftPoint_4_maxSpeed_angular, false) <= leftPoint_4_toleranceRange){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_leftPoint_11){
@@ -2270,7 +2335,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         /*if(_manualInput || _b){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
-        }else */if(GoToTarget(autoTarget_position, true) <= 800.0){
+        }else */if(GoToTarget(autoTarget_position, leftPoint_11_maxSpeed_linear, leftPoint_11_maxSpeed_angular,  true) <= leftPoint_11_toleranceRange){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_leftPoint_12){
@@ -2281,7 +2346,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         if(_manualInput || _b){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
-        }else if(GoToTarget(autoTarget_position, true) <= 800.0){
+        }else if(GoToTarget(autoTarget_position, leftPoint_12_maxSpeed_linear, leftPoint_12_maxSpeed_angular,  true) <= leftPoint_12_toleranceRange){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_leftPoint_13){
@@ -2292,7 +2357,18 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         if(_manualInput || _b){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
-        }else if(GoToTarget(autoTarget_position, false) <= 20.0){
+        }else if(GoToTarget(autoTarget_position, leftPoint_13_maxSpeed_linear, leftPoint_13_maxSpeed_angular,  true) <= leftPoint_13_toleranceRange){
+            this->currentCommandIndex++;
+        }
+    }else if(currentCommand == ControllerCommands::autoMove_leftPoint_14){
+        autoTarget_position.linear.x = leftPoint_14.linear.x;
+        autoTarget_position.linear.y = leftPoint_14.linear.y;
+        autoTarget_position.angular.z = leftPoint_14.angular.z;
+        _is_manual_enabled = false;
+        if(_manualInput || _b){
+            this->currentCommandIndex++;
+            _is_manual_enabled = true;
+        }else if(GoToTarget(autoTarget_position, leftPoint_14_maxSpeed_linear, leftPoint_14_maxSpeed_angular,  false) <= leftPoint_14_toleranceRange){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_Stop){

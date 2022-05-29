@@ -135,15 +135,68 @@
 
       <param name="stopRange_linear" type="double" value="30.0" />
       <param name="stopRange_angular" type="double" value="0.03" />
-      <param name="accelarating_coeff" type="double" value="0.02" />
+      <param name="accelarating_coeff" type="double" value="0.018" />
       <param name="autoMaxSpeed_linear" type="double" value="1.8" />
       <param name="autoMinSpeed_linear" type="double" value="0.3" />
       <param name="autoMaxSpeed_distance_linear" type="double" value="3200.0" />
-      <param name="autoMaxSpeed_angular" type="double" value="0.85" />
+      <param name="autoMaxSpeed_angular" type="double" value="1.1" />
       <param name="autoMinSpeed_angular" type="double" value="0.1" />
-      <param name="autoMaxSpeed_distance_angular" type="double" value="0.5" />
+      <param name="autoMaxSpeed_distance_angular" type="double" value="0.45" />
       <param name="autoOmni_MaxAccel" type="double" value="2100" />
       <param name="manualOmni_MaxAccel" type="double" value="1800" />
+
+      <param name="leftPoint_1_x" type="double" value="-400" />
+      <param name="leftPoint_1_y" type="double" value="-3300" />
+      <param name="leftPoint_1_z" type="double" value="0.0" />
+      <param name="leftPoint_2_x" type="double" value="-700" />
+      <param name="leftPoint_2_y" type="double" value="-4350" />
+      <param name="leftPoint_2_z" type="double" value="0.0" />
+      <param name="leftPoint_3_x" type="double" value="-4000" />
+      <param name="leftPoint_3_y" type="double" value="-5000" />
+      <param name="leftPoint_3_z" type="double" value="0.0" />
+      <param name="leftPoint_4_x" type="double" value="-5400" />
+      <param name="leftPoint_4_y" type="double" value="-4980" />
+      <param name="leftPoint_4_z" type="double" value="0.0" />
+      <param name="leftPoint_11_x" type="double" value="-3280" />
+      <param name="leftPoint_11_y" type="double" value="-5350" />
+      <param name="leftPoint_11_z" type="double" value="0.0" />
+      <param name="leftPoint_12_x" type="double" value="-1000" />
+      <param name="leftPoint_12_y" type="double" value="-4000" />
+      <param name="leftPoint_12_z" type="double" value="1.5708" />
+      <param name="leftPoint_13_x" type="double" value="-300" />
+      <param name="leftPoint_13_y" type="double" value="-2000" />
+      <param name="leftPoint_13_z" type="double" value="1.5708" />
+      <param name="leftPoint_14_x" type="double" value="-150.0" />
+      <param name="leftPoint_14_y" type="double" value="0.0" />
+      <param name="leftPoint_14_z" type="double" value="1.5708" />
+
+      <param name="leftPoint_1_maxSpeed_linear" type="double" value="2.2" />
+      <param name="leftPoint_1_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_2_maxSpeed_linear" type="double" value="1.25" />
+      <param name="leftPoint_2_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_3_maxSpeed_linear" type="double" value="2.0" />
+      <param name="leftPoint_3_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_4_maxSpeed_linear" type="double" value="1.7" />
+      <param name="leftPoint_4_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_11_maxSpeed_linear" type="double" value="2.0" />
+      <param name="leftPoint_11_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_12_maxSpeed_linear" type="double" value="1.8" />
+      <param name="leftPoint_12_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_13_maxSpeed_linear" type="double" value="2.0" />
+      <param name="leftPoint_13_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_14_maxSpeed_linear" type="double" value="2.0" />
+      <param name="leftPoint_14_maxSpeed_angular" type="double" value="0.85" />
+
+      <param name="leftPoint_1_toleranceRange" type="double" value="400" />
+      <param name="leftPoint_2_toleranceRange" type="double" value="400" />
+      <param name="leftPoint_3_toleranceRange" type="double" value="400" />
+      <param name="leftPoint_4_toleranceRange" type="double" value="20" />
+      <param name="leftPoint_11_toleranceRange" type="double" value="500" />
+      <param name="leftPoint_12_toleranceRange" type="double" value="500" />
+      <param name="leftPoint_13_toleranceRange" type="double" value="500" />
+      <param name="leftPoint_14_toleranceRange" type="double" value="20" />
+
+      <!--  完璧
 
       <param name="leftPoint_1_x" type="double" value="-400" />
       <param name="leftPoint_1_y" type="double" value="-3350" />
@@ -169,6 +222,34 @@
       <param name="leftPoint_14_x" type="double" value="0.0" />
       <param name="leftPoint_14_y" type="double" value="0.0" />
       <param name="leftPoint_14_z" type="double" value="0.0" />
+
+      <param name="leftPoint_1_maxSpeed_linear" type="double" value="1.8" />
+      <param name="leftPoint_1_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_2_maxSpeed_linear" type="double" value="1.8" />
+      <param name="leftPoint_2_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_3_maxSpeed_linear" type="double" value="1.8" />
+      <param name="leftPoint_3_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_4_maxSpeed_linear" type="double" value="1.8" />
+      <param name="leftPoint_4_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_11_maxSpeed_linear" type="double" value="1.8" />
+      <param name="leftPoint_11_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_12_maxSpeed_linear" type="double" value="1.8" />
+      <param name="leftPoint_12_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_13_maxSpeed_linear" type="double" value="1.8" />
+      <param name="leftPoint_13_maxSpeed_angular" type="double" value="0.85" />
+      <param name="leftPoint_14_maxSpeed_linear" type="double" value="1.8" />
+      <param name="leftPoint_14_maxSpeed_angular" type="double" value="0.85" />
+
+      <param name="leftPoint_1_toleranceRange" type="double" value="700" />
+      <param name="leftPoint_2_toleranceRange" type="double" value="700" />
+      <param name="leftPoint_3_toleranceRange" type="double" value="20" />
+      <param name="leftPoint_4_toleranceRange" type="double" value="20" />
+      <param name="leftPoint_11_toleranceRange" type="double" value="800" />
+      <param name="leftPoint_12_toleranceRange" type="double" value="800" />
+      <param name="leftPoint_13_toleranceRange" type="double" value="20" />
+      <param name="leftPoint_14_toleranceRange" type="double" value="20" />
+
+      -->
     </node>
     
 <!--Solenoid_Driver-->  
