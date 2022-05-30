@@ -171,6 +171,10 @@ private:
     void Odmetory_L_PosCallback(const std_msgs::Float32::ConstPtr& msg);
     void Odmetory_F_PosCallback(const std_msgs::Float32::ConstPtr& msg);
     void Odmetory_B_PosCallback(const std_msgs::Float32::ConstPtr& msg);
+	void Odmetory_R_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg);
+    void Odmetory_L_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg);
+    void Odmetory_F_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg);
+    void Odmetory_B_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg);
     void Auto_OmniSuspension(geometry_msgs::Twist control_input, double max_speed_linear, double max_speed_angular);
     double GoToTarget(geometry_msgs::Twist target_position, double max_speed_linear, double max_speed_angular, bool not_stop, bool reset);
     double GetLinearInputSpeed(geometry_msgs::Twist now_diff, double max_speed);
@@ -206,7 +210,9 @@ private:
 
     //Odmetory
     void Odmetory_reset(int odm_num, bool _all);
+    void Odmetory_reset_byTire(int odm_num, bool _all);
     void Odmetory_position(bool reset);
+    void Odmetory_position_byTire(bool reset);
 
     /***********************Function**************************/
     
@@ -256,6 +262,10 @@ private:
 	ros::Subscriber Odmetory_L_Pos_sub;
 	ros::Subscriber Odmetory_F_Pos_sub;
 	ros::Subscriber Odmetory_B_Pos_sub;
+	ros::Subscriber Odmetory_R_Tire_Pos_sub;
+	ros::Subscriber Odmetory_L_Tire_Pos_sub;
+	ros::Subscriber Odmetory_F_Tire_Pos_sub;
+	ros::Subscriber Odmetory_B_Tire_Pos_sub;
     //ros::Publisher steer_CmdPub0;
     //ros::Publisher steer_CmdPub1;
     //ros::Publisher steer_CmdPub2;
@@ -384,6 +394,10 @@ private:
     double arm_l_avoidlagoribase_pos = 0.0;
     bool _arm_r_avoidlagoribase = false;
     bool _arm_l_avoidlagoribase = false;
+    double arm_r_upper_pos = 0.0;
+    double arm_l_upper_pos = 0.0;
+    double arm_r_lower_pos = 0.0;
+    double arm_l_lower_pos = 0.0;
 
     int _autoPile_R_mode_count = -1;
     int _autoPile_L_mode_count = -1;
@@ -424,6 +438,27 @@ private:
 
     geometry_msgs::Twist odm_now_position;
     geometry_msgs::Twist odm_recent_position;
+
+    bool _odm_r_tire_update = false;
+    bool _odm_l_tire_update = false;
+    bool _odm_f_tire_update = false;
+    bool _odm_b_tire_update = false;
+    double odm_r_tire_recent_pos = 0.0;
+    double odm_r_tire_diff = 0.0;
+    double odm_r_tire_now_pos = 0.0;
+    double odm_l_tire_recent_pos = 0.0;
+    double odm_l_tire_diff = 0.0;
+    double odm_l_tire_now_pos = 0.0;
+    double odm_f_tire_recent_pos = 0.0;
+    double odm_f_tire_diff = 0.0;
+    double odm_f_tire_now_pos = 0.0;
+    double odm_b_tire_recent_pos = 0.0;
+    double odm_b_tire_diff = 0.0;
+    double odm_b_tire_now_pos = 0.0;
+
+    geometry_msgs::Twist odm_now_position_byTire;
+    geometry_msgs::Twist odm_recent_position_byTire;
+    geometry_msgs::Twist odm_inclined_position;
 
     //double maxCtrlInput_linear;
     //double maxCtrlInput_angular;
@@ -717,6 +752,12 @@ void MR2_nodelet_main::onInit(void)
     this->Odmetory_L_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor21_current_val", 10, &MR2_nodelet_main::Odmetory_L_PosCallback, this);
     this->Odmetory_F_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor22_current_val", 10, &MR2_nodelet_main::Odmetory_F_PosCallback, this);
     this->Odmetory_B_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor23_current_val", 10, &MR2_nodelet_main::Odmetory_B_PosCallback, this);
+    
+    this->Odmetory_R_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor2_current_val", 10, &MR2_nodelet_main::Odmetory_R_Tire_PosCallback, this);
+    this->Odmetory_L_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor0_current_val", 10, &MR2_nodelet_main::Odmetory_L_Tire_PosCallback, this);
+    this->Odmetory_F_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor3_current_val", 10, &MR2_nodelet_main::Odmetory_F_Tire_PosCallback, this);
+    this->Odmetory_B_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor1_current_val", 10, &MR2_nodelet_main::Odmetory_B_Tire_PosCallback, this);
+
 
 	/*******************pub & sub*****************/
 
@@ -736,6 +777,10 @@ void MR2_nodelet_main::onInit(void)
     _nh.param("arm_l_avoid1lagori_pos", this->arm_l_avoid1lagori_pos, 0.0);
     _nh.param("arm_r_avoidlagoribase_pos", this->arm_r_avoidlagoribase_pos, 0.0);
     _nh.param("arm_l_avoidlagoribase_pos", this->arm_l_avoidlagoribase_pos, 0.0);
+    _nh.param("arm_r_upper_pos", this->arm_r_upper_pos, 0.0);
+    _nh.param("arm_l_upper_pos", this->arm_l_upper_pos, 0.0);
+    _nh.param("arm_r_lower_pos", this->arm_r_lower_pos, 0.0);
+    _nh.param("arm_l_lower_pos", this->arm_l_lower_pos, 0.0);
 
     _nh.param("stopRange_linear", this->stopRange_linear, 0.0);
     _nh.param("stopRange_angular", this->stopRange_angular, 0.0);
@@ -811,6 +856,15 @@ void MR2_nodelet_main::onInit(void)
     odm_recent_position.linear.x = 0.0;
     odm_recent_position.linear.y = 0.0;
     odm_recent_position.angular.z = 0.0;
+    odm_now_position_byTire.linear.x = 0.0;
+    odm_now_position_byTire.linear.y = 0.0;
+    odm_now_position_byTire.angular.z = 0.0;
+    odm_recent_position_byTire.linear.x = 0.0;
+    odm_recent_position_byTire.linear.y = 0.0;
+    odm_recent_position_byTire.angular.z = 0.0;
+    odm_inclined_position.linear.x = 0.0;
+    odm_inclined_position.linear.y = 0.0;
+    odm_inclined_position.angular.z = 0.0;
 
     //this line must be placed here (last line of this function) because of some publisher will be called by this timer before it is declared
     this->control_timer = nh.createTimer(ros::Duration(0.01), &MR2_nodelet_main::control_timer_callback, this);
@@ -949,6 +1003,105 @@ void MR2_nodelet_main::Odmetory_B_PosCallback(const std_msgs::Float32::ConstPtr&
     }
 }
 
+void MR2_nodelet_main::Odmetory_R_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
+{
+    this->odm_r_tire_now_pos = msg->data;
+    odm_r_tire_diff = odm_r_tire_now_pos - odm_r_tire_recent_pos;
+    _odm_r_tire_update = true;
+	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
+        _odm_r_tire_update = false;
+        _odm_l_tire_update = false;
+        _odm_f_tire_update = false;
+        _odm_b_tire_update = false;
+        odm_r_tire_recent_pos = odm_r_tire_now_pos;
+        odm_l_tire_recent_pos = odm_l_tire_now_pos;
+        odm_f_tire_recent_pos = odm_f_tire_now_pos;
+        odm_b_tire_recent_pos = odm_b_tire_now_pos;
+        Odmetory_position_byTire(false);
+    }
+}
+void MR2_nodelet_main::Odmetory_L_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
+{
+    this->odm_l_tire_now_pos = msg->data;
+    odm_l_tire_diff = odm_l_tire_now_pos - odm_l_tire_recent_pos;
+    _odm_l_tire_update = true;
+	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
+        _odm_r_tire_update = false;
+        _odm_l_tire_update = false;
+        _odm_f_tire_update = false;
+        _odm_b_tire_update = false;
+        odm_r_tire_recent_pos = odm_r_tire_now_pos;
+        odm_l_tire_recent_pos = odm_l_tire_now_pos;
+        odm_f_tire_recent_pos = odm_f_tire_now_pos;
+        odm_b_tire_recent_pos = odm_b_tire_now_pos;
+        Odmetory_position_byTire(false);
+    }
+}
+void MR2_nodelet_main::Odmetory_F_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
+{
+    this->odm_f_tire_now_pos = msg->data;
+    odm_f_tire_diff = odm_f_tire_now_pos - odm_f_tire_recent_pos;
+    _odm_f_tire_update = true;
+	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
+        _odm_r_tire_update = false;
+        _odm_l_tire_update = false;
+        _odm_f_tire_update = false;
+        _odm_b_tire_update = false;
+        odm_r_tire_recent_pos = odm_r_tire_now_pos;
+        odm_l_tire_recent_pos = odm_l_tire_now_pos;
+        odm_f_tire_recent_pos = odm_f_tire_now_pos;
+        odm_b_tire_recent_pos = odm_b_tire_now_pos;
+        Odmetory_position_byTire(false);
+    }
+}
+void MR2_nodelet_main::Odmetory_B_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
+{
+    this->odm_b_tire_now_pos = msg->data;
+    odm_b_tire_diff = odm_b_tire_now_pos - odm_b_tire_recent_pos;
+    _odm_b_tire_update = true;
+	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
+        _odm_r_tire_update = false;
+        _odm_l_tire_update = false;
+        _odm_f_tire_update = false;
+        _odm_b_tire_update = false;
+        odm_r_tire_recent_pos = odm_r_tire_now_pos;
+        odm_l_tire_recent_pos = odm_l_tire_now_pos;
+        odm_f_tire_recent_pos = odm_f_tire_now_pos;
+        odm_b_tire_recent_pos = odm_b_tire_now_pos;
+        Odmetory_position_byTire(false);
+    }
+}
+
+void MR2_nodelet_main::Odmetory_position_byTire(bool reset){
+    double gear_ratio = 33.0;
+    double omni_pos_radius = 533.8; //d = 1079.9
+    //double omni_pos_radius = 411.0; //d = 824
+    double omni_radius = 125.0/2.0;
+    //double omni_radius = 50.0/2.0 * 1.013;
+    geometry_msgs::Twist odm_cal_position;
+
+    odm_cal_position.linear.x = 0.5 * (-odm_f_tire_diff+odm_b_tire_diff) * (1.0 / gear_ratio) * omni_radius;
+    odm_cal_position.linear.y = 0.5 * (-odm_l_tire_diff+odm_r_tire_diff) * (1.0 / gear_ratio) * omni_radius;
+    odm_cal_position.angular.z = 0.25 * -(odm_r_tire_diff+odm_l_tire_diff+odm_f_tire_diff+odm_b_tire_diff)* (1.0 / gear_ratio) * (omni_radius/omni_pos_radius);
+    // kaitensu * (1.0 / gear_ratio) * omni_radius -> x and y
+    // kaitensu * (omni_radius * 2*pi/omni_pos_radius * 2*pi) / 2*pi
+    odm_now_position_byTire.linear.x = odm_recent_position_byTire.linear.x + odm_cal_position.linear.x * cos(odm_recent_position_byTire.angular.z) + odm_cal_position.linear.y * sin(odm_recent_position_byTire.angular.z);
+    odm_now_position_byTire.linear.y = odm_recent_position_byTire.linear.y - odm_cal_position.linear.x * sin(odm_recent_position_byTire.angular.z) + odm_cal_position.linear.y * cos(odm_recent_position_byTire.angular.z);
+    odm_now_position_byTire.angular.z = odm_recent_position_byTire.angular.z + odm_cal_position.angular.z;
+
+    odm_inclined_position.linear.y = - odm_now_position_byTire.linear.x * cos(pi/4.0) + odm_now_position_byTire.linear.y * sin(pi/4.0);
+    odm_inclined_position.linear.x = odm_now_position_byTire.linear.x * sin(pi/4.0) + odm_now_position_byTire.linear.y * cos(pi/4.0);
+    odm_inclined_position.angular.z = odm_now_position_byTire.angular.z;
+
+    odm_recent_position_byTire.linear.x = odm_now_position_byTire.linear.x;
+    odm_recent_position_byTire.linear.y = odm_now_position_byTire.linear.y;
+    odm_recent_position_byTire.angular.z = odm_now_position_byTire.angular.z;
+
+    //NODELET_INFO("[odm] x:%5.1f, y:%5.1f, z:%2.3f, [tire] x:%5.1f, y:%5.1f, z:%2.3f,",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z,odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
+    NODELET_INFO("[ave] x:%5.1f, y:%5.1f, z:%2.3f,",(odm_now_position.linear.x+odm_inclined_position.linear.x)/2.0,(odm_now_position.linear.y+odm_inclined_position.linear.y)/2.0,(odm_now_position.angular.z+odm_inclined_position.angular.z)/2.0);
+    //NODELET_INFO("x : %f,  y : %f,  z : %f",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z);
+}
+
 void MR2_nodelet_main::Odmetory_position(bool reset){
     double gear_ratio = 1.0;
     //double omni_pos_radius = 540.0; //d = 1079.9
@@ -956,7 +1109,6 @@ void MR2_nodelet_main::Odmetory_position(bool reset){
     //double omni_radius = 125.0/2.0;
     double omni_radius = 50.0/2.0 * 1.013;
     geometry_msgs::Twist odm_cal_position;
-    geometry_msgs::Twist odm_inclined_position;
 
     odm_cal_position.linear.x = 0.5 * (-odm_f_diff+odm_b_diff) * (1.0 / gear_ratio) * omni_radius;
     odm_cal_position.linear.y = 0.5 * (-odm_l_diff+odm_r_diff) * (1.0 / gear_ratio) * omni_radius;
@@ -1009,6 +1161,45 @@ void MR2_nodelet_main::Odmetory_reset(int odm_num, bool _all){
         break;
     case 3: //B
         this->Odmetory_B_CmdPub.publish(Cmd_Msg);
+        break;
+    default:
+        break;
+    }
+}
+
+void MR2_nodelet_main::Odmetory_reset_byTire(int odm_num, bool _all){
+    std_msgs::UInt8 Cmd_Msg;
+    Cmd_Msg.data = (uint8_t)MotorCommands::homing_cmd;
+    if(_all){
+        this->foot_CmdPub0.publish(Cmd_Msg);
+        this->foot_CmdPub1.publish(Cmd_Msg);
+        this->foot_CmdPub2.publish(Cmd_Msg);
+        this->foot_CmdPub3.publish(Cmd_Msg);
+        odm_now_position_byTire.linear.x = 0.0;
+        odm_now_position_byTire.linear.y = 0.0;
+        odm_now_position_byTire.angular.z = 0.0;
+        odm_recent_position_byTire.linear.x = 0.0;
+        odm_recent_position_byTire.linear.y = 0.0;
+        odm_recent_position_byTire.angular.z = 0.0;
+        odm_inclined_position.linear.x = 0.0;
+        odm_inclined_position.linear.y = 0.0;
+        odm_inclined_position.angular.z = 0.0;
+        NODELET_INFO("Odmetory reset all");
+        return;
+    }
+    switch (odm_num)
+    {
+    case 0: //R
+        this->foot_CmdPub0.publish(Cmd_Msg);
+        break;
+    case 1: //L
+        this->foot_CmdPub1.publish(Cmd_Msg);
+        break;
+    case 2: //F
+        this->foot_CmdPub2.publish(Cmd_Msg);
+        break;
+    case 3: //B
+        this->foot_CmdPub3.publish(Cmd_Msg);
         break;
     default:
         break;
@@ -1312,6 +1503,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this->recover();
         }else if(_a){
             this->Odmetory_reset(0,true);
+            this->Odmetory_reset_byTire(0,true);
         }else if(_y){
             this->Arm_R_homing();
             this->Arm_L_homing();
@@ -1382,6 +1574,10 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         _defence_lift_upper_speeddown = false;
         _Arm_R_moving = false;
         _Arm_L_moving = false;
+        _reverse_control = false;
+        _swap_control = false;
+        currentCommandIndex = 0;
+        return;
     }
    
     //if (_righttrigger && (_padx != -1))
@@ -1404,13 +1600,15 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }else */if(_a && _rb){
             this->command_list = &autoMove_leftBallLack_commands;
             _is_manual_enabled = false;
-            _command_ongoing = true;   
+            _command_ongoing = true;
         }else if(_y && _rb){
             this->command_list = &autoMove_loadPos_fromLeft_commands;
             _is_manual_enabled = false;
             _command_ongoing = true;   
         }else if(_b && _rb){
             this->command_list = &autoMove_leftBall_PickUp_commands;
+            _reverse_control = false;
+            _swap_control = false;
             _is_manual_enabled = false;
             _command_ongoing = true;   
         }
@@ -1427,27 +1625,38 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             _x_enable = false;
         }
 
-    }else if(_piling_auto_Mode){
+    }else if(_piling_auto_Mode){ //--------------------------------------------------------------------------------------------------------------------------------
         NODELET_INFO("Piling Auto Mode");
         if(!(_autoPile_L_mode_count == 3 && !_arm_l_avoid1lagori) && !(_autoPile_L_mode_count == 6 && !_arm_l_avoidlagoribase)){
             if(joy->buttons[ButtonLeftThumb] != 0.0){
-                //Cylinder_Operation("L_Clutch",true);
-                this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
+                if(Arm_L_position <= arm_l_lower_pos){
+                    this->Arm_L_move_Vel(0.0);
+                }else{
+                    this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
+                }
             }else if(_lb){
-                //Cylinder_Operation("L_Clutch",true);
-                this->Arm_L_move_Vel(15.0);
+                if(Arm_L_position >= arm_l_upper_pos){
+                    this->Arm_L_move_Vel(0.0);
+                }else{
+                    this->Arm_L_move_Vel(15.0);
+                }
             }else{
-                //Cylinder_Operation("L_Clutch",false);
                 this->Arm_L_move_Vel(0.0);
             }
         }
         if(!(_autoPile_R_mode_count == 3 && !_arm_r_avoid1lagori) && !(_autoPile_R_mode_count == 6 && !_arm_r_avoidlagoribase)){
             if(joy->buttons[ButtonRightThumb] != 0.0){
-                //Cylinder_Operation("R_Clutch",true);
-                this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
+                if(Arm_R_position >= arm_r_lower_pos){
+                    this->Arm_R_move_Vel(0.0);
+                }else{
+                    this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
+                }
             }else if(_rb){
-                //Cylinder_Operation("R_Clutch",true);
-                this->Arm_R_move_Vel(-15.0);
+                if(Arm_R_position <= arm_r_upper_pos){
+                    this->Arm_R_move_Vel(0.0);
+                }else{
+                    this->Arm_R_move_Vel(-15.0);
+                }
             }else{
                 //Cylinder_Operation("R_Clutch",false);
                 this->Arm_R_move_Vel(0.0);
@@ -1619,25 +1828,37 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     }else if(_piling_manual_Mode){
         NODELET_INFO("Piling Manual Mode");
         if(joy->buttons[ButtonRightThumb] != 0.0){
-            //Cylinder_Operation("R_Clutch",true);
-            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
+            if(Arm_R_position >= arm_r_lower_pos){
+                this->Arm_R_move_Vel(0.0);
+            }else{
+                this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
+            }
         }else if(_rb){
-            //Cylinder_Operation("R_Clutch",true);
-            this->Arm_R_move_Vel(-15.0);
+            if(Arm_R_position <= arm_r_upper_pos){
+                this->Arm_R_move_Vel(0.0);
+            }else{
+                this->Arm_R_move_Vel(-15.0);
+            }
         }else{
             //Cylinder_Operation("R_Clutch",false);
             this->Arm_R_move_Vel(0.0);
         }
         if(joy->buttons[ButtonLeftThumb] != 0.0){
-            //Cylinder_Operation("L_Clutch",true);
-            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
+            if(Arm_L_position <= arm_l_lower_pos){
+                this->Arm_L_move_Vel(0.0);
+            }else{
+                this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
+            }
         }else if(_lb){
-            //Cylinder_Operation("L_Clutch",true);
-            this->Arm_L_move_Vel(15.0);
+            if(Arm_L_position >= arm_l_upper_pos){
+                this->Arm_L_move_Vel(0.0);
+            }else{
+                this->Arm_L_move_Vel(15.0);
+            }
         }else{
-            //Cylinder_Operation("L_Clutch",false);
             this->Arm_L_move_Vel(0.0);
         }
+        
         if(_padx == -1 && _pady == 1){ //right upper
             if(_b && _b_enable){
                 if(_Cyl_R_Upper_Grab){
@@ -2065,14 +2286,18 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             Cylinder_Operation("R_Lower_Deploy",true);
             break;
         case 14:
-            if(fabs(Arm_R_position) >= 30.0 && fabs(Arm_R_position) <= 50.0){
+            /*if(fabs(Arm_R_position) >= 30.0 && fabs(Arm_R_position) <= 50.0){
                 Cylinder_Operation("R_Upper_Deploy",true);
             }else{
                 Cylinder_Operation("R_Lower_Deploy",false);
-            }
+            }*/
+            Cylinder_Operation("R_Upper_Deploy",true);
+            Cylinder_Operation("R_Lower_Deploy",true);
             Cylinder_Operation("R_Upper_Rotate",false);
             break;
         case 15:
+            Cylinder_Operation("R_Upper_Deploy",false);
+            Cylinder_Operation("R_Lower_Deploy",false);
             Cylinder_Operation("R_Lower_Grab",false);
             Cylinder_Operation("R_Upper_Grab",false);
             break;
@@ -2171,14 +2396,18 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             Cylinder_Operation("L_Lower_Deploy",true);
             break;
         case 14:
-            if(fabs(Arm_L_position) >= 30.0 && fabs(Arm_L_position) <= 50.0){
+            /*if(fabs(Arm_L_position) >= 30.0 && fabs(Arm_L_position) <= 50.0){
                 Cylinder_Operation("L_Upper_Deploy",true);
             }else{
                 Cylinder_Operation("L_Lower_Deploy",false);
-            }
+            }*/
+            Cylinder_Operation("L_Upper_Deploy",true);
+            Cylinder_Operation("L_Lower_Deploy",true);
             Cylinder_Operation("L_Upper_Rotate",false);
             break;
         case 15:
+            Cylinder_Operation("L_Upper_Deploy",false);
+            Cylinder_Operation("L_Lower_Deploy",false);
             Cylinder_Operation("L_Lower_Grab",false);
             Cylinder_Operation("L_Upper_Grab",false);
             break;
@@ -2387,6 +2616,8 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         autoTarget_position.linear.x = leftPoint_11.linear.x;
         autoTarget_position.linear.y = leftPoint_11.linear.y;
         autoTarget_position.angular.z = leftPoint_11.angular.z;
+        _reverse_control = true;
+        _swap_control = false;
         _is_manual_enabled = false;
         /*if(_manualInput || _b){
             this->currentCommandIndex++;
