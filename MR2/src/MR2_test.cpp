@@ -1627,41 +1627,6 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
     }else if(_piling_auto_Mode){ //--------------------------------------------------------------------------------------------------------------------------------
         NODELET_INFO("Piling Auto Mode");
-        if(!(_autoPile_L_mode_count == 3 && !_arm_l_avoid1lagori) && !(_autoPile_L_mode_count == 6 && !_arm_l_avoidlagoribase)){
-            if(joy->buttons[ButtonLeftThumb] != 0.0){
-                if(Arm_L_position <= arm_l_lower_pos){
-                    this->Arm_L_move_Vel(0.0);
-                }else{
-                    this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
-                }
-            }else if(_lb){
-                if(Arm_L_position >= arm_l_upper_pos){
-                    this->Arm_L_move_Vel(0.0);
-                }else{
-                    this->Arm_L_move_Vel(15.0);
-                }
-            }else{
-                this->Arm_L_move_Vel(0.0);
-            }
-        }
-        if(!(_autoPile_R_mode_count == 3 && !_arm_r_avoid1lagori) && !(_autoPile_R_mode_count == 6 && !_arm_r_avoidlagoribase)){
-            if(joy->buttons[ButtonRightThumb] != 0.0){
-                if(Arm_R_position >= arm_r_lower_pos){
-                    this->Arm_R_move_Vel(0.0);
-                }else{
-                    this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
-                }
-            }else if(_rb){
-                if(Arm_R_position <= arm_r_upper_pos){
-                    this->Arm_R_move_Vel(0.0);
-                }else{
-                    this->Arm_R_move_Vel(-15.0);
-                }
-            }else{
-                //Cylinder_Operation("R_Clutch",false);
-                this->Arm_R_move_Vel(0.0);
-            }
-        }
         //if(_pady != 1 && _padx != 1){
         //    if(!_command_ongoing){
         //        if(_y){
@@ -1738,7 +1703,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 _x_enable = false;
             }
         }
-        if(_y && _y_enable && !_start){
+        if(_y && _y_enable && !_start && !_command_ongoing){
             if(_padx == -1){
                 Defend_mode_Count(-1);
             }else{
@@ -1757,8 +1722,20 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 }
             }else if(_padx == -1){
                 this->Defence_Lift_move_Vel(8.0);
+
+                if(defenceLift_position >= defence_lift_upper_pos - 1.0){
+                    this->Defence_Lift_move_Vel(0.0);
+                }else{
+
+                    this->Defence_Lift_move_Vel(8.0);
+                }
             }else{
-                this->Defence_Lift_move_Vel(-8.0);
+                if(defenceLift_position <= defence_lift_lower_pos + 1.0){
+                    this->Defence_Lift_move_Vel(0.0);
+                }else{
+
+                    this->Defence_Lift_move_Vel(-8.0);
+                }
             }
             _a_enable = false;
         }else if(!_command_ongoing && !_a){
@@ -1773,6 +1750,9 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                     this->command_list = &Defence_Up_commands;
                     _command_ongoing = true;   
                 }
+                Cylinder_Operation("Defend_Grab",false);   
+                Cylinder_Operation("Defend_Press", false);
+                Cylinder_Operation("Defend_Rise",false);   
                 break;
             case 1:
                 if(!_command_ongoing){
@@ -1797,7 +1777,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                     this->command_list = &Defence_Enable_commands;
                     _command_ongoing = true;      
                 }
-                _reverse_control = false;
+                //_reverse_control = false;
                 //_swap_control = true;
                 break;
             case 6:
@@ -1827,37 +1807,6 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         _recent_Defend_mode_count = _Defend_mode_count;
     }else if(_piling_manual_Mode){
         NODELET_INFO("Piling Manual Mode");
-        if(joy->buttons[ButtonRightThumb] != 0.0){
-            if(Arm_R_position >= arm_r_lower_pos){
-                this->Arm_R_move_Vel(0.0);
-            }else{
-                this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 15.0);
-            }
-        }else if(_rb){
-            if(Arm_R_position <= arm_r_upper_pos){
-                this->Arm_R_move_Vel(0.0);
-            }else{
-                this->Arm_R_move_Vel(-15.0);
-            }
-        }else{
-            //Cylinder_Operation("R_Clutch",false);
-            this->Arm_R_move_Vel(0.0);
-        }
-        if(joy->buttons[ButtonLeftThumb] != 0.0){
-            if(Arm_L_position <= arm_l_lower_pos){
-                this->Arm_L_move_Vel(0.0);
-            }else{
-                this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -15.0);
-            }
-        }else if(_lb){
-            if(Arm_L_position >= arm_l_upper_pos){
-                this->Arm_L_move_Vel(0.0);
-            }else{
-                this->Arm_L_move_Vel(15.0);
-            }
-        }else{
-            this->Arm_L_move_Vel(0.0);
-        }
         
         if(_padx == -1 && _pady == 1){ //right upper
             if(_b && _b_enable){
@@ -1967,15 +1916,15 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         //    this-> _defence_Mode = false;
         //    return;
         //}
-        if(joy->buttons[ButtonRightThumb] != 0.0){
-            this->Defence_Lift_move_Vel(joy->buttons[ButtonRightThumb] * -8.0);
+        if(_rightthumb){
+            this->Defence_Lift_move_Vel(-8.0);
         }else if(_rb){
             this->Defence_Lift_move_Vel(8.0);
         }else{
             this->Defence_Lift_move_Vel(0.0);
         }
-        if(joy->buttons[ButtonLeftThumb] != 0.0){
-            this->Defence_Roll_move_Vel(joy->buttons[ButtonLeftThumb] * -5.0);
+        if(_leftthumb){
+            this->Defence_Roll_move_Vel(5.0);
         }else if(_lb){
             this->Defence_Roll_move_Vel(5.0);
         }else{
@@ -2044,8 +1993,8 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }
     }else if(_homing_Mode){ //------------------------------------------------------------------------------------------------------
         NODELET_INFO("Homing Mode");
-        if(joy->buttons[ButtonRightThumb] != 0.0){
-            this->Arm_R_move_Vel(joy->buttons[ButtonRightThumb] * 5.0);
+        if(_rightthumb){
+            this->Arm_R_move_Vel(5.0);
             Cylinder_Operation("R_Clutch",true);
         }else if(_rb){
             this->Arm_R_move_Vel(-5.0);
@@ -2054,8 +2003,8 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this->Arm_R_move_Vel(0.0);
             Cylinder_Operation("R_Clutch",false);
         }
-        if(joy->buttons[ButtonLeftThumb] != 0.0){
-            this->Arm_L_move_Vel(joy->buttons[ButtonLeftThumb] * -5.0);
+        if(_leftthumb){
+            this->Arm_L_move_Vel(-5.0);
             Cylinder_Operation("L_Clutch",true);
         }else if(_lb){
             this->Arm_L_move_Vel(5.0);
@@ -2178,7 +2127,8 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
     if(_recent_R_mode_count != _autoPile_R_mode_count || _recent_L_mode_count != _autoPile_L_mode_count){
         if(_autoPile_R_mode_count == 0 && _autoPile_L_mode_count == 0){
             this->_delay_s_r = ros::Time::now().toSec() + 0.5;
-        }    
+            _reverse_control = false;
+        }
     }
     if(_autoPile_R_mode_count == 0 && _autoPile_L_mode_count == 0 && !_Arm_Deploy){
         Cylinder_Operation("R_Clutch",true);
@@ -2199,8 +2149,78 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         }
     }
 
-    if(_autoMove_enable){
-        GoToTarget(autoTarget_position,autoMaxSpeed_linear,autoMaxSpeed_angular,_autoMove_notStop,false);
+    //if(_autoMove_enable){
+    //    GoToTarget(autoTarget_position,autoMaxSpeed_linear,autoMaxSpeed_angular,_autoMove_notStop,false);
+    //}
+
+    if(_piling_auto_Mode){ //--------------------------------------------------------------------------------------------------------------------------------
+        if(!(_autoPile_L_mode_count == 3 && !_arm_l_avoid1lagori) && !(_autoPile_L_mode_count == 6 && !_arm_l_avoidlagoribase)){
+            if(_leftthumb){
+                if(Arm_L_position <= arm_l_lower_pos){
+                    this->Arm_L_move_Vel(0.0);
+                }else{
+                    this->Arm_L_move_Vel(-15.0);
+                }
+            }else if(_lb){
+                if(Arm_L_position >= arm_l_upper_pos){
+                    this->Arm_L_move_Vel(0.0);
+                }else{
+                    this->Arm_L_move_Vel(15.0);
+                }
+            }else{
+                this->Arm_L_move_Vel(0.0);
+            }
+        }
+        if(!(_autoPile_R_mode_count == 3 && !_arm_r_avoid1lagori) && !(_autoPile_R_mode_count == 6 && !_arm_r_avoidlagoribase)){
+            if(_rightthumb){
+                if(Arm_R_position >= arm_r_lower_pos){
+                    this->Arm_R_move_Vel(0.0);
+                }else{
+                    this->Arm_R_move_Vel(15.0);
+                }
+            }else if(_rb){
+                if(Arm_R_position <= arm_r_upper_pos){
+                    this->Arm_R_move_Vel(0.0);
+                }else{
+                    this->Arm_R_move_Vel(-15.0);
+                }
+            }else{
+                //Cylinder_Operation("R_Clutch",false);
+                this->Arm_R_move_Vel(0.0);
+            }
+        }
+    }else if(_piling_manual_Mode){
+        if(_rightthumb){
+            if(Arm_R_position >= arm_r_lower_pos){
+                this->Arm_R_move_Vel(0.0);
+            }else{
+                this->Arm_R_move_Vel(15.0);
+            }
+        }else if(_rb){
+            if(Arm_R_position <= arm_r_upper_pos){
+                this->Arm_R_move_Vel(0.0);
+            }else{
+                this->Arm_R_move_Vel(-15.0);
+            }
+        }else{
+            //Cylinder_Operation("R_Clutch",false);
+            this->Arm_R_move_Vel(0.0);
+        }
+        if(_leftthumb){
+            if(Arm_L_position <= arm_l_lower_pos){
+                this->Arm_L_move_Vel(0.0);
+            }else{
+                this->Arm_L_move_Vel(-15.0);
+            }
+        }else if(_lb){
+            if(Arm_L_position >= arm_l_upper_pos){
+                this->Arm_L_move_Vel(0.0);
+            }else{
+                this->Arm_L_move_Vel(15.0);
+            }
+        }else{
+            this->Arm_L_move_Vel(0.0);
+        }
     }
 
     if(_recent_R_mode_count != _autoPile_R_mode_count || _autoPile_R_mode_count == 3 || _autoPile_R_mode_count == 6){
@@ -2498,7 +2518,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             NODELET_INFO("Defence Lift Move to LagoriBase Slowly");
         }
     }else if(currentCommand == ControllerCommands::defenceLift_mv_DodgeLagori_slowly){
-        Defence_Lift_move_Vel(-10.0);
+        Defence_Lift_move_Vel(-13.0);
         if(defenceLift_position <= defence_lift_dodgelagori_pos+2.0){
             Defence_Lift_move_Vel(0.0);
             this->currentCommandIndex++;
