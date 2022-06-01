@@ -123,7 +123,7 @@
       <param name="steer0_adjust_sub" type="double" value="0.7" />
       <param name="steer1_adjust_sub" type="double" value="0.9" />
       <param name="steer2_adjust_sub" type="double" value="3.1" />-->
-      <param name="defence_lift_upper_pos" type="double" value="39.5" />
+      <param name="defence_lift_upper_pos" type="double" value="39.8" />
       <param name="defence_lift_lower_pos" type="double" value="0.0" />
       <param name="defence_lift_dodgelagori_pos" type="double" value="6.5" />
       <param name="defence_lift_getlagori_pos" type="double" value="0.1" />
@@ -133,8 +133,8 @@
       <param name="arm_l_avoid1lagori_pos" type="double" value="20.0" />
       <param name="arm_r_avoidlagoribase_pos" type="double" value="-57.0" />
       <param name="arm_l_avoidlagoribase_pos" type="double" value="57.0" />
-      <param name="arm_r_upper_pos" type="double" value="-59.0" />
-      <param name="arm_l_upper_pos" type="double" value="59.0" />
+      <param name="arm_r_upper_pos" type="double" value="-64.0" />
+      <param name="arm_l_upper_pos" type="double" value="64.0" />
       <param name="arm_r_lower_pos" type="double" value="-0.0" />
       <param name="arm_l_lower_pos" type="double" value="0.0" />
 
@@ -148,7 +148,7 @@
       <param name="autoMinSpeed_angular" type="double" value="0.1" />
       <param name="autoMaxSpeed_distance_angular" type="double" value="0.45" />
       <param name="autoOmni_MaxAccel" type="double" value="2100" />
-      <param name="manualOmni_MaxAccel" type="double" value="1200" />
+      <param name="manualOmni_MaxAccel" type="double" value="1000" />
 
       <param name="leftPoint_1_x" type="double" value="-300" />
       <param name="leftPoint_1_y" type="double" value="-3800" />
@@ -306,7 +306,7 @@
     <rosparam file="$(find MR2)/param/logitech_f710_joy_assign.yaml" command="load" />
     <node respawn="true" pkg="joy" type="joy_node" name="joy_node" >
       <param name="dev" type="string" value="/dev/input/js0" />
-      <param name="deadzone" value="0.04" />
+      <param name="deadzone" value="0.02" />
     </node>
     
 <!-- key&mouse -->
