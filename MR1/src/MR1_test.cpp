@@ -15,6 +15,7 @@
 #include <thread>     
 #include <chrono>
 #include <math.h>
+#include <cmath>
 
 
 constexpr double pi = 3.141592653589793238462643383279502884L;
@@ -508,9 +509,10 @@ void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
             pitch_PosPub.publish(this->pitch_PosMsg);
             yaw_PosPub.publish(this->yaw_PosMsg);
         }
-    }else if(_enable_autoAim){
-        offset_position_x = this->mouse_position_x-(displaysize_x/2.0);
+    }else if(_enable_autoAim && !_enable_homing && !_enable_autoMove){
+        offset_position_x = (this->mouse_position_x-(displaysize_x/2.0)); //*0.857
         offset_position_y = displaysize_y - this->mouse_position_y;
+        offset_position_y =  pow((offset_position_y/displaysize_y),1.2/2.0) * displaysize_y;
         distance_to_target = hypot(offset_position_x,offset_position_y);
         cal_degree = -(atan2(offset_position_y,offset_position_x) - pi/2.0);
         if(distance_to_target <= Aim_horizontal_range){
@@ -530,6 +532,7 @@ void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
         }else{
             cal_pitch = ((distance_to_target-Aim_horizontal_range)/(max_distance-Aim_horizontal_range))*(Aim_maxPitch-Aim_minPitch) + Aim_minPitch;
             cal_speed = ((distance_to_target-Aim_horizontal_range)/(max_distance-Aim_horizontal_range))*(Aim_maxSpeed-Aim_minSpeed) + Aim_minSpeed;
+            cal_speed = pow(cal_speed/Aim_maxSpeed,1.2/2.0) * Aim_maxSpeed;
             cal_yaw = -(atan2(offset_position_y/cos(cal_pitch),offset_position_x) - pi/2.0);
             //motometa_X * (cos(pitch)) = imaaru_X
             //motometa_X = imaaru_X / cos(pitch); cos(pitch) != 0
@@ -550,6 +553,9 @@ void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
         launch1_VelPub.publish(this->launch_VelMsg[0]);
         launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
         launch3_VelPub.publish(this->launch_VelMsg[2]);
+
+        pitch_PosPub.publish(this->pitch_PosMsg);
+        yaw_PosPub.publish(this->yaw_PosMsg);
 
         NODELET_INFO("pitch:%2.3f, yaw:%2.3f, speed:%5.1f", this->pitch_PosMsg.data, this->yaw_PosMsg.data, this->launch_VelMsg[0].data);
     }

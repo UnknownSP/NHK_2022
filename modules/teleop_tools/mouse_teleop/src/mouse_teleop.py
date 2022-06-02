@@ -49,12 +49,31 @@ class MouseTeleop():
         # Create window:
         self._root = tkinter.Tk()
         self._root.title('Mouse Teleop')
+        self._root.geometry("2735x1693")
+        self._root.config(bg="white")
+        self._root.wait_visibility(self._root)
+        self._root.wm_attributes("-alpha",0.5)
+
+        #self.var = tkinter.StringVar()
+        #self.var.set("start")
+        #self.label = tkinter.Label(self._root,textvariable=self.var,width=300)
+        #self.label.pack()
 
         # Make window non-resizable:
-        self._root.resizable(0, 0)
+        #self._root.resizable(0, 0)
 
         # Create canvas:
-        #self._canvas = tkinter.Canvas(self._root, bg='white', width="1300",height="100")
+        display_x = 2735
+        display_y = 1823
+        lagori_pos_x = 2735/2.0
+        lagori_pos_y = 1823/2.0 - 130
+        lagori_size = 200
+        self._canvas = tkinter.Canvas(self._root, bg='yellow', width="2735",height="1693")
+        self._canvas.create_rectangle(lagori_pos_x - lagori_size/2, lagori_pos_y - lagori_size/2,lagori_pos_x + lagori_size/2, lagori_pos_y + lagori_size/2, fill="blue")
+        grid_width = 5
+        self._canvas.create_rectangle(0, lagori_pos_y - grid_width, display_x, lagori_pos_y + grid_width, fill="red")
+        self._canvas.create_rectangle(lagori_pos_x - grid_width, 0, lagori_pos_x+grid_width, display_y, fill="red")
+        
 
         # Create canvas objects:
         #self._canvas.create_arc(0, 0, 0, 0, fill='red', outline='red',
@@ -109,7 +128,7 @@ class MouseTeleop():
         #else:
         #    self._canvas.bind('<B1-Motion>', self._mouse_motion_angular)
 
-        #self._canvas.pack()
+        self._canvas.pack()
 
         # If frequency is positive, use synchronous publishing mode:
         if self._frequency > 0.0:
@@ -184,6 +203,8 @@ class MouseTeleop():
 
         twist = Twist(linear, angular)
         self._pub_cmd.publish(twist)
+        #display_string = "x : " + str(v_x) + ", y : " + str(v_y)
+        #self.var.set(display_string)
 
     def _publish_twist(self, event):
         self._send_motion()

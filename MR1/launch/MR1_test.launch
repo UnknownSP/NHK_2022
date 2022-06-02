@@ -64,7 +64,7 @@
       <param name="displaysize_x" type="double" value="2735.0" />
       <param name="displaysize_y" type="double" value="1823.0" />
 
-      <param name="Aim_maxSpeed" type="double" value="1200.0" />
+      <param name="Aim_maxSpeed" type="double" value="1300.0" />
       <param name="Aim_minSpeed" type="double" value="800.0" />
       <param name="Aim_maxPitch" type="double" value="-0.8" />
       <param name="Aim_minPitch" type="double" value="0.0" />
@@ -109,13 +109,22 @@
       <param name="LagoriBrake_pos_2_pitch" type="double" value="0.0" />
       <param name="LagoriBrake_pos_2_speed" type="double" value="920.0" />
       -->
+      <!-- 下下遅め理想2 あまり広がらない
       <param name="LagoriBrake_pos_1_yaw" type="double" value="0.0" />
       <param name="LagoriBrake_pos_1_pitch" type="double" value="-0.5" />
-      <param name="LagoriBrake_pos_1_speed" type="double" value="580.0" />  <!--十の位絶対偶数-->
+      <param name="LagoriBrake_pos_1_speed" type="double" value="580.0" />
       <param name="LagoriBrake_pos_2_yaw" type="double" value="0.0" />
       <param name="LagoriBrake_pos_2_pitch" type="double" value="0.0750" />
-      <param name="LagoriBrake_pos_2_speed" type="double" value="1320.0" /> <!--十の位絶対偶数-->
-      
+      <param name="LagoriBrake_pos_2_speed" type="double" value="1320.0" />
+      -->
+
+      <param name="LagoriBrake_pos_1_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_1_pitch" type="double" value="0.075" />
+      <param name="LagoriBrake_pos_1_speed" type="double" value="1180.0" />  <!--十の位絶対偶数-->
+      <param name="LagoriBrake_pos_2_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_2_pitch" type="double" value="0.025" />
+      <param name="LagoriBrake_pos_2_speed" type="double" value="940.0" /> <!--十の位絶対偶数-->
+
     </node>
 <!--Solenoid_Driver--> 
     <node pkg="solenoid_driver_node" type="solenoid_driver_node" name="solenoid" >

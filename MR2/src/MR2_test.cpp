@@ -180,7 +180,7 @@ private:
     double GetLinearInputSpeed(geometry_msgs::Twist now_diff, double max_speed);
     double GetAngularInputSpeed(geometry_msgs::Twist now_diff, double max_speed);
 
-    void shutdown();
+    void shutdown(bool _solenoid);
     void recover();
     void all_motor_stop();
     void set_delay(double delay_s);
@@ -1316,10 +1316,12 @@ double MR2_nodelet_main::GetAngularInputSpeed(geometry_msgs::Twist now_diff, dou
 }
 /**********************************************************************************************************/
 
-void MR2_nodelet_main::shutdown(void){
+void MR2_nodelet_main::shutdown(bool _solenoid){
     act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
-    for(int i=0; i<4;i++){
-        Solenoid_Cmd_pub[i].publish(act_conf_cmd_msg);
+    if(_solenoid){
+        for(int i=0; i<4;i++){
+            Solenoid_Cmd_pub[i].publish(act_conf_cmd_msg);
+        }
     }
     foot_CmdPub0.publish(act_conf_cmd_msg);
     foot_CmdPub1.publish(act_conf_cmd_msg);
@@ -1368,7 +1370,7 @@ void MR2_nodelet_main::all_motor_stop(void){
     this->Arm_R_move_Vel(0.0);
     this->Arm_L_move_Vel(0.0);
     this->Defence_Lift_move_Vel(0.0);
-    this->shutdown();
+    this->shutdown(false);
 }
 
 //void MR2_nodelet_main::homing(void){
@@ -1413,6 +1415,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     static bool _b_enable = false;
     static bool _x_enable = false;
     static bool _y_enable = false;
+    static int y_count = 0;
 
     //static bool _Cyl_Arm = false;
     //static bool _Cyl_Clutch = false;
@@ -1559,7 +1562,6 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     if (_back)
     {
         this->all_motor_stop();
-        //this->shutdown();
         this->_command_ongoing = false;
         this->command_list = &MR2_nodelet_main::manual_all;
         GoToTarget(autoTarget_position, 0.0,0.0, false,true);
@@ -1580,6 +1582,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         _reverse_control = false;
         _swap_control = false;
         currentCommandIndex = 0;
+        y_count = 0;
         return;
     }
    
@@ -1671,6 +1674,8 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 L_mode_Count(1);
                 //_autoPile_R_mode_count = 0;
                 //_autoPile_L_mode_count = 0;
+                _b_enable = false;
+                _x_enable = false;
             }
         }else{
             if(_b && _b_enable && !_start){
@@ -1706,13 +1711,18 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 _x_enable = false;
             }
         }
-        if(_y && _y_enable && !_start && !_command_ongoing){
-            if(_padx == -1){
-                Defend_mode_Count(-1);
-            }else if(_pady == 1){
-                this->_Defend_mode_count = 6;
+        if(_y && _y_enable && !_start){
+            if(!_command_ongoing){
+                if(_padx == -1){
+                    Defend_mode_Count(-1);
+                }else if(_pady == 1){
+                    this->_Defend_mode_count = 6;
+                }else{
+                    Defend_mode_Count(1);
+                }
+                y_count = 0;
             }else{
-                Defend_mode_Count(1);
+                y_count++;
             }
             _y_enable = false;
         }
@@ -1742,7 +1752,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             }
             _a_enable = false;
         }else if(!_command_ongoing && !_a){
-            this->Defence_Lift_move_Vel(0);
+            this->Defence_Lift_move_Vel(0.0);
         }
         
         if(_Defend_mode_count != _recent_Defend_mode_count){
@@ -1779,11 +1789,6 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 if(!_command_ongoing){
                     this->command_list = &Defence_Enable_commands;
                     _command_ongoing = true;      
-                }else{
-                    if(_y){
-                        Cylinder_Operation("Defend_Grab",false);
-                        Cylinder_Operation("Defend_Press", false);
-                    }
                 }
                 //_reverse_control = false;
                 //_swap_control = true;
@@ -1810,6 +1815,11 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             
             default:
                 break;
+            }
+        }else if(_Defend_mode_count == 6){
+            if(y_count >= 3){
+                Cylinder_Operation("Defend_Grab",false);
+                Cylinder_Operation("Defend_Press", false);
             }
         }
         _recent_Defend_mode_count = _Defend_mode_count;
@@ -2544,7 +2554,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
     }else if(currentCommand == ControllerCommands::defenceLift_mv_LagoriBase_slowly){
         if(defenceLift_position >= defence_lift_lagoribase_pos+1.0){
             Defence_Lift_move_Vel(-8.0);
-        }else if(defenceLift_position <= defence_lift_lagoribase_pos-1.0){
+        }else if(defenceLift_position <= defence_lift_lagoribase_pos-0.3){
             Defence_Lift_move_Vel(8.0);
         }else{
             Defence_Lift_move_Vel(0.0);
