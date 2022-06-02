@@ -60,7 +60,17 @@
       <param name="lift_r_loading_pos" type="double" value="-111" />
       <param name="lift_l_loadwait_pos" type="double" value="-111" />
       <param name="lift_l_loading_pos" type="double" value="-114" />
-      <param name="launcher_first_speed" type="double" value="500.0" />
+      <param name="launcher_first_speed" type="double" value="800.0" />
+      <param name="displaysize_x" type="double" value="2735.0" />
+      <param name="displaysize_y" type="double" value="1823.0" />
+
+      <param name="Aim_maxSpeed" type="double" value="1200.0" />
+      <param name="Aim_minSpeed" type="double" value="800.0" />
+      <param name="Aim_maxPitch" type="double" value="-0.8" />
+      <param name="Aim_minPitch" type="double" value="0.0" />
+      <param name="Aim_maxYaw_abs" type="double" value="1.4" />
+      <param name="Aim_horizontal_range" type="double" value="700" />
+
 
       <!-- 上側左
       <param name="LagoriBrake_pos_1_yaw" type="double" value="-0.025" />

@@ -180,6 +180,9 @@ private:
     bool _enableAim_fromJoy = false;
     bool _enableAim_fromKey = false;
 
+    double displaysize_x;
+    double displaysize_y;
+
     double Lift_position = 0.0;
     double lift_upper_pos;
     double lift_lower_pos;
@@ -192,6 +195,7 @@ private:
     bool _lift_mv_r_loading_start = false;
     bool _enable_homing = false;
     bool _enable_autoMove = false;
+    bool _enable_autoAim = false;
 
     double LagoriBrake_pos_1_yaw;
     double LagoriBrake_pos_1_pitch;
@@ -199,6 +203,13 @@ private:
     double LagoriBrake_pos_2_yaw;
     double LagoriBrake_pos_2_pitch;
     double LagoriBrake_pos_2_speed;
+
+    double Aim_maxSpeed;
+    double Aim_minSpeed;
+    double Aim_maxPitch;
+    double Aim_minPitch;
+    double Aim_maxYaw_abs;
+    double Aim_horizontal_range;
     /***********************Valiables**************************/
 
     bool _a = false;
@@ -426,6 +437,8 @@ void MR1_nodelet_main::onInit(void)
 	/*******************pub & sub*****************/
 
 	/*******************parameter*****************/
+    _nh.param("displaysize_x", displaysize_x, 0.0);
+    _nh.param("displaysize_y", displaysize_y, 0.0);
     _nh.param("lift_upper_pos", lift_upper_pos, 0.0);
     _nh.param("lift_lower_pos", lift_lower_pos, 0.0);
     _nh.param("lift_r_loadwait_pos", lift_r_loadwait_pos, 0.0);
@@ -439,6 +452,13 @@ void MR1_nodelet_main::onInit(void)
     _nh.param("LagoriBrake_pos_2_yaw", LagoriBrake_pos_2_yaw, 0.0); 
     _nh.param("LagoriBrake_pos_2_pitch", LagoriBrake_pos_2_pitch, 0.0);
     _nh.param("LagoriBrake_pos_2_speed", LagoriBrake_pos_2_speed, 0.0);
+
+    _nh.param("Aim_maxSpeed", Aim_maxSpeed, 0.0);
+    _nh.param("Aim_minSpeed", Aim_minSpeed, 0.0);
+    _nh.param("Aim_maxPitch", Aim_maxPitch, 0.0);
+    _nh.param("Aim_minPitch", Aim_minPitch, 0.0);
+    _nh.param("Aim_maxYaw_abs", Aim_maxYaw_abs, 0.0);
+    _nh.param("Aim_horizontal_range", Aim_horizontal_range, 0.0);
 	/*******************parameter*****************/
 
     launch_VelMsg[0].data = 0.0;
@@ -458,6 +478,16 @@ void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
     static int _debug_count = 0;
 	this->mouse_position_x = msg->linear.x;
 	this->mouse_position_y = msg->linear.y;
+
+    double offset_position_x;
+    double offset_position_y;
+    double distance_to_target;
+    double cal_degree;
+    double cal_pitch;
+    double cal_yaw;
+    double cal_speed;
+    double max_distance = hypot(displaysize_x/2.0,displaysize_y);
+
     //NODELET_INFO("x : %f, y : %f", this->mouse_position_x, this->mouse_position_y);
 
     _debug_count ++;
@@ -466,10 +496,10 @@ void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
         _debug_count = 0;
     }
 
-    if(!_enable_homing && !_enable_autoMove){
+    if(!_enable_homing && !_enable_autoMove && !_enable_autoAim){
         if(_enableAim_fromKey){
-            yaw_PosMsg.data = (this->mouse_position_x-(2735.0/2.0)) / 1000.0;
-            pitch_PosMsg.data = (this->mouse_position_y-(1823.0/2.0)) / 1200.0;;
+            yaw_PosMsg.data = (this->mouse_position_x-(displaysize_x/2.0)) / 1000.0;
+            pitch_PosMsg.data = (this->mouse_position_y-(displaysize_y/2.0)) / 1200.0;;
             pitch_PosPub.publish(this->pitch_PosMsg);
             yaw_PosPub.publish(this->yaw_PosMsg);
         }else{
@@ -478,6 +508,50 @@ void MR1_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
             pitch_PosPub.publish(this->pitch_PosMsg);
             yaw_PosPub.publish(this->yaw_PosMsg);
         }
+    }else if(_enable_autoAim){
+        offset_position_x = this->mouse_position_x-(displaysize_x/2.0);
+        offset_position_y = displaysize_y - this->mouse_position_y;
+        distance_to_target = hypot(offset_position_x,offset_position_y);
+        cal_degree = -(atan2(offset_position_y,offset_position_x) - pi/2.0);
+        if(distance_to_target <= Aim_horizontal_range){
+            pitch_PosMsg.data = Aim_minPitch;
+            if(fabs(cal_degree) <= Aim_maxYaw_abs){
+                yaw_PosMsg.data = cal_degree;
+            }else{
+                if(cal_degree < 0){
+                    yaw_PosMsg.data = -Aim_maxYaw_abs;
+                }else{
+                    yaw_PosMsg.data = Aim_maxYaw_abs;
+                }
+            }
+            this->launch_VelMsg[0].data = Aim_minSpeed;
+            this->launch_VelMsg[1].data = Aim_minSpeed;
+            this->launch_VelMsg[2].data = Aim_minSpeed;
+        }else{
+            cal_pitch = ((distance_to_target-Aim_horizontal_range)/(max_distance-Aim_horizontal_range))*(Aim_maxPitch-Aim_minPitch) + Aim_minPitch;
+            cal_speed = ((distance_to_target-Aim_horizontal_range)/(max_distance-Aim_horizontal_range))*(Aim_maxSpeed-Aim_minSpeed) + Aim_minSpeed;
+            cal_yaw = -(atan2(offset_position_y/cos(cal_pitch),offset_position_x) - pi/2.0);
+            //motometa_X * (cos(pitch)) = imaaru_X
+            //motometa_X = imaaru_X / cos(pitch); cos(pitch) != 0
+            if(fabs(cal_yaw) > Aim_maxYaw_abs){
+                if(cal_yaw < 0){
+                    cal_yaw = -Aim_maxYaw_abs;
+                }else{
+                    cal_yaw = Aim_maxYaw_abs;
+                }
+            }
+            pitch_PosMsg.data = cal_pitch;
+            yaw_PosMsg.data = cal_yaw;
+            this->launch_VelMsg[0].data = cal_speed;
+            this->launch_VelMsg[1].data = cal_speed;
+            this->launch_VelMsg[2].data = cal_speed;
+        }
+        this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
+        launch1_VelPub.publish(this->launch_VelMsg[0]);
+        launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
+        launch3_VelPub.publish(this->launch_VelMsg[2]);
+
+        NODELET_INFO("pitch:%2.3f, yaw:%2.3f, speed:%5.1f", this->pitch_PosMsg.data, this->yaw_PosMsg.data, this->launch_VelMsg[0].data);
     }
 }
 void MR1_nodelet_main::KeyReleaseCallback(const std_msgs::String::ConstPtr& msg){
@@ -556,11 +630,17 @@ void MR1_nodelet_main::KeyPressCallback(const std_msgs::String::ConstPtr& msg)
             this->command_list = &LaunchSpeedDown_commands;
             _command_ongoing = true;   
         }
+        _enable_autoAim = false;
     }else if(this->key_press == "z"){
-        if(!_lift_mv_lower_start && !_lift_mv_r_loading_start && !_command_ongoing){
-            this->command_list = &AutoLoading_commands;
-            _command_ongoing = true;   
-        }   
+        //if(!_lift_mv_lower_start && !_lift_mv_r_loading_start && !_command_ongoing){
+        //    this->command_list = &AutoLoading_commands;
+        //    _command_ongoing = true;   
+        //}
+        if(_enable_autoAim){
+            _enable_autoAim = false;
+        }else if(!_enable_homing && !_enable_autoMove){
+            _enable_autoAim = true;
+        }
     }else if(this->key_press == "v"){
         if(!_command_ongoing){
             this->command_list = &AutoLagoriBreak_commands;
@@ -592,35 +672,23 @@ void MR1_nodelet_main::KeyPressCallback(const std_msgs::String::ConstPtr& msg)
     }else if(this->key_press == "j"){
         Lift_move_Vel(10);
     }else if(this->key_press == "q"){
-        //if(_Cyl_Left){
-        //    Cylinder_Operation("Left_load",false);
-        //    _Cyl_Left = false;
-        //}else{
-        //    Cylinder_Operation("Left_load",true);
-        //    _Cyl_Left = true;
-        //}
         if(!_command_ongoing){
             this->command_list = &LiftMove_L_Loading_commands;
             _command_ongoing = true;      
         }
     }else if(this->key_press == "e"){
-        //if(_Cyl_Right){
-        //    Cylinder_Operation("Right_load",false);
-        //    _Cyl_Right = false;
-        //}else{
-        //    Cylinder_Operation("Right_load",true);
-        //    _Cyl_Right = true;
-       // }
        if(!_command_ongoing){
             this->command_list = &LiftMove_R_Loading_commands;
             _command_ongoing = true;      
         }
     }
 
-    this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
-    launch1_VelPub.publish(this->launch_VelMsg[0]);
-    launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
-    launch3_VelPub.publish(this->launch_VelMsg[2]);
+    if(!_enable_autoAim){
+        this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
+        launch1_VelPub.publish(this->launch_VelMsg[0]);
+        launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
+        launch3_VelPub.publish(this->launch_VelMsg[2]);
+    }
 
     NODELET_INFO("keypress : %s", this->key_press.c_str());
 }
@@ -812,9 +880,9 @@ void MR1_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     }
 
     this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
-    launch1_VelPub.publish(this->launch_VelMsg[0]);
-    launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
-    launch3_VelPub.publish(this->launch_VelMsg[2]);
+    //launch1_VelPub.publish(this->launch_VelMsg[0]);
+    //launch2_VelPub.publish(this->launch_VelMsg_inverse[1]);
+    //launch3_VelPub.publish(this->launch_VelMsg[2]);
 
     if (this->_is_manual_enabled)
     {
@@ -855,7 +923,7 @@ void MR1_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this->cmd_vel_msg.linear.y = vel_y;
             this->cmd_vel_msg.angular.z = -vel_yaw;
         }
-        this->cmd_vel_pub.publish(this->cmd_vel_msg);
+        //this->cmd_vel_pub.publish(this->cmd_vel_msg);
 
         recent_vel_x = vel_x;
         recent_vel_y = vel_y;
@@ -985,8 +1053,12 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             NODELET_INFO("Lift Move to Lower");
         }else if(Lift_position >= lift_lower_pos-10.0){
             Lift_move_Vel(8.0);
-        }else{
+        }else if(Lift_position >= lift_lower_pos-20.0){
             Lift_move_Vel(15.0);
+        }else if(Lift_position >= lift_lower_pos-30.0){
+            Lift_move_Vel(30.0);
+        }else{
+            Lift_move_Vel(40.0);
         }
     }else if(currentCommand == ControllerCommands::Lift_mv_Lower_start){
         if(Lift_position >= lift_lower_pos-1.0){
@@ -1049,9 +1121,9 @@ void MR1_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         }
     }else if(currentCommand == ControllerCommands::Launcher_SpeedUp){
         if(this->launch_VelMsg[0].data < launcher_first_speed){
-            this->launch_VelMsg[0].data += 1.0;
-            this->launch_VelMsg[1].data += 1.0;
-            this->launch_VelMsg[2].data += 1.0;
+            this->launch_VelMsg[0].data += 10.0;
+            this->launch_VelMsg[1].data += 10.0;
+            this->launch_VelMsg[2].data += 10.0;
 
             this->launch_VelMsg_inverse[1].data = - this->launch_VelMsg[1].data;
             launch1_VelPub.publish(this->launch_VelMsg[0]);
