@@ -1078,6 +1078,7 @@ void MR2_nodelet_main::Odmetory_position_byTire(bool reset){
     double omni_pos_radius = 533.8; //d = 1079.9
     //double omni_pos_radius = 411.0; //d = 824
     double omni_radius = 125.0/2.0;
+    static int display_count = 0;
     //double omni_radius = 50.0/2.0 * 1.013;
     geometry_msgs::Twist odm_cal_position;
 
@@ -1099,7 +1100,13 @@ void MR2_nodelet_main::Odmetory_position_byTire(bool reset){
     odm_recent_position_byTire.angular.z = odm_now_position_byTire.angular.z;
 
     //NODELET_INFO("[odm] x:%5.1f, y:%5.1f, z:%2.3f, [tire] x:%5.1f, y:%5.1f, z:%2.3f,",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z,odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
-    NODELET_INFO("[ave] x:%5.1f, y:%5.1f, z:%2.3f,",(odm_now_position.linear.x+odm_inclined_position.linear.x)/2.0,(odm_now_position.linear.y+odm_inclined_position.linear.y)/2.0,(odm_now_position.angular.z+odm_inclined_position.angular.z)/2.0);
+    display_count++;
+    if(display_count>10){
+        //NODELET_INFO("[ave] x:%5.1f, y:%5.1f, z:%2.3f,",(odm_now_position.linear.x+odm_inclined_position.linear.x)/2.0,(odm_now_position.linear.y+odm_inclined_position.linear.y)/2.0,(odm_now_position.angular.z+odm_inclined_position.angular.z)/2.0);
+        //NODELET_INFO("[odm] x:%5.1f, y:%5.1f, z:%2.3f, [tire] x:%5.1f, y:%5.1f, z:%2.3f,",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z,odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
+        NODELET_INFO("[odm] r:%2.8f, l:%2.8f, f:%2.8f, b:%2.8f",odm_r_diff,odm_l_diff,odm_f_diff,odm_b_diff);
+        display_count = 0;
+    }
     //NODELET_INFO("x : %f,  y : %f,  z : %f",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z);
 }
 
@@ -1594,7 +1601,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
     //--------------------------------------------------------------------------------------------------------------------------------
     if(_autoMoving_Mode){
-        NODELET_INFO("Auto Moving Mode");
+        //NODELET_INFO("Auto Moving Mode");
         geometry_msgs::Twist target_pos;
         /*if(_x){
             autoTarget_position.linear.x = 0.0;
@@ -1632,7 +1639,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }
 
     }else if(_piling_auto_Mode){ //--------------------------------------------------------------------------------------------------------------------------------
-        NODELET_INFO("Piling Auto Mode");
+        //NODELET_INFO("Piling Auto Mode");
         //if(_pady != 1 && _padx != 1){
         //    if(!_command_ongoing){
         //        if(_y){
@@ -1824,7 +1831,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }
         _recent_Defend_mode_count = _Defend_mode_count;
     }else if(_piling_manual_Mode){
-        NODELET_INFO("Piling Manual Mode");
+        //NODELET_INFO("Piling Manual Mode");
         
         if(_padx == -1 && _pady == 1){ //right upper
             if(_b && _b_enable){
@@ -1926,7 +1933,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             }
         }
     }else if(_defence_Mode){ //------------------------------------------------------------------------------------------------------
-        NODELET_INFO("Defence Mode");
+        //NODELET_INFO("Defence Mode");
         //if (_start) //&& _padx == 1)
         //{
         //    this-> _piling_Mode = true;
@@ -1979,7 +1986,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             _a_enable = false;
         }
     }else if(_ballPick_Mode){ //------------------------------------------------------------------------------------------------------
-        NODELET_INFO("Ball Pick Mode");
+        //NODELET_INFO("Ball Pick Mode");
         //if (_start)// && _padx == -1)
         //{
         //    this-> _piling_Mode = true;
@@ -2010,7 +2017,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             _y_enable = false;
         }
     }else if(_homing_Mode){ //------------------------------------------------------------------------------------------------------
-        NODELET_INFO("Homing Mode");
+        //NODELET_INFO("Homing Mode");
         if(_rightthumb){
             this->Arm_R_move_Vel(5.0);
             Cylinder_Operation("R_Clutch",true);
@@ -2172,7 +2179,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
     //    GoToTarget(autoTarget_position,autoMaxSpeed_linear,autoMaxSpeed_angular,_autoMove_notStop,false);
     //}
 
-    if(_piling_auto_Mode){ //--------------------------------------------------------------------------------------------------------------------------------
+    if(_piling_auto_Mode && !_start){ //--------------------------------------------------------------------------------------------------------------------------------
         if(!(_autoPile_L_mode_count == 3 && !_arm_l_avoid1lagori) && !(_autoPile_L_mode_count == 6 && !_arm_l_avoidlagoribase)){
             if(_leftthumb){
                 if(Arm_L_position <= arm_l_lower_pos){
@@ -2216,7 +2223,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
                 this->Arm_R_move_Vel(0.0);
             }
         }
-    }else if(_piling_manual_Mode){
+    }else if(_piling_manual_Mode && !_start){
         if(_rightthumb){
             if(Arm_R_position >= arm_r_lower_pos){
                 this->Arm_R_move_Vel(0.0);

@@ -326,7 +326,8 @@ const std::vector<ControllerCommands> MR1_nodelet_main::LiftUp_commands({
     ControllerCommands::Lift_mv_Upper,
 });
 const std::vector<ControllerCommands> MR1_nodelet_main::LiftDown_commands({
-    ControllerCommands::Lift_mv_Lower,
+    //ControllerCommands::Lift_mv_Lower,
+    ControllerCommands::Lift_mv_Lower_start,
 });
 const std::vector<ControllerCommands> MR1_nodelet_main::LiftMove_R_Loadwait_commands({
     ControllerCommands::Lift_mv_R_Loadwait,
@@ -599,6 +600,12 @@ void MR1_nodelet_main::KeyPressCallback(const std_msgs::String::ConstPtr& msg)
         this->recover();
     }else if(this->key_press == "o"){
         this->shutdown();
+        _enable_autoAim = false;
+        _command_ongoing = false;
+        currentCommandIndex = 0;
+        this->_enableAim_fromKey = false;
+        _enable_homing = false;
+        _enable_autoMove = false;
     }else if(this->key_press == "w"){
         if(!_command_ongoing){
             this->command_list = &Shot_commands;

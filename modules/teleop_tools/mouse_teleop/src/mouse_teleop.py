@@ -19,7 +19,8 @@ from std_msgs.msg import String
 import pyautogui
 
 import numpy
-#import cv2
+import cv2
+import math
 #from PIL import Image, ImageTk, ImageOps
 
 
@@ -63,17 +64,21 @@ class MouseTeleop():
         #self._root.resizable(0, 0)
 
         # Create canvas:
-        display_x = 2735
-        display_y = 1823
+        self.display_x = 2735
+        self.display_y = 1823
         lagori_pos_x = 2735/2.0
         lagori_pos_y = 1823/2.0 - 130
         lagori_size = 200
         self._canvas = tkinter.Canvas(self._root, bg='yellow', width="2735",height="1693")
         self._canvas.create_rectangle(lagori_pos_x - lagori_size/2, lagori_pos_y - lagori_size/2,lagori_pos_x + lagori_size/2, lagori_pos_y + lagori_size/2, fill="blue")
         grid_width = 5
-        self._canvas.create_rectangle(0, lagori_pos_y - grid_width, display_x, lagori_pos_y + grid_width, fill="red")
-        self._canvas.create_rectangle(lagori_pos_x - grid_width, 0, lagori_pos_x+grid_width, display_y, fill="red")
+        self._canvas.create_rectangle(0, lagori_pos_y - grid_width, self.display_x, lagori_pos_y + grid_width, fill="red")
+        self._canvas.create_rectangle(lagori_pos_x - grid_width, 0, lagori_pos_x+grid_width, self.display_y, fill="red")
         
+        self.cap = cv2.VideoCapture(14)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 360)
+        self.cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
 
         # Create canvas objects:
         #self._canvas.create_arc(0, 0, 0, 0, fill='red', outline='red',
@@ -206,8 +211,59 @@ class MouseTeleop():
         #display_string = "x : " + str(v_x) + ", y : " + str(v_y)
         #self.var.set(display_string)
 
+    def _show_img(self):
+        _, img = self.cap.read()
+        height = img.shape[0]
+        width = img.shape[1]
+        #cv2.imshow('image', img2)
+        #key = cv2.waitKey(1)
+        #img = cv2.imread(img_path)
+        #h,w = img.shape[:2]
+        DIM=(640, 360)
+        K=numpy.array([[640, 0.0, 320], [0.0, 640, 180], [0.0, 0.0, 1.0]])
+        D=numpy.array([[-0.12428544821092972], [1.241814186449534], [-12.14701944648527], [16.720427864073375]])
+
+        map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, numpy.eye(3), K, DIM, cv2.CV_16SC2)
+        undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+
+        w_ratio = 1.1
+        # 変換前4点の座標　p1:左上　p2:右上 p3:左下 p4:左下
+        p1 = numpy.array([45, 30])
+        p2 = numpy.array([595,30])
+        p3 = numpy.array([-650, 550])
+        p4 = numpy.array([1290, 550])
+
+        #　幅取得
+        o_width = numpy.linalg.norm(p2 - p1)
+        o_width = math.floor(o_width * w_ratio)
+
+        #　高さ取得
+        o_height = numpy.linalg.norm(p3 - p1)
+        o_height = math.floor(o_height)
+
+        # 変換前の4点
+        src = numpy.float32([p1, p2, p3, p4])
+
+        # 変換後の4点
+        dst = numpy.float32([[0, 0],[o_width, 0],[0, o_height],[o_width, o_height]])
+
+        # 変換行列
+        M = cv2.getPerspectiveTransform(src, dst)
+
+        # 射影変換・透視変換する
+        output = cv2.warpPerspective(undistorted_img, M, (o_width, o_height))
+
+        output2 = cv2.resize(output,(int(self.display_x*0.857),int(self.display_y)))
+        #img2 = cv2.resize(img,(int(self.display_x),int(self.display_y)))
+        undistorted_img2 =  cv2.resize(undistorted_img,(int(self.display_x),int(self.display_y)))
+
+        cv2.imshow('output', output2)
+        cv2.imshow('image', undistorted_img)
+        key = cv2.waitKey(1)
+    
     def _publish_twist(self, event):
         self._send_motion()
+        self._show_img()
 
 def main():
     rospy.init_node('mouse_teleop')
