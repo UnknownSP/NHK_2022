@@ -138,6 +138,9 @@
       <param name="arm_r_lower_pos" type="double" value="-0.0" />
       <param name="arm_l_lower_pos" type="double" value="0.0" />
 
+
+      <param name="autoFastError_linear" type="double" value="15.0" />
+      <param name="autoFastError_angular" type="double" value="0.5" />
       <param name="stopRange_linear" type="double" value="30.0" />
       <param name="stopRange_angular" type="double" value="0.02" />
       <param name="accelarating_coeff" type="double" value="0.015" />

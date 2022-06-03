@@ -211,7 +211,7 @@ private:
     //Odmetory
     void Odmetory_reset(int odm_num, bool _all);
     void Odmetory_reset_byTire(int odm_num, bool _all);
-    void Odmetory_position(bool reset);
+    int Odmetory_position(bool reset);
     void Odmetory_position_byTire(bool reset);
 
     /***********************Function**************************/
@@ -262,10 +262,10 @@ private:
 	ros::Subscriber Odmetory_L_Pos_sub;
 	ros::Subscriber Odmetory_F_Pos_sub;
 	ros::Subscriber Odmetory_B_Pos_sub;
-	ros::Subscriber Odmetory_R_Tire_Pos_sub;
-	ros::Subscriber Odmetory_L_Tire_Pos_sub;
-	ros::Subscriber Odmetory_F_Tire_Pos_sub;
-	ros::Subscriber Odmetory_B_Tire_Pos_sub;
+	//ros::Subscriber Odmetory_R_Tire_Pos_sub;
+	//ros::Subscriber Odmetory_L_Tire_Pos_sub;
+	//ros::Subscriber Odmetory_F_Tire_Pos_sub;
+	//ros::Subscriber Odmetory_B_Tire_Pos_sub;
     //ros::Publisher steer_CmdPub0;
     //ros::Publisher steer_CmdPub1;
     //ros::Publisher steer_CmdPub2;
@@ -283,21 +283,21 @@ private:
   	ros::Publisher Defence_Lift_Value_pub;
     std_msgs::Float64 Defence_Lift_Value_msg;
 
-    ros::Publisher Defence_Roll_Cmd_pub;
-  	ros::Publisher Defence_Roll_Value_pub;
-    std_msgs::Float64 Defence_Roll_Value_msg;
+    //ros::Publisher Defence_Roll_Cmd_pub;
+  	//ros::Publisher Defence_Roll_Value_pub;
+    //std_msgs::Float64 Defence_Roll_Value_msg;
 
-	ros::Subscriber ThrowPos_sub;
-	ros::Subscriber Mouse_sub;
-	ros::Subscriber Key_sub;
+	//ros::Subscriber ThrowPos_sub;
+	//ros::Subscriber Mouse_sub;
+	//ros::Subscriber Key_sub;
 
 	ros::Subscriber DefenceLift_Pos_sub;
-	ros::Subscriber DefenceRoll_Pos_sub;
+	//ros::Subscriber DefenceRoll_Pos_sub;
 	ros::Subscriber Arm_R_Pos_sub;
 	ros::Subscriber Arm_L_Pos_sub;
 
-    ros::Publisher SteerAdjust_pub;
-    std_msgs::Float64MultiArray adjust_pubData;
+    //ros::Publisher SteerAdjust_pub;
+    //std_msgs::Float64MultiArray adjust_pubData;
     /***********************Pub&Sub**************************/
 
     bool _a = false;
@@ -467,6 +467,8 @@ private:
     double stopRange_angular;
     double accelarating_coeff;
 
+    double autoFastError_linear;
+    double autoFastError_angular;
     double autoMaxSpeed_linear;
     double autoMinSpeed_linear;
     double autoMaxSpeed_distance_linear;
@@ -479,6 +481,7 @@ private:
 
     bool _autoMove_enable = false;
     bool _autoMove_notStop = false;
+    bool _odmetry_error_fast = false;
 
     geometry_msgs::Twist leftPoint_1;
     geometry_msgs::Twist leftPoint_2;
@@ -737,27 +740,27 @@ void MR2_nodelet_main::onInit(void)
   	this->Arm_L_Value_pub = nh.advertise<std_msgs::Float64>("arm_l_value", 1);
     this->Defence_Lift_Cmd_pub = nh.advertise<std_msgs::UInt8>("defence_lift_cmd", 1);
   	this->Defence_Lift_Value_pub = nh.advertise<std_msgs::Float64>("defence_lift_value", 1);
-    this->Defence_Roll_Cmd_pub = nh.advertise<std_msgs::UInt8>("defence_roll_cmd", 1);
-  	this->Defence_Roll_Value_pub = nh.advertise<std_msgs::Float64>("defence_roll_value", 1);
-    this->ThrowPos_sub = nh_MT.subscribe<std_msgs::Float32>("motor4_current_val", 10, &MR2_nodelet_main::PosCallback, this);
-    this->Mouse_sub = nh.subscribe<geometry_msgs::Twist>("/mouse_vel", 10, &MR2_nodelet_main::MouseCallback, this);
-    this->Key_sub = nh.subscribe<std_msgs::String>("/keypress", 10, &MR2_nodelet_main::KeyCallback, this);
-    this->SteerAdjust_pub = nh.advertise<std_msgs::Float64MultiArray>("adjust_val", 1);
+    //this->Defence_Roll_Cmd_pub = nh.advertise<std_msgs::UInt8>("defence_roll_cmd", 1);
+  	//this->Defence_Roll_Value_pub = nh.advertise<std_msgs::Float64>("defence_roll_value", 1);
+    //this->ThrowPos_sub = nh_MT.subscribe<std_msgs::Float32>("motor4_current_val", 10, &MR2_nodelet_main::PosCallback, this);
+    //this->Mouse_sub = nh.subscribe<geometry_msgs::Twist>("/mouse_vel", 10, &MR2_nodelet_main::MouseCallback, this);
+    //this->Key_sub = nh.subscribe<std_msgs::String>("/keypress", 10, &MR2_nodelet_main::KeyCallback, this);
+    //this->SteerAdjust_pub = nh.advertise<std_msgs::Float64MultiArray>("adjust_val", 1);
 
     this->DefenceLift_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor10_current_val", 10, &MR2_nodelet_main::DefenceLift_PosCallback, this);
-    this->DefenceRoll_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor11_current_val", 10, &MR2_nodelet_main::DefenceRoll_PosCallback, this);
+    //this->DefenceRoll_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor11_current_val", 10, &MR2_nodelet_main::DefenceRoll_PosCallback, this);
     this->Arm_R_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor8_current_val", 10, &MR2_nodelet_main::Arm_R_PosCallback, this);
     this->Arm_L_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor9_current_val", 10, &MR2_nodelet_main::Arm_L_PosCallback, this);
 
-    this->Odmetory_R_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor20_current_val", 10, &MR2_nodelet_main::Odmetory_R_PosCallback, this);
-    this->Odmetory_L_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor21_current_val", 10, &MR2_nodelet_main::Odmetory_L_PosCallback, this);
-    this->Odmetory_F_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor22_current_val", 10, &MR2_nodelet_main::Odmetory_F_PosCallback, this);
-    this->Odmetory_B_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor23_current_val", 10, &MR2_nodelet_main::Odmetory_B_PosCallback, this);
+    this->Odmetory_R_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor20_current_val", 5, &MR2_nodelet_main::Odmetory_R_PosCallback, this);
+    this->Odmetory_L_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor21_current_val", 5, &MR2_nodelet_main::Odmetory_L_PosCallback, this);
+    this->Odmetory_F_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor22_current_val", 5, &MR2_nodelet_main::Odmetory_F_PosCallback, this);
+    this->Odmetory_B_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor23_current_val", 5, &MR2_nodelet_main::Odmetory_B_PosCallback, this);
     
-    this->Odmetory_R_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor2_current_val", 10, &MR2_nodelet_main::Odmetory_R_Tire_PosCallback, this);
-    this->Odmetory_L_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor0_current_val", 10, &MR2_nodelet_main::Odmetory_L_Tire_PosCallback, this);
-    this->Odmetory_F_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor3_current_val", 10, &MR2_nodelet_main::Odmetory_F_Tire_PosCallback, this);
-    this->Odmetory_B_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor1_current_val", 10, &MR2_nodelet_main::Odmetory_B_Tire_PosCallback, this);
+    //this->Odmetory_R_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor2_current_val", 10, &MR2_nodelet_main::Odmetory_R_Tire_PosCallback, this);
+    //this->Odmetory_L_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor0_current_val", 10, &MR2_nodelet_main::Odmetory_L_Tire_PosCallback, this);
+    //this->Odmetory_F_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor3_current_val", 10, &MR2_nodelet_main::Odmetory_F_Tire_PosCallback, this);
+    //this->Odmetory_B_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor1_current_val", 10, &MR2_nodelet_main::Odmetory_B_Tire_PosCallback, this);
 
 
 	/*******************pub & sub*****************/
@@ -783,6 +786,8 @@ void MR2_nodelet_main::onInit(void)
     _nh.param("arm_r_lower_pos", this->arm_r_lower_pos, 0.0);
     _nh.param("arm_l_lower_pos", this->arm_l_lower_pos, 0.0);
 
+    _nh.param("autoFastError_linear", this->autoFastError_linear, 0.0);
+    _nh.param("autoFastError_angular", this->autoFastError_angular, 0.0);
     _nh.param("stopRange_linear", this->stopRange_linear, 0.0);
     _nh.param("stopRange_angular", this->stopRange_angular, 0.0);
     _nh.param("accelarating_coeff", this->accelarating_coeff, 0.0);
@@ -845,10 +850,10 @@ void MR2_nodelet_main::onInit(void)
     _nh.param("leftPoint_13_toleranceRange", this->leftPoint_13_toleranceRange, 0.0);
     _nh.param("leftPoint_14_toleranceRange", this->leftPoint_14_toleranceRange, 0.0);
 
-    this->adjust_pubData.data.resize(4);
-    for(int i=0;i<4;i++){
-        this->adjust_pubData.data[i] = this->steer_adjust[i];
-    }
+    //this->adjust_pubData.data.resize(4);
+    //for(int i=0;i<4;i++){
+    //    this->adjust_pubData.data[i] = this->steer_adjust[i];
+    //}
 	/*******************parameter*****************/
 
     odm_now_position.linear.x = 0.0;
@@ -874,57 +879,57 @@ void MR2_nodelet_main::onInit(void)
 }
 
 /**************************************************************************************/
-void MR2_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
-{
-	this->mouse_position_x = msg->linear.x;
-	this->mouse_position_y = msg->linear.y;
-    //NODELET_INFO("x : %f, y : %f", this->mouse_position_x, this->mouse_position_y);
-}
+//void MR2_nodelet_main::MouseCallback(const geometry_msgs::Twist::ConstPtr& msg)
+//{
+//	this->mouse_position_x = msg->linear.x;
+//	this->mouse_position_y = msg->linear.y;
+//    //NODELET_INFO("x : %f, y : %f", this->mouse_position_x, this->mouse_position_y);
+//}
 
-void MR2_nodelet_main::KeyCallback(const std_msgs::String::ConstPtr& msg)
-{   
-
-	this->key_press = msg->data;
-    if(this->key_press == "q"){
-        Cylinder_Operation("L_Clutch",true);
-    }else if(this->key_press == "w"){
-        Cylinder_Operation("L_Clutch",false);
-    }else if(this->key_press == "e"){
-        Cylinder_Operation("L_Upper_Rotate",true);
-    }else if(this->key_press == "r"){
-        Cylinder_Operation("L_Upper_Rotate",false);
-    }else if(this->key_press == "t"){
-        Cylinder_Operation("L_Upper_Grab",true);
-    }else if(this->key_press == "y"){
-        Cylinder_Operation("L_Upper_Grab",false);
-    }else if(this->key_press == "u"){
-        Cylinder_Operation("L_Upper_Deploy",true);
-    }else if(this->key_press == "i"){
-        Cylinder_Operation("L_Upper_Deploy",false);
-    }else if(this->key_press == "d"){
-        Cylinder_Operation("L_Lower_Grab",true);
-    }else if(this->key_press == "f"){
-        Cylinder_Operation("L_Lower_Grab",false);
-    }else if(this->key_press == "g"){
-        Cylinder_Operation("L_Lower_Deploy",true);
-    }else if(this->key_press == "h"){
-        Cylinder_Operation("L_Lower_Deploy",false);
-    }
-    
-    NODELET_INFO("keypress : %s", this->key_press.c_str());
-}
-void MR2_nodelet_main::PosCallback(const std_msgs::Float32::ConstPtr& msg)
-{
-	this->throw_position_observed = msg->data;
-}
+//void MR2_nodelet_main::KeyCallback(const std_msgs::String::ConstPtr& msg)
+//{   
+//
+//	this->key_press = msg->data;
+//    if(this->key_press == "q"){
+//        Cylinder_Operation("L_Clutch",true);
+//    }else if(this->key_press == "w"){
+//        Cylinder_Operation("L_Clutch",false);
+//    }else if(this->key_press == "e"){
+//        Cylinder_Operation("L_Upper_Rotate",true);
+//    }else if(this->key_press == "r"){
+//        Cylinder_Operation("L_Upper_Rotate",false);
+//    }else if(this->key_press == "t"){
+//        Cylinder_Operation("L_Upper_Grab",true);
+//    }else if(this->key_press == "y"){
+//        Cylinder_Operation("L_Upper_Grab",false);
+//    }else if(this->key_press == "u"){
+//        Cylinder_Operation("L_Upper_Deploy",true);
+//    }else if(this->key_press == "i"){
+//        Cylinder_Operation("L_Upper_Deploy",false);
+//    }else if(this->key_press == "d"){
+//        Cylinder_Operation("L_Lower_Grab",true);
+//    }else if(this->key_press == "f"){
+//        Cylinder_Operation("L_Lower_Grab",false);
+//    }else if(this->key_press == "g"){
+//        Cylinder_Operation("L_Lower_Deploy",true);
+//    }else if(this->key_press == "h"){
+//        Cylinder_Operation("L_Lower_Deploy",false);
+//    }
+//    
+//    NODELET_INFO("keypress : %s", this->key_press.c_str());
+//}
+//void MR2_nodelet_main::PosCallback(const std_msgs::Float32::ConstPtr& msg)
+//{
+//	this->throw_position_observed = msg->data;
+//}
 void MR2_nodelet_main::DefenceLift_PosCallback(const std_msgs::Float32::ConstPtr& msg)
 {
 	this->defenceLift_position = msg->data;
 }
-void MR2_nodelet_main::DefenceRoll_PosCallback(const std_msgs::Float32::ConstPtr& msg)
-{
-	this->defenceRoll_position = msg->data;
-}
+//void MR2_nodelet_main::DefenceRoll_PosCallback(const std_msgs::Float32::ConstPtr& msg)
+//{
+//	this->defenceRoll_position = msg->data;
+//}
 void MR2_nodelet_main::Arm_R_PosCallback(const std_msgs::Float32::ConstPtr& msg)
 {
 	this->Arm_R_position = msg->data;
@@ -949,7 +954,9 @@ void MR2_nodelet_main::Odmetory_R_PosCallback(const std_msgs::Float32::ConstPtr&
         odm_l_recent_pos = odm_l_now_pos;
         odm_f_recent_pos = odm_f_now_pos;
         odm_b_recent_pos = odm_b_now_pos;
-        Odmetory_position(false);
+        if(Odmetory_position(false) == -1){
+            _odmetry_error_fast = true;
+        }
     }
 }
 void MR2_nodelet_main::Odmetory_L_PosCallback(const std_msgs::Float32::ConstPtr& msg)
@@ -966,7 +973,9 @@ void MR2_nodelet_main::Odmetory_L_PosCallback(const std_msgs::Float32::ConstPtr&
         odm_l_recent_pos = odm_l_now_pos;
         odm_f_recent_pos = odm_f_now_pos;
         odm_b_recent_pos = odm_b_now_pos;
-        Odmetory_position(false);
+        if(Odmetory_position(false) == -1){
+            _odmetry_error_fast = true;
+        }
     }
 }
 void MR2_nodelet_main::Odmetory_F_PosCallback(const std_msgs::Float32::ConstPtr& msg)
@@ -983,7 +992,9 @@ void MR2_nodelet_main::Odmetory_F_PosCallback(const std_msgs::Float32::ConstPtr&
         odm_l_recent_pos = odm_l_now_pos;
         odm_f_recent_pos = odm_f_now_pos;
         odm_b_recent_pos = odm_b_now_pos;
-        Odmetory_position(false);
+        if(Odmetory_position(false) == -1){
+            _odmetry_error_fast = true;
+        }
     }
 }
 void MR2_nodelet_main::Odmetory_B_PosCallback(const std_msgs::Float32::ConstPtr& msg)
@@ -1000,123 +1011,127 @@ void MR2_nodelet_main::Odmetory_B_PosCallback(const std_msgs::Float32::ConstPtr&
         odm_l_recent_pos = odm_l_now_pos;
         odm_f_recent_pos = odm_f_now_pos;
         odm_b_recent_pos = odm_b_now_pos;
-        Odmetory_position(false);
+        if(Odmetory_position(false) == -1){
+            _odmetry_error_fast = true;
+        }
     }
 }
 
-void MR2_nodelet_main::Odmetory_R_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
-{
-    this->odm_r_tire_now_pos = msg->data;
-    odm_r_tire_diff = odm_r_tire_now_pos - odm_r_tire_recent_pos;
-    _odm_r_tire_update = true;
-	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
-        _odm_r_tire_update = false;
-        _odm_l_tire_update = false;
-        _odm_f_tire_update = false;
-        _odm_b_tire_update = false;
-        odm_r_tire_recent_pos = odm_r_tire_now_pos;
-        odm_l_tire_recent_pos = odm_l_tire_now_pos;
-        odm_f_tire_recent_pos = odm_f_tire_now_pos;
-        odm_b_tire_recent_pos = odm_b_tire_now_pos;
-        Odmetory_position_byTire(false);
-    }
-}
-void MR2_nodelet_main::Odmetory_L_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
-{
-    this->odm_l_tire_now_pos = msg->data;
-    odm_l_tire_diff = odm_l_tire_now_pos - odm_l_tire_recent_pos;
-    _odm_l_tire_update = true;
-	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
-        _odm_r_tire_update = false;
-        _odm_l_tire_update = false;
-        _odm_f_tire_update = false;
-        _odm_b_tire_update = false;
-        odm_r_tire_recent_pos = odm_r_tire_now_pos;
-        odm_l_tire_recent_pos = odm_l_tire_now_pos;
-        odm_f_tire_recent_pos = odm_f_tire_now_pos;
-        odm_b_tire_recent_pos = odm_b_tire_now_pos;
-        Odmetory_position_byTire(false);
-    }
-}
-void MR2_nodelet_main::Odmetory_F_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
-{
-    this->odm_f_tire_now_pos = msg->data;
-    odm_f_tire_diff = odm_f_tire_now_pos - odm_f_tire_recent_pos;
-    _odm_f_tire_update = true;
-	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
-        _odm_r_tire_update = false;
-        _odm_l_tire_update = false;
-        _odm_f_tire_update = false;
-        _odm_b_tire_update = false;
-        odm_r_tire_recent_pos = odm_r_tire_now_pos;
-        odm_l_tire_recent_pos = odm_l_tire_now_pos;
-        odm_f_tire_recent_pos = odm_f_tire_now_pos;
-        odm_b_tire_recent_pos = odm_b_tire_now_pos;
-        Odmetory_position_byTire(false);
-    }
-}
-void MR2_nodelet_main::Odmetory_B_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
-{
-    this->odm_b_tire_now_pos = msg->data;
-    odm_b_tire_diff = odm_b_tire_now_pos - odm_b_tire_recent_pos;
-    _odm_b_tire_update = true;
-	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
-        _odm_r_tire_update = false;
-        _odm_l_tire_update = false;
-        _odm_f_tire_update = false;
-        _odm_b_tire_update = false;
-        odm_r_tire_recent_pos = odm_r_tire_now_pos;
-        odm_l_tire_recent_pos = odm_l_tire_now_pos;
-        odm_f_tire_recent_pos = odm_f_tire_now_pos;
-        odm_b_tire_recent_pos = odm_b_tire_now_pos;
-        Odmetory_position_byTire(false);
-    }
-}
+//void MR2_nodelet_main::Odmetory_R_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
+//{
+//    this->odm_r_tire_now_pos = msg->data;
+//    odm_r_tire_diff = odm_r_tire_now_pos - odm_r_tire_recent_pos;
+//    _odm_r_tire_update = true;
+//	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
+//        _odm_r_tire_update = false;
+//        _odm_l_tire_update = false;
+//        _odm_f_tire_update = false;
+//        _odm_b_tire_update = false;
+//        odm_r_tire_recent_pos = odm_r_tire_now_pos;
+//        odm_l_tire_recent_pos = odm_l_tire_now_pos;
+//        odm_f_tire_recent_pos = odm_f_tire_now_pos;
+//        odm_b_tire_recent_pos = odm_b_tire_now_pos;
+//        Odmetory_position_byTire(false);
+//    }
+//}
+//void MR2_nodelet_main::Odmetory_L_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
+//{
+//    this->odm_l_tire_now_pos = msg->data;
+//    odm_l_tire_diff = odm_l_tire_now_pos - odm_l_tire_recent_pos;
+//    _odm_l_tire_update = true;
+//	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
+//        _odm_r_tire_update = false;
+//        _odm_l_tire_update = false;
+//        _odm_f_tire_update = false;
+//        _odm_b_tire_update = false;
+//        odm_r_tire_recent_pos = odm_r_tire_now_pos;
+//        odm_l_tire_recent_pos = odm_l_tire_now_pos;
+//        odm_f_tire_recent_pos = odm_f_tire_now_pos;
+//        odm_b_tire_recent_pos = odm_b_tire_now_pos;
+//        Odmetory_position_byTire(false);
+//    }
+//}
+//void MR2_nodelet_main::Odmetory_F_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
+//{
+//    this->odm_f_tire_now_pos = msg->data;
+//    odm_f_tire_diff = odm_f_tire_now_pos - odm_f_tire_recent_pos;
+//    _odm_f_tire_update = true;
+//	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
+//        _odm_r_tire_update = false;
+//        _odm_l_tire_update = false;
+//        _odm_f_tire_update = false;
+//        _odm_b_tire_update = false;
+//        odm_r_tire_recent_pos = odm_r_tire_now_pos;
+//        odm_l_tire_recent_pos = odm_l_tire_now_pos;
+//        odm_f_tire_recent_pos = odm_f_tire_now_pos;
+//        odm_b_tire_recent_pos = odm_b_tire_now_pos;
+//        Odmetory_position_byTire(false);
+//    }
+//}
+//void MR2_nodelet_main::Odmetory_B_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
+//{
+//    this->odm_b_tire_now_pos = msg->data;
+//    odm_b_tire_diff = odm_b_tire_now_pos - odm_b_tire_recent_pos;
+//    _odm_b_tire_update = true;
+//	if(_odm_r_tire_update && _odm_l_tire_update && _odm_f_tire_update && _odm_b_tire_update){
+//        _odm_r_tire_update = false;
+//        _odm_l_tire_update = false;
+//        _odm_f_tire_update = false;
+//        _odm_b_tire_update = false;
+//        odm_r_tire_recent_pos = odm_r_tire_now_pos;
+//        odm_l_tire_recent_pos = odm_l_tire_now_pos;
+//        odm_f_tire_recent_pos = odm_f_tire_now_pos;
+//        odm_b_tire_recent_pos = odm_b_tire_now_pos;
+//        Odmetory_position_byTire(false);
+//    }
+//}
+//
+//void MR2_nodelet_main::Odmetory_position_byTire(bool reset){
+//    double gear_ratio = 33.0;
+//    double omni_pos_radius = 533.8; //d = 1079.9
+//    //double omni_pos_radius = 411.0; //d = 824
+//    double omni_radius = 125.0/2.0;
+//    static int display_count = 0;
+//    //double omni_radius = 50.0/2.0 * 1.013;
+//    geometry_msgs::Twist odm_cal_position;
+//
+//    odm_cal_position.linear.x = 0.5 * (-odm_f_tire_diff+odm_b_tire_diff) * (1.0 / gear_ratio) * omni_radius;
+//    odm_cal_position.linear.y = 0.5 * (-odm_l_tire_diff+odm_r_tire_diff) * (1.0 / gear_ratio) * omni_radius;
+//    odm_cal_position.angular.z = 0.25 * -(odm_r_tire_diff+odm_l_tire_diff+odm_f_tire_diff+odm_b_tire_diff)* (1.0 / gear_ratio) * (omni_radius/omni_pos_radius);
+//    // kaitensu * (1.0 / gear_ratio) * omni_radius -> x and y
+//    // kaitensu * (omni_radius * 2*pi/omni_pos_radius * 2*pi) / 2*pi
+//    odm_now_position_byTire.linear.x = odm_recent_position_byTire.linear.x + odm_cal_position.linear.x * cos(odm_recent_position_byTire.angular.z) + odm_cal_position.linear.y * sin(odm_recent_position_byTire.angular.z);
+//    odm_now_position_byTire.linear.y = odm_recent_position_byTire.linear.y - odm_cal_position.linear.x * sin(odm_recent_position_byTire.angular.z) + odm_cal_position.linear.y * cos(odm_recent_position_byTire.angular.z);
+//    odm_now_position_byTire.angular.z = odm_recent_position_byTire.angular.z + odm_cal_position.angular.z;
+//
+//    odm_inclined_position.linear.y = - odm_now_position_byTire.linear.x * cos(pi/4.0) + odm_now_position_byTire.linear.y * sin(pi/4.0);
+//    odm_inclined_position.linear.x = odm_now_position_byTire.linear.x * sin(pi/4.0) + odm_now_position_byTire.linear.y * cos(pi/4.0);
+//    odm_inclined_position.angular.z = odm_now_position_byTire.angular.z;
+//
+//    odm_recent_position_byTire.linear.x = odm_now_position_byTire.linear.x;
+//    odm_recent_position_byTire.linear.y = odm_now_position_byTire.linear.y;
+//    odm_recent_position_byTire.angular.z = odm_now_position_byTire.angular.z;
+//
+//    //NODELET_INFO("[odm] x:%5.1f, y:%5.1f, z:%2.3f, [tire] x:%5.1f, y:%5.1f, z:%2.3f,",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z,odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
+//    display_count++;
+//    if(display_count>10){
+//        //NODELET_INFO("[ave] x:%5.1f, y:%5.1f, z:%2.3f,",(odm_now_position.linear.x+odm_inclined_position.linear.x)/2.0,(odm_now_position.linear.y+odm_inclined_position.linear.y)/2.0,(odm_now_position.angular.z+odm_inclined_position.angular.z)/2.0);
+//        //NODELET_INFO("[odm] x:%5.1f, y:%5.1f, z:%2.3f, [tire] x:%5.1f, y:%5.1f, z:%2.3f,",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z,odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
+//        NODELET_INFO("[odm] r:%2.8f, l:%2.8f, f:%2.8f, b:%2.8f",odm_r_diff,odm_l_diff,odm_f_diff,odm_b_diff);
+//        display_count = 0;
+//    }
+//    //NODELET_INFO("x : %f,  y : %f,  z : %f",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z);
+//}
 
-void MR2_nodelet_main::Odmetory_position_byTire(bool reset){
-    double gear_ratio = 33.0;
-    double omni_pos_radius = 533.8; //d = 1079.9
-    //double omni_pos_radius = 411.0; //d = 824
-    double omni_radius = 125.0/2.0;
-    static int display_count = 0;
-    //double omni_radius = 50.0/2.0 * 1.013;
-    geometry_msgs::Twist odm_cal_position;
-
-    odm_cal_position.linear.x = 0.5 * (-odm_f_tire_diff+odm_b_tire_diff) * (1.0 / gear_ratio) * omni_radius;
-    odm_cal_position.linear.y = 0.5 * (-odm_l_tire_diff+odm_r_tire_diff) * (1.0 / gear_ratio) * omni_radius;
-    odm_cal_position.angular.z = 0.25 * -(odm_r_tire_diff+odm_l_tire_diff+odm_f_tire_diff+odm_b_tire_diff)* (1.0 / gear_ratio) * (omni_radius/omni_pos_radius);
-    // kaitensu * (1.0 / gear_ratio) * omni_radius -> x and y
-    // kaitensu * (omni_radius * 2*pi/omni_pos_radius * 2*pi) / 2*pi
-    odm_now_position_byTire.linear.x = odm_recent_position_byTire.linear.x + odm_cal_position.linear.x * cos(odm_recent_position_byTire.angular.z) + odm_cal_position.linear.y * sin(odm_recent_position_byTire.angular.z);
-    odm_now_position_byTire.linear.y = odm_recent_position_byTire.linear.y - odm_cal_position.linear.x * sin(odm_recent_position_byTire.angular.z) + odm_cal_position.linear.y * cos(odm_recent_position_byTire.angular.z);
-    odm_now_position_byTire.angular.z = odm_recent_position_byTire.angular.z + odm_cal_position.angular.z;
-
-    odm_inclined_position.linear.y = - odm_now_position_byTire.linear.x * cos(pi/4.0) + odm_now_position_byTire.linear.y * sin(pi/4.0);
-    odm_inclined_position.linear.x = odm_now_position_byTire.linear.x * sin(pi/4.0) + odm_now_position_byTire.linear.y * cos(pi/4.0);
-    odm_inclined_position.angular.z = odm_now_position_byTire.angular.z;
-
-    odm_recent_position_byTire.linear.x = odm_now_position_byTire.linear.x;
-    odm_recent_position_byTire.linear.y = odm_now_position_byTire.linear.y;
-    odm_recent_position_byTire.angular.z = odm_now_position_byTire.angular.z;
-
-    //NODELET_INFO("[odm] x:%5.1f, y:%5.1f, z:%2.3f, [tire] x:%5.1f, y:%5.1f, z:%2.3f,",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z,odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
-    display_count++;
-    if(display_count>10){
-        //NODELET_INFO("[ave] x:%5.1f, y:%5.1f, z:%2.3f,",(odm_now_position.linear.x+odm_inclined_position.linear.x)/2.0,(odm_now_position.linear.y+odm_inclined_position.linear.y)/2.0,(odm_now_position.angular.z+odm_inclined_position.angular.z)/2.0);
-        //NODELET_INFO("[odm] x:%5.1f, y:%5.1f, z:%2.3f, [tire] x:%5.1f, y:%5.1f, z:%2.3f,",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z,odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
-        NODELET_INFO("[odm] r:%2.8f, l:%2.8f, f:%2.8f, b:%2.8f",odm_r_diff,odm_l_diff,odm_f_diff,odm_b_diff);
-        display_count = 0;
-    }
-    //NODELET_INFO("x : %f,  y : %f,  z : %f",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z);
-}
-
-void MR2_nodelet_main::Odmetory_position(bool reset){
+int MR2_nodelet_main::Odmetory_position(bool reset){
     double gear_ratio = 1.0;
     //double omni_pos_radius = 540.0; //d = 1079.9
     double omni_pos_radius = 411.0; //d = 824
     //double omni_radius = 125.0/2.0;
     double omni_radius = 50.0/2.0 * 1.013;
     geometry_msgs::Twist odm_cal_position;
+
+    static int display_count = 0;
 
     odm_cal_position.linear.x = 0.5 * (-odm_f_diff+odm_b_diff) * (1.0 / gear_ratio) * omni_radius;
     odm_cal_position.linear.y = 0.5 * (-odm_l_diff+odm_r_diff) * (1.0 / gear_ratio) * omni_radius;
@@ -1131,12 +1146,30 @@ void MR2_nodelet_main::Odmetory_position(bool reset){
     //odm_inclined_position.linear.x = odm_now_position.linear.x * sin(pi/4.0) + odm_now_position.linear.y * cos(pi/4.0);
     //odm_inclined_position.angular.z = odm_now_position.angular.z;
 
+    if(hypot(odm_recent_position.linear.x - odm_now_position.linear.x,odm_recent_position.linear.y - odm_now_position.linear.y) > autoFastError_linear){
+        NODELET_INFO("Move Fast or Odmetry Error LINEAR");
+        return -1;
+    }
+    if(fabs(odm_recent_position.angular.z - odm_now_position.angular.z) > autoFastError_angular){
+        NODELET_INFO("Move Fast or Odmetry Error ANGULAR");
+        return -1;
+    }
+
     odm_recent_position.linear.x = odm_now_position.linear.x;
     odm_recent_position.linear.y = odm_now_position.linear.y;
     odm_recent_position.angular.z = odm_now_position.angular.z;
 
+    display_count++;
+    if(display_count>10){
+        //NODELET_INFO("[ave] x:%5.1f, y:%5.1f, z:%2.3f,",(odm_now_position.linear.x+odm_inclined_position.linear.x)/2.0,(odm_now_position.linear.y+odm_inclined_position.linear.y)/2.0,(odm_now_position.angular.z+odm_inclined_position.angular.z)/2.0);
+        //NODELET_INFO("[odm] x:%5.1f, y:%5.1f, z:%2.3f, [tire] x:%5.1f, y:%5.1f, z:%2.3f,",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z,odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
+        //NODELET_INFO("[odm] r:%2.8f, l:%2.8f, f:%2.8f, b:%2.8f",odm_r_diff,odm_l_diff,odm_f_diff,odm_b_diff);
+        NODELET_INFO("[odm] x:%5.1f, y:%5.1f, z:%2.3f,",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z);
+        display_count = 0;
+    }
     //NODELET_INFO("x : %f,  y : %f,  z : %f",odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
     //NODELET_INFO("x : %f,  y : %f,  z : %f",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z);
+    return 0;
 }
 
 void MR2_nodelet_main::Odmetory_reset(int odm_num, bool _all){
@@ -1175,44 +1208,44 @@ void MR2_nodelet_main::Odmetory_reset(int odm_num, bool _all){
     }
 }
 
-void MR2_nodelet_main::Odmetory_reset_byTire(int odm_num, bool _all){
-    std_msgs::UInt8 Cmd_Msg;
-    Cmd_Msg.data = (uint8_t)MotorCommands::homing_cmd;
-    if(_all){
-        this->foot_CmdPub0.publish(Cmd_Msg);
-        this->foot_CmdPub1.publish(Cmd_Msg);
-        this->foot_CmdPub2.publish(Cmd_Msg);
-        this->foot_CmdPub3.publish(Cmd_Msg);
-        odm_now_position_byTire.linear.x = 0.0;
-        odm_now_position_byTire.linear.y = 0.0;
-        odm_now_position_byTire.angular.z = 0.0;
-        odm_recent_position_byTire.linear.x = 0.0;
-        odm_recent_position_byTire.linear.y = 0.0;
-        odm_recent_position_byTire.angular.z = 0.0;
-        odm_inclined_position.linear.x = 0.0;
-        odm_inclined_position.linear.y = 0.0;
-        odm_inclined_position.angular.z = 0.0;
-        NODELET_INFO("Odmetory reset all");
-        return;
-    }
-    switch (odm_num)
-    {
-    case 0: //R
-        this->foot_CmdPub0.publish(Cmd_Msg);
-        break;
-    case 1: //L
-        this->foot_CmdPub1.publish(Cmd_Msg);
-        break;
-    case 2: //F
-        this->foot_CmdPub2.publish(Cmd_Msg);
-        break;
-    case 3: //B
-        this->foot_CmdPub3.publish(Cmd_Msg);
-        break;
-    default:
-        break;
-    }
-}
+//void MR2_nodelet_main::Odmetory_reset_byTire(int odm_num, bool _all){
+//    std_msgs::UInt8 Cmd_Msg;
+//    Cmd_Msg.data = (uint8_t)MotorCommands::homing_cmd;
+//    if(_all){
+//        this->foot_CmdPub0.publish(Cmd_Msg);
+//        this->foot_CmdPub1.publish(Cmd_Msg);
+//        this->foot_CmdPub2.publish(Cmd_Msg);
+//        this->foot_CmdPub3.publish(Cmd_Msg);
+//        odm_now_position_byTire.linear.x = 0.0;
+//        odm_now_position_byTire.linear.y = 0.0;
+//        odm_now_position_byTire.angular.z = 0.0;
+//        odm_recent_position_byTire.linear.x = 0.0;
+//        odm_recent_position_byTire.linear.y = 0.0;
+//        odm_recent_position_byTire.angular.z = 0.0;
+//        odm_inclined_position.linear.x = 0.0;
+//        odm_inclined_position.linear.y = 0.0;
+//        odm_inclined_position.angular.z = 0.0;
+//        NODELET_INFO("Odmetory reset all");
+//        return;
+//    }
+//    switch (odm_num)
+//    {
+//    case 0: //R
+//        this->foot_CmdPub0.publish(Cmd_Msg);
+//        break;
+//    case 1: //L
+//        this->foot_CmdPub1.publish(Cmd_Msg);
+//        break;
+//    case 2: //F
+//        this->foot_CmdPub2.publish(Cmd_Msg);
+//        break;
+//    case 3: //B
+//        this->foot_CmdPub3.publish(Cmd_Msg);
+//        break;
+//    default:
+//        break;
+//    }
+//}
 
 void MR2_nodelet_main::Auto_OmniSuspension(geometry_msgs::Twist control_input, double max_speed_linear, double max_speed_angular){
     double hypotenuse = hypot(control_input.linear.x,control_input.linear.y);
@@ -1345,7 +1378,7 @@ void MR2_nodelet_main::shutdown(bool _solenoid){
     Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
     Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
     Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
-    Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
+    //Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
 }
 
 void MR2_nodelet_main::recover(void){
@@ -1366,7 +1399,7 @@ void MR2_nodelet_main::recover(void){
     Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
     Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
     Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
-    Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
+    //Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
 }
 
 void MR2_nodelet_main::all_motor_stop(void){
@@ -1590,6 +1623,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         _swap_control = false;
         currentCommandIndex = 0;
         y_count = 0;
+        _odmetry_error_fast = false;
         return;
     }
    
@@ -2292,7 +2326,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         case 3:
             if(!_Arm_R_moving && !_arm_r_avoid1lagori){
                 _Arm_R_moving = true;
-                this->Arm_R_move_Vel(-15.0);
+                this->Arm_R_move_Vel(-22.0);
             }else{
                 if(Arm_R_position <= arm_r_avoid1lagori_pos && !_arm_r_avoid1lagori){
                     this->Arm_R_move_Vel(0.0);
@@ -2318,7 +2352,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         case 6:
             if(!_Arm_R_moving && !_arm_r_avoidlagoribase){
                 _Arm_R_moving = true;
-                this->Arm_R_move_Vel(-15.0);
+                this->Arm_R_move_Vel(-22.0);
             }else{
                 if(Arm_R_position <= arm_r_avoidlagoribase_pos && !_arm_r_avoidlagoribase){
                     this->Arm_R_move_Vel(0.0);
@@ -2405,7 +2439,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         case 3:
             if(!_Arm_L_moving && !_arm_l_avoid1lagori){
                 _Arm_L_moving = true;
-                this->Arm_L_move_Vel(15.0);
+                this->Arm_L_move_Vel(22.0);
             }else{
                 if(Arm_L_position >= arm_l_avoid1lagori_pos && !_arm_l_avoid1lagori){
                     this->Arm_L_move_Vel(0.0);
@@ -2431,7 +2465,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         case 6:
             if(!_Arm_L_moving && !_arm_l_avoidlagoribase){
                 _Arm_L_moving = true;
-                this->Arm_L_move_Vel(15.0);
+                this->Arm_L_move_Vel(22.0);
             }else{
                 if(Arm_L_position >= arm_l_avoidlagoribase_pos && !_arm_l_avoidlagoribase){
                     this->Arm_L_move_Vel(0.0);
@@ -2589,7 +2623,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             NODELET_INFO("Defence Lift Move to GetLagori Slowly");
         }
     }else if(currentCommand == ControllerCommands::defenceRoll_mv_Horizontal){
-        Defence_Roll_move_Pos(this-> defence_roll_horizontal_pos);
+        //Defence_Roll_move_Pos(this-> defence_roll_horizontal_pos);
         this->currentCommandIndex++;
         NODELET_INFO("Defence Roll Move to Horizontal");
     }else if(currentCommand == ControllerCommands::Cyl_Defend_Grab_On){
@@ -2650,7 +2684,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         autoTarget_position.linear.y = leftPoint_1.linear.y;
         autoTarget_position.angular.z = leftPoint_1.angular.z;
         _is_manual_enabled = false;
-        if(_manualInput/* || _b*/){
+        if(_manualInput/* || _b*/|| _odmetry_error_fast){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
         }else if(GoToTarget(autoTarget_position, leftPoint_1_maxSpeed_linear, leftPoint_1_maxSpeed_angular, true,false) <= leftPoint_1_toleranceRange){
@@ -2661,7 +2695,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         autoTarget_position.linear.y = leftPoint_2.linear.y;
         autoTarget_position.angular.z = leftPoint_2.angular.z;
         _is_manual_enabled = false;
-        if(_manualInput || _b){
+        if(_manualInput || _b || _odmetry_error_fast){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
         }else if(GoToTarget(autoTarget_position, leftPoint_2_maxSpeed_linear, leftPoint_2_maxSpeed_angular, true,false) <= leftPoint_2_toleranceRange){
@@ -2672,7 +2706,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         autoTarget_position.linear.y = leftPoint_3.linear.y;
         autoTarget_position.angular.z = leftPoint_3.angular.z;
         _is_manual_enabled = false;
-        if(_manualInput || _b){
+        if(_manualInput || _b || _odmetry_error_fast){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
         }else if(GoToTarget(autoTarget_position, leftPoint_3_maxSpeed_linear, leftPoint_3_maxSpeed_angular, true,false) <= leftPoint_3_toleranceRange){
@@ -2683,7 +2717,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         autoTarget_position.linear.y = leftPoint_4.linear.y;
         autoTarget_position.angular.z = leftPoint_4.angular.z;
         _is_manual_enabled = false;
-        if(_manualInput || _b){
+        if(_manualInput || _b || _odmetry_error_fast){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
         }else if(GoToTarget(autoTarget_position, leftPoint_4_maxSpeed_linear, leftPoint_4_maxSpeed_angular, false,false) <= leftPoint_4_toleranceRange){
@@ -2696,10 +2730,10 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         _reverse_control = true;
         _swap_control = false;
         _is_manual_enabled = false;
-        /*if(_manualInput || _b){
+        if(/*_manualInput || _b*/_odmetry_error_fast){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
-        }else */if(GoToTarget(autoTarget_position, leftPoint_11_maxSpeed_linear, leftPoint_11_maxSpeed_angular,  true,false) <= leftPoint_11_toleranceRange){
+        }else if(GoToTarget(autoTarget_position, leftPoint_11_maxSpeed_linear, leftPoint_11_maxSpeed_angular,  true,false) <= leftPoint_11_toleranceRange){
             this->currentCommandIndex++;
         }
     }else if(currentCommand == ControllerCommands::autoMove_leftPoint_12){
@@ -2707,7 +2741,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         autoTarget_position.linear.y = leftPoint_12.linear.y;
         autoTarget_position.angular.z = leftPoint_12.angular.z;
         _is_manual_enabled = false;
-        if(_manualInput || _b){
+        if(_manualInput || _b || _odmetry_error_fast){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
         }else if(GoToTarget(autoTarget_position, leftPoint_12_maxSpeed_linear, leftPoint_12_maxSpeed_angular,  true,false) <= leftPoint_12_toleranceRange){
@@ -2718,7 +2752,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         autoTarget_position.linear.y = leftPoint_13.linear.y;
         autoTarget_position.angular.z = leftPoint_13.angular.z;
         _is_manual_enabled = false;
-        if(_manualInput || _b){
+        if(_manualInput || _b || _odmetry_error_fast){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
         }else if(GoToTarget(autoTarget_position, leftPoint_13_maxSpeed_linear, leftPoint_13_maxSpeed_angular,  true,false) <= leftPoint_13_toleranceRange){
@@ -2729,7 +2763,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         autoTarget_position.linear.y = leftPoint_14.linear.y;
         autoTarget_position.angular.z = leftPoint_14.angular.z;
         _is_manual_enabled = false;
-        if(_manualInput || _b){
+        if(_manualInput || _b || _odmetry_error_fast){
             this->currentCommandIndex++;
             _is_manual_enabled = true;
         }else if(GoToTarget(autoTarget_position, leftPoint_14_maxSpeed_linear, leftPoint_14_maxSpeed_angular,  false,false) <= leftPoint_14_toleranceRange){
@@ -2741,6 +2775,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         cmd_vel_msg.angular.z = 0.0;
         this->cmd_vel_pub.publish(this->cmd_vel_msg);
         _is_manual_enabled = true;
+        _odmetry_error_fast = false;
         this->currentCommandIndex++;
         
     }
@@ -2794,9 +2829,9 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
 
 }
 
-void MR2_nodelet_main::send_steerAdjust(void){
-    SteerAdjust_pub.publish(this->adjust_pubData);
-}
+//void MR2_nodelet_main::send_steerAdjust(void){
+//    SteerAdjust_pub.publish(this->adjust_pubData);
+//}
 
 //void MR2_nodelet_main::steer_homing(void){
 //    act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
@@ -2829,16 +2864,18 @@ void MR2_nodelet_main::Defence_Lift_homing(void){
     act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
     this->Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
 }
-void MR2_nodelet_main::Defence_Roll_homing(void){
-    act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
-    this->Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
-    act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
-    this->Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
-}
+//void MR2_nodelet_main::Defence_Roll_homing(void){
+//    act_conf_cmd_msg.data = (uint8_t)MotorCommands::shutdown_cmd;
+//    this->Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
+//    act_conf_cmd_msg.data = (uint8_t)MotorCommands::homing_cmd;
+//    this->Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
+//}
 
 void MR2_nodelet_main::Arm_R_move_Vel(double target){
     //act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
     //Arm_R_Cmd_pub.publish(act_conf_cmd_msg);
+    this->Arm_R_Value_msg.data = target;
+    this->Arm_R_Value_pub.publish(this->Arm_R_Value_msg);
     this->Arm_R_Value_msg.data = target;
     this->Arm_R_Value_pub.publish(this->Arm_R_Value_msg);
 }
@@ -2847,10 +2884,14 @@ void MR2_nodelet_main::Arm_L_move_Vel(double target){
     //Arm_L_Cmd_pub.publish(act_conf_cmd_msg);
     this->Arm_L_Value_msg.data = target;
     this->Arm_L_Value_pub.publish(this->Arm_L_Value_msg);
+    this->Arm_L_Value_msg.data = target;
+    this->Arm_L_Value_pub.publish(this->Arm_L_Value_msg);
 }
 void MR2_nodelet_main::Defence_Lift_move_Vel(double target){
     //act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_velocity;
     //Defence_Lift_Cmd_pub.publish(act_conf_cmd_msg);
+    this->Defence_Lift_Value_msg.data = target;
+    this->Defence_Lift_Value_pub.publish(this->Defence_Lift_Value_msg);
     this->Defence_Lift_Value_msg.data = target;
     this->Defence_Lift_Value_pub.publish(this->Defence_Lift_Value_msg);
 }
@@ -2864,22 +2905,22 @@ void MR2_nodelet_main::Defence_Lift_move_Pos(double target){
     this->Defence_Lift_Value_msg.data = target;
     this->Defence_Lift_Value_pub.publish(this->Defence_Lift_Value_msg);
 }
-void MR2_nodelet_main::Defence_Roll_move_Vel(double target){
-    act_conf_cmd_msg2.data = (uint8_t)MotorCommands::recover_velocity;
-    Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg2);
-    this->Defence_Roll_Value_msg.data = target;
-    this->Defence_Roll_Value_pub.publish(this->Defence_Roll_Value_msg);
-}
-void MR2_nodelet_main::Defence_Roll_move_Pos(double target){
-    this->_delay_s = ros::Time::now().toSec() + 0.5;
-    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_position;
-    Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
-
-    while(this->_delay_s > ros::Time::now().toSec());
-    this->_delay_s = 0.0;
-    this->Defence_Roll_Value_msg.data = target;
-    this->Defence_Roll_Value_pub.publish(this->Defence_Roll_Value_msg);
-}
+//void MR2_nodelet_main::Defence_Roll_move_Vel(double target){
+//    act_conf_cmd_msg2.data = (uint8_t)MotorCommands::recover_velocity;
+//    Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg2);
+//    this->Defence_Roll_Value_msg.data = target;
+//    this->Defence_Roll_Value_pub.publish(this->Defence_Roll_Value_msg);
+//}
+//void MR2_nodelet_main::Defence_Roll_move_Pos(double target){
+//    this->_delay_s = ros::Time::now().toSec() + 0.5;
+//    act_conf_cmd_msg.data = (uint8_t)MotorCommands::recover_position;
+//    Defence_Roll_Cmd_pub.publish(act_conf_cmd_msg);
+//
+//    while(this->_delay_s > ros::Time::now().toSec());
+//    this->_delay_s = 0.0;
+//    this->Defence_Roll_Value_msg.data = target;
+//    this->Defence_Roll_Value_pub.publish(this->Defence_Roll_Value_msg);
+//}
 
 void MR2_nodelet_main::R_mode_Count(int count){
     if(count == 0){
@@ -2990,9 +3031,11 @@ void MR2_nodelet_main::Cylinder_Operation(std::string CylName, bool state){
         this->lastSolenoid_Order[Ctrl_solenoidBoard] |= (uint8_t)Ctrl_solenoidCommand;
         this->solenoid_order_msg[Ctrl_solenoidBoard].data = this->lastSolenoid_Order[Ctrl_solenoidBoard];
         this->Solenoid_Order_pub[Ctrl_solenoidBoard].publish(this->solenoid_order_msg[Ctrl_solenoidBoard]);
+        this->Solenoid_Order_pub[Ctrl_solenoidBoard].publish(this->solenoid_order_msg[Ctrl_solenoidBoard]);
     }else{
         this->lastSolenoid_Order[Ctrl_solenoidBoard] &= ~(uint8_t)Ctrl_solenoidCommand;
         this->solenoid_order_msg[Ctrl_solenoidBoard].data = this->lastSolenoid_Order[Ctrl_solenoidBoard];
+        this->Solenoid_Order_pub[Ctrl_solenoidBoard].publish(this->solenoid_order_msg[Ctrl_solenoidBoard]);
         this->Solenoid_Order_pub[Ctrl_solenoidBoard].publish(this->solenoid_order_msg[Ctrl_solenoidBoard]);
     }
     //NODELET_INFO("send solenoid order");
