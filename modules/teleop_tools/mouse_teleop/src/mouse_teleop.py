@@ -254,11 +254,13 @@ class MouseTeleop():
         output = cv2.warpPerspective(undistorted_img, M, (o_width, o_height))
 
         output2 = cv2.resize(output,(int(self.display_x*0.857),int(self.display_y)))
-        #img2 = cv2.resize(img,(int(self.display_x),int(self.display_y)))
-        undistorted_img2 =  cv2.resize(undistorted_img,(int(self.display_x),int(self.display_y)))
+        #undistorted_img2 =  cv2.resize(undistorted_img,(int(self.display_x),int(self.display_y)))
 
-        cv2.imshow('output', output2)
-        cv2.imshow('image', undistorted_img)
+        cv2.imshow('revision', output2)
+        cv2.moveWindow('revision', int((self.display_x -self.display_x*0.857)/2.0),0)
+        
+        #img2 = cv2.resize(img,(int(self.display_x),int(self.display_y)))
+        #cv2.imshow('image', img2)
         key = cv2.waitKey(1)
     
     def _publish_twist(self, event):

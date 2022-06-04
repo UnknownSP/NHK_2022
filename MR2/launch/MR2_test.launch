@@ -127,7 +127,7 @@
       <param name="defence_lift_lower_pos" type="double" value="0.0" />
       <param name="defence_lift_dodgelagori_pos" type="double" value="6.5" />
       <param name="defence_lift_getlagori_pos" type="double" value="0.1" />
-      <param name="defence_lift_lagoribase_pos" type="double" value="10.0" />
+      <param name="defence_lift_lagoribase_pos" type="double" value="12.0" />
       <param name="defence_roll_horizontal_pos" type="double" value="0.0" />
       <param name="arm_r_avoid1lagori_pos" type="double" value="-20.0" />
       <param name="arm_l_avoid1lagori_pos" type="double" value="20.0" />
@@ -139,8 +139,8 @@
       <param name="arm_l_lower_pos" type="double" value="0.0" />
 
 
-      <param name="autoFastError_linear" type="double" value="15.0" />
-      <param name="autoFastError_angular" type="double" value="0.5" />
+      <param name="autoFastError_linear" type="double" value="200000.0" />
+      <param name="autoFastError_angular" type="double" value="150" />
       <param name="stopRange_linear" type="double" value="30.0" />
       <param name="stopRange_angular" type="double" value="0.02" />
       <param name="accelarating_coeff" type="double" value="0.015" />
@@ -156,11 +156,11 @@
       <param name="leftPoint_1_x" type="double" value="-300" />
       <param name="leftPoint_1_y" type="double" value="-3800" />
       <param name="leftPoint_1_z" type="double" value="0.0" />
-      <param name="leftPoint_2_x" type="double" value="-2200" />
-      <param name="leftPoint_2_y" type="double" value="-4950" />
+      <param name="leftPoint_2_x" type="double" value="-2000" />
+      <param name="leftPoint_2_y" type="double" value="-5000" />
       <param name="leftPoint_2_z" type="double" value="0.0" />
       <param name="leftPoint_3_x" type="double" value="-3500" />
-      <param name="leftPoint_3_y" type="double" value="-5070" />
+      <param name="leftPoint_3_y" type="double" value="-5080" />
       <param name="leftPoint_3_z" type="double" value="0.0" />
       <param name="leftPoint_4_x" type="double" value="-5400" />
       <param name="leftPoint_4_y" type="double" value="-4980" />
@@ -168,13 +168,13 @@
       <param name="leftPoint_11_x" type="double" value="-2700" />
       <param name="leftPoint_11_y" type="double" value="-5200" />
       <param name="leftPoint_11_z" type="double" value="0.0" />
-      <param name="leftPoint_12_x" type="double" value="-700" />
+      <param name="leftPoint_12_x" type="double" value="-500" />
       <param name="leftPoint_12_y" type="double" value="-4000" />
       <param name="leftPoint_12_z" type="double" value="1.5708" />
-      <param name="leftPoint_13_x" type="double" value="-300" />
+      <param name="leftPoint_13_x" type="double" value="-200" />
       <param name="leftPoint_13_y" type="double" value="-2000" />
       <param name="leftPoint_13_z" type="double" value="1.5708" />
-      <param name="leftPoint_14_x" type="double" value="-100.0" />
+      <param name="leftPoint_14_x" type="double" value="-50.0" />
       <param name="leftPoint_14_y" type="double" value="0.0" />
       <param name="leftPoint_14_z" type="double" value="1.5708" />
 

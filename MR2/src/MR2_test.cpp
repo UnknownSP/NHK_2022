@@ -221,6 +221,7 @@ private:
   	ros::NodeHandle _nh;
     ros::NodeHandle nh_MT;
     ros::Timer control_timer;
+    ros::Timer odmetory;
     
     /***********************Pub&Sub**************************/
     ros::Subscriber joy_sub;
@@ -455,6 +456,12 @@ private:
     double odm_b_tire_recent_pos = 0.0;
     double odm_b_tire_diff = 0.0;
     double odm_b_tire_now_pos = 0.0;
+
+    int odm_r_calCount = 0;
+    int odm_l_calCount = 0;
+    int odm_f_calCount = 0;
+    int odm_b_calCount = 0;
+    int error_calCount = 30;
 
     geometry_msgs::Twist odm_now_position_byTire;
     geometry_msgs::Twist odm_recent_position_byTire;
@@ -747,15 +754,15 @@ void MR2_nodelet_main::onInit(void)
     //this->Key_sub = nh.subscribe<std_msgs::String>("/keypress", 10, &MR2_nodelet_main::KeyCallback, this);
     //this->SteerAdjust_pub = nh.advertise<std_msgs::Float64MultiArray>("adjust_val", 1);
 
-    this->DefenceLift_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor10_current_val", 10, &MR2_nodelet_main::DefenceLift_PosCallback, this);
+    this->DefenceLift_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor10_current_val", 1, &MR2_nodelet_main::DefenceLift_PosCallback, this);
     //this->DefenceRoll_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor11_current_val", 10, &MR2_nodelet_main::DefenceRoll_PosCallback, this);
-    this->Arm_R_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor8_current_val", 10, &MR2_nodelet_main::Arm_R_PosCallback, this);
-    this->Arm_L_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor9_current_val", 10, &MR2_nodelet_main::Arm_L_PosCallback, this);
+    this->Arm_R_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor8_current_val", 1, &MR2_nodelet_main::Arm_R_PosCallback, this);
+    this->Arm_L_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor9_current_val", 1, &MR2_nodelet_main::Arm_L_PosCallback, this);
 
-    this->Odmetory_R_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor20_current_val", 5, &MR2_nodelet_main::Odmetory_R_PosCallback, this);
-    this->Odmetory_L_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor21_current_val", 5, &MR2_nodelet_main::Odmetory_L_PosCallback, this);
-    this->Odmetory_F_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor22_current_val", 5, &MR2_nodelet_main::Odmetory_F_PosCallback, this);
-    this->Odmetory_B_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor23_current_val", 5, &MR2_nodelet_main::Odmetory_B_PosCallback, this);
+    this->Odmetory_R_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor20_current_val", 1, &MR2_nodelet_main::Odmetory_R_PosCallback, this);
+    this->Odmetory_L_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor21_current_val", 1, &MR2_nodelet_main::Odmetory_L_PosCallback, this);
+    this->Odmetory_F_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor22_current_val", 1, &MR2_nodelet_main::Odmetory_F_PosCallback, this);
+    this->Odmetory_B_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor23_current_val", 1, &MR2_nodelet_main::Odmetory_B_PosCallback, this);
     
     //this->Odmetory_R_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor2_current_val", 10, &MR2_nodelet_main::Odmetory_R_Tire_PosCallback, this);
     //this->Odmetory_L_Tire_Pos_sub = nh_MT.subscribe<std_msgs::Float32>("motor0_current_val", 10, &MR2_nodelet_main::Odmetory_L_Tire_PosCallback, this);
@@ -873,7 +880,8 @@ void MR2_nodelet_main::onInit(void)
     odm_inclined_position.angular.z = 0.0;
 
     //this line must be placed here (last line of this function) because of some publisher will be called by this timer before it is declared
-    this->control_timer = nh.createTimer(ros::Duration(0.01), &MR2_nodelet_main::control_timer_callback, this);
+    this->control_timer = nh.createTimer(ros::Duration(0.005), &MR2_nodelet_main::control_timer_callback, this);
+    //this->odmetory = nh.createTimer(ros::Duration(0.01), &MR2_nodelet_main::Odmetory_position, this);
     NODELET_INFO("MR2 node has started.");
 
 }
@@ -945,76 +953,112 @@ void MR2_nodelet_main::Odmetory_R_PosCallback(const std_msgs::Float32::ConstPtr&
     this->odm_r_now_pos = msg->data;
     odm_r_diff = odm_r_now_pos - odm_r_recent_pos;
     _odm_r_update = true;
-	if(_odm_r_update && _odm_l_update && _odm_f_update && _odm_b_update){
-        _odm_r_update = false;
-        _odm_l_update = false;
-        _odm_f_update = false;
-        _odm_b_update = false;
-        odm_r_recent_pos = odm_r_now_pos;
-        odm_l_recent_pos = odm_l_now_pos;
-        odm_f_recent_pos = odm_f_now_pos;
-        odm_b_recent_pos = odm_b_now_pos;
-        if(Odmetory_position(false) == -1){
-            _odmetry_error_fast = true;
-        }
-    }
+    odm_r_calCount++;
+	//if(_odm_r_update && _odm_l_update && _odm_f_update && _odm_b_update){
+    //    _odm_r_update = false;
+    //    _odm_l_update = false;
+    //    _odm_f_update = false;
+    //    _odm_b_update = false;
+    //    odm_r_recent_pos = odm_r_now_pos;
+    //    odm_l_recent_pos = odm_l_now_pos;
+    //    odm_f_recent_pos = odm_f_now_pos;
+    //    odm_b_recent_pos = odm_b_now_pos;
+    //    //NODELET_INFO("[calCount by R] r:%2d, l:%2d, f:%2d, b:%2d,",odm_r_calCount,odm_l_calCount,odm_f_calCount,odm_b_calCount);
+    //    if(odm_r_calCount >= error_calCount || odm_l_calCount >= error_calCount || odm_f_calCount >= error_calCount || odm_b_calCount >= error_calCount){
+    //        //NODELET_ERROR("CalCount Error");
+    //    }
+    //    if(Odmetory_position(ros::Time::now(),false) == -1){
+    //        _odmetry_error_fast = true;
+    //    }
+    //    odm_r_calCount = 0;
+    //    odm_l_calCount = 0;
+    //    odm_f_calCount = 0;
+    //    odm_b_calCount = 0;
+    //}
 }
 void MR2_nodelet_main::Odmetory_L_PosCallback(const std_msgs::Float32::ConstPtr& msg)
 {
 	this->odm_l_now_pos = msg->data;
     odm_l_diff = odm_l_now_pos - odm_l_recent_pos;
     _odm_l_update = true;
-	if(_odm_r_update && _odm_l_update && _odm_f_update && _odm_b_update){
-        _odm_r_update = false;
-        _odm_l_update = false;
-        _odm_f_update = false;
-        _odm_b_update = false;
-        odm_r_recent_pos = odm_r_now_pos;
-        odm_l_recent_pos = odm_l_now_pos;
-        odm_f_recent_pos = odm_f_now_pos;
-        odm_b_recent_pos = odm_b_now_pos;
-        if(Odmetory_position(false) == -1){
-            _odmetry_error_fast = true;
-        }
-    }
+    odm_l_calCount++;
+	//if(_odm_r_update && _odm_l_update && _odm_f_update && _odm_b_update){
+    //    _odm_r_update = false;
+    //    _odm_l_update = false;
+    //    _odm_f_update = false;
+    //    _odm_b_update = false;
+    //    odm_r_recent_pos = odm_r_now_pos;
+    //    odm_l_recent_pos = odm_l_now_pos;
+    //    odm_f_recent_pos = odm_f_now_pos;
+    //    odm_b_recent_pos = odm_b_now_pos;
+    //    //NODELET_INFO("[calCount by L] r:%2d, l:%2d, f:%2d, b:%2d,",odm_r_calCount,odm_l_calCount,odm_f_calCount,odm_b_calCount);
+    //    if(odm_r_calCount >= error_calCount || odm_l_calCount >= error_calCount || odm_f_calCount >= error_calCount || odm_b_calCount >= error_calCount){
+    //       //NODELET_ERROR("CalCount Error");
+    //    }
+    //    if(Odmetory_position(ros::Time::now(),false) == -1){
+    //        _odmetry_error_fast = true;
+    //    }
+    //    odm_r_calCount = 0;
+    //    odm_l_calCount = 0;
+    //    odm_f_calCount = 0;
+    //    odm_b_calCount = 0;
+    //}
 }
 void MR2_nodelet_main::Odmetory_F_PosCallback(const std_msgs::Float32::ConstPtr& msg)
 {
 	this->odm_f_now_pos = msg->data;
     odm_f_diff = odm_f_now_pos - odm_f_recent_pos;
     _odm_f_update = true;
-	if(_odm_r_update && _odm_l_update && _odm_f_update && _odm_b_update){
-        _odm_r_update = false;
-        _odm_l_update = false;
-        _odm_f_update = false;
-        _odm_b_update = false;
-        odm_r_recent_pos = odm_r_now_pos;
-        odm_l_recent_pos = odm_l_now_pos;
-        odm_f_recent_pos = odm_f_now_pos;
-        odm_b_recent_pos = odm_b_now_pos;
-        if(Odmetory_position(false) == -1){
-            _odmetry_error_fast = true;
-        }
-    }
+    odm_f_calCount++;
+	//if(_odm_r_update && _odm_l_update && _odm_f_update && _odm_b_update){
+    //    _odm_r_update = false;
+    //    _odm_l_update = false;
+    //    _odm_f_update = false;
+    //    _odm_b_update = false;
+    //    odm_r_recent_pos = odm_r_now_pos;
+    //    odm_l_recent_pos = odm_l_now_pos;
+    //    odm_f_recent_pos = odm_f_now_pos;
+    //    odm_b_recent_pos = odm_b_now_pos;
+    //    //NODELET_INFO("[calCount by F] r:%2d, l:%2d, f:%2d, b:%2d,",odm_r_calCount,odm_l_calCount,odm_f_calCount,odm_b_calCount);
+    //    if(odm_r_calCount >= error_calCount || odm_l_calCount >= error_calCount || odm_f_calCount >= error_calCount || odm_b_calCount >= error_calCount){
+    //        //NODELET_ERROR("CalCount Error");
+    //    }
+    //    if(Odmetory_position(ros::Time::now(),false) == -1){
+    //        _odmetry_error_fast = true;
+    //    }
+    //    odm_r_calCount = 0;
+    //    odm_l_calCount = 0;
+    //    odm_f_calCount = 0;
+    //    odm_b_calCount = 0;
+    //}
 }
 void MR2_nodelet_main::Odmetory_B_PosCallback(const std_msgs::Float32::ConstPtr& msg)
 {
 	this->odm_b_now_pos = msg->data;
     odm_b_diff = odm_b_now_pos - odm_b_recent_pos;
     _odm_b_update = true;
-	if(_odm_r_update && _odm_l_update && _odm_f_update && _odm_b_update){
-        _odm_r_update = false;
-        _odm_l_update = false;
-        _odm_f_update = false;
-        _odm_b_update = false;
-        odm_r_recent_pos = odm_r_now_pos;
-        odm_l_recent_pos = odm_l_now_pos;
-        odm_f_recent_pos = odm_f_now_pos;
-        odm_b_recent_pos = odm_b_now_pos;
-        if(Odmetory_position(false) == -1){
-            _odmetry_error_fast = true;
-        }
-    }
+    odm_b_calCount++;
+	//if(_odm_r_update && _odm_l_update && _odm_f_update && _odm_b_update){
+    //    _odm_r_update = false;
+    //    _odm_l_update = false;
+    //    _odm_f_update = false;
+    //    _odm_b_update = false;
+    //    odm_r_recent_pos = odm_r_now_pos;
+    //    odm_l_recent_pos = odm_l_now_pos;
+    //    odm_f_recent_pos = odm_f_now_pos;
+    //    odm_b_recent_pos = odm_b_now_pos;
+    //    //NODELET_INFO("[calCount by B] r:%2d, l:%2d, f:%2d, b:%2d,",odm_r_calCount,odm_l_calCount,odm_f_calCount,odm_b_calCount);
+    //    if(odm_r_calCount >= error_calCount || odm_l_calCount >= error_calCount || odm_f_calCount >= error_calCount || odm_b_calCount >= error_calCount){
+    //        //NODELET_ERROR("CalCount Error");
+    //    }
+    //    if(Odmetory_position(ros::Time::now(),false) == -1){
+    //        _odmetry_error_fast = true;
+    //    }
+    //    odm_r_calCount = 0;
+    //    odm_l_calCount = 0;
+    //    odm_f_calCount = 0;
+    //    odm_b_calCount = 0;
+    //}
 }
 
 //void MR2_nodelet_main::Odmetory_R_Tire_PosCallback(const std_msgs::Float32::ConstPtr& msg)
@@ -1130,41 +1174,83 @@ int MR2_nodelet_main::Odmetory_position(bool reset){
     //double omni_radius = 125.0/2.0;
     double omni_radius = 50.0/2.0 * 1.013;
     geometry_msgs::Twist odm_cal_position;
-
+    static ros::Time recent_calTime = ros::Time::now();
+    ros::Time calTime = ros::Time::now();
+    ros::Duration duration;
     static int display_count = 0;
+
+    if(_odm_r_update && _odm_l_update && _odm_f_update && _odm_b_update){
+        _odm_r_update = false;
+        _odm_l_update = false;
+        _odm_f_update = false;
+        _odm_b_update = false;
+        //NODELET_INFO("[calCount by R] r:%2d, l:%2d, f:%2d, b:%2d,",odm_r_calCount,odm_l_calCount,odm_f_calCount,odm_b_calCount);
+        if(odm_r_calCount >= error_calCount || odm_l_calCount >= error_calCount || odm_f_calCount >= error_calCount || odm_b_calCount >= error_calCount){
+            //NODELET_ERROR("CalCount Error");
+        }
+        //if(Odmetory_position(ros::Time::now(),false) == -1){
+        //    _odmetry_error_fast = true;
+        //}
+        odm_r_calCount = 0;
+        odm_l_calCount = 0;
+        odm_f_calCount = 0;
+        odm_b_calCount = 0;
+    }else{
+        return 0;
+    }
 
     odm_cal_position.linear.x = 0.5 * (-odm_f_diff+odm_b_diff) * (1.0 / gear_ratio) * omni_radius;
     odm_cal_position.linear.y = 0.5 * (-odm_l_diff+odm_r_diff) * (1.0 / gear_ratio) * omni_radius;
     odm_cal_position.angular.z = 0.25 * -(odm_r_diff+odm_l_diff+odm_f_diff+odm_b_diff)* (1.0 / gear_ratio) * (omni_radius/omni_pos_radius);
+    
+    odm_r_recent_pos = odm_r_now_pos;
+    odm_l_recent_pos = odm_l_now_pos;
+    odm_f_recent_pos = odm_f_now_pos;
+    odm_b_recent_pos = odm_b_now_pos;
     // kaitensu * (1.0 / gear_ratio) * omni_radius -> x and y
     // kaitensu * (omni_radius * 2*pi/omni_pos_radius * 2*pi) / 2*pi
     odm_now_position.linear.x = odm_recent_position.linear.x + odm_cal_position.linear.x * cos(odm_recent_position.angular.z) + odm_cal_position.linear.y * sin(odm_recent_position.angular.z);
     odm_now_position.linear.y = odm_recent_position.linear.y - odm_cal_position.linear.x * sin(odm_recent_position.angular.z) + odm_cal_position.linear.y * cos(odm_recent_position.angular.z);
     odm_now_position.angular.z = odm_recent_position.angular.z + odm_cal_position.angular.z;
 
+    odm_r_recent_pos = odm_r_now_pos;
+    odm_l_recent_pos = odm_l_now_pos;
+    odm_f_recent_pos = odm_f_now_pos;
+    odm_b_recent_pos = odm_b_now_pos;
+
     //odm_inclined_position.linear.y = - odm_now_position.linear.x * cos(pi/4.0) + odm_now_position.linear.y * sin(pi/4.0);
     //odm_inclined_position.linear.x = odm_now_position.linear.x * sin(pi/4.0) + odm_now_position.linear.y * cos(pi/4.0);
     //odm_inclined_position.angular.z = odm_now_position.angular.z;
 
-    if(hypot(odm_recent_position.linear.x - odm_now_position.linear.x,odm_recent_position.linear.y - odm_now_position.linear.y) > autoFastError_linear){
-        NODELET_INFO("Move Fast or Odmetry Error LINEAR");
+    duration = calTime-recent_calTime;
+    if(hypot(odm_recent_position.linear.x - odm_now_position.linear.x,odm_recent_position.linear.y - odm_now_position.linear.y) > autoFastError_linear*(duration.toSec())){
+        NODELET_ERROR("calTimeDiff %f",(duration.toSec()));
+        NODELET_ERROR("[calCount by F] r:%2d, l:%2d, f:%2d, b:%2d,",odm_r_calCount,odm_l_calCount,odm_f_calCount,odm_b_calCount);
+        NODELET_ERROR("Move Fast or Odmetry Error LINEAR");
+        recent_calTime = calTime;
         return -1;
     }
-    if(fabs(odm_recent_position.angular.z - odm_now_position.angular.z) > autoFastError_angular){
-        NODELET_INFO("Move Fast or Odmetry Error ANGULAR");
+    if(fabs(odm_recent_position.angular.z - odm_now_position.angular.z) > autoFastError_angular*(duration.toSec())){
+        NODELET_ERROR("calTimeDiff %f",(duration.toSec()));
+        NODELET_ERROR("[calCount by F] r:%2d, l:%2d, f:%2d, b:%2d,",odm_r_calCount,odm_l_calCount,odm_f_calCount,odm_b_calCount);
+        NODELET_ERROR("Move Fast or Odmetry Error ANGULAR");
+        recent_calTime = calTime;
         return -1;
     }
+    //NODELET_INFO("calTimeDiff %f",(duration.toSec()));
 
     odm_recent_position.linear.x = odm_now_position.linear.x;
     odm_recent_position.linear.y = odm_now_position.linear.y;
     odm_recent_position.angular.z = odm_now_position.angular.z;
+    recent_calTime = calTime;
 
     display_count++;
-    if(display_count>10){
+    if(display_count>2){
         //NODELET_INFO("[ave] x:%5.1f, y:%5.1f, z:%2.3f,",(odm_now_position.linear.x+odm_inclined_position.linear.x)/2.0,(odm_now_position.linear.y+odm_inclined_position.linear.y)/2.0,(odm_now_position.angular.z+odm_inclined_position.angular.z)/2.0);
         //NODELET_INFO("[odm] x:%5.1f, y:%5.1f, z:%2.3f, [tire] x:%5.1f, y:%5.1f, z:%2.3f,",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z,odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
         //NODELET_INFO("[odm] r:%2.8f, l:%2.8f, f:%2.8f, b:%2.8f",odm_r_diff,odm_l_diff,odm_f_diff,odm_b_diff);
         NODELET_INFO("[odm] x:%5.1f, y:%5.1f, z:%2.3f,",odm_now_position.linear.x,odm_now_position.linear.y,odm_now_position.angular.z);
+        //NODELET_INFO("[nowTime] %f",ros::Time::now().toSec());
         display_count = 0;
     }
     //NODELET_INFO("x : %f,  y : %f,  z : %f",odm_inclined_position.linear.x,odm_inclined_position.linear.y,odm_inclined_position.angular.z);
@@ -1328,7 +1414,7 @@ double MR2_nodelet_main::GoToTarget(geometry_msgs::Twist target_position, double
     Auto_OmniSuspension(omniControl_input,max_speed_linear,max_speed_angular);
     //migikaiten ga sei // right turn is plus
 
-    NODELET_INFO("distance from target : %f",hypotenuse);
+    //NODELET_INFO("distance from target : %f",hypotenuse);
     return hypotenuse;
 }
 
@@ -1547,12 +1633,13 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this->recover();
         }else if(_a){
             this->Odmetory_reset(0,true);
-            this->Odmetory_reset_byTire(0,true);
+            _odmetry_error_fast = false;
+            //this->Odmetory_reset_byTire(0,true);
         }else if(_y){
             this->Arm_R_homing();
             this->Arm_L_homing();
             this->Defence_Lift_homing();
-            this->Defence_Roll_homing();
+            //this->Defence_Roll_homing();
             NODELET_INFO("Complete Homing");
         }else if(_x){
             this->_autoMoving_Mode = false;
@@ -1653,6 +1740,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             _is_manual_enabled = false;
             _command_ongoing = true;   
         }else if(_b && _rb){
+            _odmetry_error_fast = false;
             this->command_list = &autoMove_leftBall_PickUp_commands;
             _reverse_control = false;
             _swap_control = false;
@@ -1864,7 +1952,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             }
         }
         _recent_Defend_mode_count = _Defend_mode_count;
-    }else if(_piling_manual_Mode){
+    }else if(_piling_manual_Mode){ //----------------------------------------------------------------------------------------
         //NODELET_INFO("Piling Manual Mode");
         
         if(_padx == -1 && _pady == 1){ //right upper
@@ -1983,11 +2071,11 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this->Defence_Lift_move_Vel(0.0);
         }
         if(_leftthumb){
-            this->Defence_Roll_move_Vel(5.0);
+            //this->Defence_Roll_move_Vel(5.0);
         }else if(_lb){
-            this->Defence_Roll_move_Vel(5.0);
+            //this->Defence_Roll_move_Vel(5.0);
         }else{
-            this->Defence_Roll_move_Vel(0.0);
+            //this->Defence_Roll_move_Vel(0.0);
         }
         if(_b && _b_enable){
             if(_Cyl_Defend_Grab){
@@ -2081,11 +2169,11 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 this->Defence_Lift_move_Vel(0.0);
             }
             if(_x){
-                this->Defence_Roll_move_Vel(3.0);
+                //this->Defence_Roll_move_Vel(3.0);
             }else if(_b){
-                this->Defence_Roll_move_Vel(-3.0);
+                //this->Defence_Roll_move_Vel(-3.0);
             }else{
-                this->Defence_Roll_move_Vel(0.0);
+                //this->Defence_Roll_move_Vel(0.0);
             }
         }
     }
@@ -2183,6 +2271,8 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
 
 void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
 { 
+    Odmetory_position(false);
+
     if(_recent_R_mode_count != _autoPile_R_mode_count || _recent_L_mode_count != _autoPile_L_mode_count){
         if(_autoPile_R_mode_count == 0 && _autoPile_L_mode_count == 0){
             this->_delay_s_r = ros::Time::now().toSec() + 0.5;
@@ -2594,7 +2684,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         NODELET_INFO("Defence Lift Move to LagoriBase");
     }else if(currentCommand == ControllerCommands::defenceLift_mv_LagoriBase_slowly){
         if(defenceLift_position >= defence_lift_lagoribase_pos+1.0){
-            Defence_Lift_move_Vel(-8.0);
+            Defence_Lift_move_Vel(-13.0);
         }else if(defenceLift_position <= defence_lift_lagoribase_pos-0.3){
             Defence_Lift_move_Vel(8.0);
         }else{
