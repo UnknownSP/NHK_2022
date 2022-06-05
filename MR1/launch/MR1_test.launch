@@ -54,12 +54,12 @@
     
     
     <node pkg="nodelet" type="nodelet" name="MR1_nodelet_main" args="$(arg nodelet_mode) MR1/MR1_nodelet_main $(arg manager_name)"  output="screen">
-      <param name="lift_upper_pos" type="double" value="-115" />
+      <param name="lift_upper_pos" type="double" value="-116" />
       <param name="lift_lower_pos" type="double" value="0.0" />
       <param name="lift_r_loadwait_pos" type="double" value="-108" />
       <param name="lift_r_loading_pos" type="double" value="-111" />
-      <param name="lift_l_loadwait_pos" type="double" value="-111" />
-      <param name="lift_l_loading_pos" type="double" value="-114" />
+      <param name="lift_l_loadwait_pos" type="double" value="-112" />
+      <param name="lift_l_loading_pos" type="double" value="-115" />
       <param name="launcher_first_speed" type="double" value="800.0" />
       <param name="displaysize_x" type="double" value="2735.0" />
       <param name="displaysize_y" type="double" value="1823.0" />
@@ -122,8 +122,8 @@
       <param name="LagoriBrake_pos_1_pitch" type="double" value="0.075" />
       <param name="LagoriBrake_pos_1_speed" type="double" value="1180.0" />  <!--十の位絶対偶数-->
       <param name="LagoriBrake_pos_2_yaw" type="double" value="0.0" />
-      <param name="LagoriBrake_pos_2_pitch" type="double" value="0.025" />
-      <param name="LagoriBrake_pos_2_speed" type="double" value="940.0" /> <!--十の位絶対偶数-->
+      <param name="LagoriBrake_pos_2_pitch" type="double" value="-0.05" />
+      <param name="LagoriBrake_pos_2_speed" type="double" value="800.0" /> <!--十の位絶対偶数-->
 
     </node>
 <!--Solenoid_Driver--> 

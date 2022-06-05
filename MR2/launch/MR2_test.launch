@@ -154,7 +154,7 @@
       <param name="manualOmni_MaxAccel" type="double" value="1000" />
 
       <param name="leftPoint_1_x" type="double" value="-300" />
-      <param name="leftPoint_1_y" type="double" value="-3800" />
+      <param name="leftPoint_1_y" type="double" value="-3600" />
       <param name="leftPoint_1_z" type="double" value="0.0" />
       <param name="leftPoint_2_x" type="double" value="-2000" />
       <param name="leftPoint_2_y" type="double" value="-5000" />
@@ -178,14 +178,27 @@
       <param name="leftPoint_14_y" type="double" value="0.0" />
       <param name="leftPoint_14_z" type="double" value="1.5708" />
 
+      <param name="rightPoint_1_x" type="double" value="-800" />
+      <param name="rightPoint_1_y" type="double" value="4900" />
+      <param name="rightPoint_1_z" type="double" value="3.141592" />
+      <param name="rightPoint_2_x" type="double" value="-5300" />
+      <param name="rightPoint_2_y" type="double" value="5300" />
+      <param name="rightPoint_2_z" type="double" value="3.141592" />
+      <param name="rightPoint_11_x" type="double" value="-1200" />
+      <param name="rightPoint_11_y" type="double" value="5300" />
+      <param name="rightPoint_11_z" type="double" value="3.141592" />
+      <param name="rightPoint_12_x" type="double" value="-50" />
+      <param name="rightPoint_12_y" type="double" value="0" />
+      <param name="rightPoint_12_z" type="double" value="1.5708" />
+
       <!-- Odm by Odmetor -->
-      <param name="leftPoint_1_maxSpeed_linear" type="double" value="1.8" />
+      <param name="leftPoint_1_maxSpeed_linear" type="double" value="2.1" />
       <param name="leftPoint_1_maxSpeed_angular" type="double" value="0.85" />
-      <param name="leftPoint_2_maxSpeed_linear" type="double" value="1.25" />
+      <param name="leftPoint_2_maxSpeed_linear" type="double" value="1.35" />
       <param name="leftPoint_2_maxSpeed_angular" type="double" value="0.85" />
-      <param name="leftPoint_3_maxSpeed_linear" type="double" value="1.5" />
+      <param name="leftPoint_3_maxSpeed_linear" type="double" value="1.7" />
       <param name="leftPoint_3_maxSpeed_angular" type="double" value="0.85" />
-      <param name="leftPoint_4_maxSpeed_linear" type="double" value="1.7" />
+      <param name="leftPoint_4_maxSpeed_linear" type="double" value="1.5" />
       <param name="leftPoint_4_maxSpeed_angular" type="double" value="0.85" />
       
       <param name="leftPoint_11_maxSpeed_linear" type="double" value="2.0" />
@@ -196,6 +209,15 @@
       <param name="leftPoint_13_maxSpeed_angular" type="double" value="1.2" />
       <param name="leftPoint_14_maxSpeed_linear" type="double" value="1.8" />
       <param name="leftPoint_14_maxSpeed_angular" type="double" value="1.2" />
+
+      <param name="rightPoint_1_maxSpeed_linear" type="double" value="1.2" />
+      <param name="rightPoint_1_maxSpeed_angular" type="double" value="1.2" />
+      <param name="rightPoint_2_maxSpeed_linear" type="double" value="1.3" />
+      <param name="rightPoint_2_maxSpeed_angular" type="double" value="0.85" />
+      <param name="rightPoint_11_maxSpeed_linear" type="double" value="1.2" />
+      <param name="rightPoint_11_maxSpeed_angular" type="double" value="0.85" />
+      <param name="rightPoint_12_maxSpeed_linear" type="double" value="1.2" />
+      <param name="rightPoint_12_maxSpeed_angular" type="double" value="1.3" />
 
       <!-- for Test
       <param name="leftPoint_1_maxSpeed_linear" type="double" value="1.0" />
@@ -224,6 +246,10 @@
       <param name="leftPoint_12_toleranceRange" type="double" value="500" />
       <param name="leftPoint_13_toleranceRange" type="double" value="500" />
       <param name="leftPoint_14_toleranceRange" type="double" value="20" />
+      <param name="rightPoint_1_toleranceRange" type="double" value="200" />
+      <param name="rightPoint_2_toleranceRange" type="double" value="20" />
+      <param name="rightPoint_11_toleranceRange" type="double" value="200" />
+      <param name="rightPoint_12_toleranceRange" type="double" value="20" />
 
       <!--  完璧
 
