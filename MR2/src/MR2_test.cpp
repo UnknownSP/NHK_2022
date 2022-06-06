@@ -46,6 +46,7 @@ enum class ControllerCommands : uint16_t
     defenceLift_mv_Lower,
     defenceLift_mv_LagoriBase,
     defenceLift_mv_DodgeLagori_slowly,
+    defenceLift_mv_AvoidBOH_slowly,
     defenceLift_mv_GetLagori_slowly,
     defenceLift_mv_Upper_slowly,
     defenceLift_mv_Lower_slowly,
@@ -341,6 +342,7 @@ private:
     int currentCommandIndex = 0;
     static const std::vector<ControllerCommands> Defence_Up_commands;
     static const std::vector<ControllerCommands> Defence_Dodge_commands;
+    static const std::vector<ControllerCommands> Defence_AvoidBOH_commands;
     static const std::vector<ControllerCommands> Defence_GrabPos_commands;
     static const std::vector<ControllerCommands> Defence_Enable_commands;
     static const std::vector<ControllerCommands> Defence_Down_commands;
@@ -389,6 +391,7 @@ private:
     bool _defence_lift_upper_speeddown = false;
     double defence_lift_lower_pos = 0.0;
     double defence_lift_dodgelagori_pos = 0.0;
+    double defence_lift_avoidBOH_pos = 0.0;
     double defence_lift_getlagori_pos = 0.0;
     double defence_lift_lagoribase_pos = 0.0;
     double defence_roll_horizontal_pos = 0.0;
@@ -400,6 +403,10 @@ private:
     double arm_l_avoidlagoribase_pos = 0.0;
     bool _arm_r_avoidlagoribase = false;
     bool _arm_l_avoidlagoribase = false;
+    double arm_r_get4lagori_pos = 0.0;
+    double arm_l_get4lagori_pos = 0.0;
+    bool _arm_r_get4lagori = false;
+    bool _arm_l_get4lagori = false;
     double arm_r_upper_pos = 0.0;
     double arm_l_upper_pos = 0.0;
     double arm_r_lower_pos = 0.0;
@@ -415,7 +422,7 @@ private:
     bool _L_mode_count_changed = false;
     int _Defend_mode_count = -1;
     int _recent_Defend_mode_count = -1;
-    int Defend_mode_count_max = 8;
+    int Defend_mode_count_max = 9;
     bool _Defend_mode_count_changed = false;
     bool _Arm_Deploy = false;
 
@@ -635,6 +642,11 @@ const std::vector<ControllerCommands> MR2_nodelet_main::Defence_Dodge_commands(
         ControllerCommands::defenceLift_mv_DodgeLagori_slowly,
     }
 );
+const std::vector<ControllerCommands> MR2_nodelet_main::Defence_AvoidBOH_commands(
+    {
+        ControllerCommands::defenceLift_mv_AvoidBOH_slowly,
+    }
+);
 const std::vector<ControllerCommands> MR2_nodelet_main::Defence_GrabPos_commands(
     {
         ControllerCommands::defenceLift_mv_GetLagori_slowly,
@@ -818,6 +830,7 @@ void MR2_nodelet_main::onInit(void)
     _nh.param("defence_lift_upper_pos", this->defence_lift_upper_pos, 0.0);
     _nh.param("defence_lift_lower_pos", this->defence_lift_lower_pos, 0.0);
     _nh.param("defence_lift_dodgelagori_pos", this->defence_lift_dodgelagori_pos, 0.0);
+    _nh.param("defence_lift_avoidBOH_pos", this->defence_lift_avoidBOH_pos, 0.0);
     _nh.param("defence_lift_getlagori_pos", this->defence_lift_getlagori_pos, 0.0);
     _nh.param("defence_lift_lagoribase_pos", this->defence_lift_lagoribase_pos, 0.0);
     _nh.param("defence_roll_horizontal_pos", this->defence_roll_horizontal_pos, 0.0);
@@ -825,6 +838,8 @@ void MR2_nodelet_main::onInit(void)
     _nh.param("arm_l_avoid1lagori_pos", this->arm_l_avoid1lagori_pos, 0.0);
     _nh.param("arm_r_avoidlagoribase_pos", this->arm_r_avoidlagoribase_pos, 0.0);
     _nh.param("arm_l_avoidlagoribase_pos", this->arm_l_avoidlagoribase_pos, 0.0);
+    _nh.param("arm_r_get4lagori_pos", this->arm_r_get4lagori_pos, 0.0);
+    _nh.param("arm_l_get4lagori_pos", this->arm_l_get4lagori_pos, 0.0);
     _nh.param("arm_r_upper_pos", this->arm_r_upper_pos, 0.0);
     _nh.param("arm_l_upper_pos", this->arm_l_upper_pos, 0.0);
     _nh.param("arm_r_lower_pos", this->arm_r_lower_pos, 0.0);
@@ -1286,14 +1301,14 @@ int MR2_nodelet_main::Odmetory_position(bool reset){
     duration = calTime-recent_calTime;
     if(hypot(odm_recent_position.linear.x - odm_now_position.linear.x,odm_recent_position.linear.y - odm_now_position.linear.y) > autoFastError_linear*(duration.toSec())){
         NODELET_ERROR("calTimeDiff %f",(duration.toSec()));
-        NODELET_ERROR("[calCount by F] r:%2d, l:%2d, f:%2d, b:%2d,",odm_r_calCount,odm_l_calCount,odm_f_calCount,odm_b_calCount);
+        NODELET_ERROR("[calCount] r:%2d, l:%2d, f:%2d, b:%2d,",odm_r_calCount,odm_l_calCount,odm_f_calCount,odm_b_calCount);
         NODELET_ERROR("Move Fast or Odmetry Error LINEAR");
         recent_calTime = calTime;
         return -1;
     }
     if(fabs(odm_recent_position.angular.z - odm_now_position.angular.z) > autoFastError_angular*(duration.toSec())){
         NODELET_ERROR("calTimeDiff %f",(duration.toSec()));
-        NODELET_ERROR("[calCount by F] r:%2d, l:%2d, f:%2d, b:%2d,",odm_r_calCount,odm_l_calCount,odm_f_calCount,odm_b_calCount);
+        NODELET_ERROR("[calCount] r:%2d, l:%2d, f:%2d, b:%2d,",odm_r_calCount,odm_l_calCount,odm_f_calCount,odm_b_calCount);
         NODELET_ERROR("Move Fast or Odmetry Error ANGULAR");
         recent_calTime = calTime;
         return -1;
@@ -1684,8 +1699,10 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
     {
         _arm_l_avoidlagoribase = false;
         _arm_l_avoid1lagori = false;
+        _arm_l_get4lagori = false;
         _arm_r_avoidlagoribase = false;
         _arm_r_avoid1lagori = false;
+        _arm_r_get4lagori = false;
         _Arm_Deploy = false;
         _Arm_R_moving = false;
         _Arm_L_moving = false;
@@ -1759,8 +1776,10 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         _recent_L_mode_count = -1;
         _arm_r_avoidlagoribase = false;
         _arm_r_avoid1lagori = false;
+        _arm_r_get4lagori = false;
         _arm_l_avoidlagoribase = false;
         _arm_l_avoid1lagori = false;
+        _arm_l_get4lagori = false;
         _Arm_Deploy = false;
         _Defend_mode_count = -1;
         _recent_Defend_mode_count = -1;
@@ -1930,7 +1949,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             }
             _y_enable = false;
         }
-        if(_a && _a_enable && !_start){
+        if(_a /*&& _a_enable */&& !_start){
             if(_padx == 1){
                 if(!_reverse_control){
                     _reverse_control = true;
@@ -1973,23 +1992,29 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 break;
             case 1:
                 if(!_command_ongoing){
-                    this->command_list = &Defence_Dodge_commands;
+                    this->command_list = &Defence_AvoidBOH_commands;
                     _command_ongoing = true;      
                 }
                 break;
             case 2:
                 if(!_command_ongoing){
-                    this->command_list = &Defence_GrabPos_commands;
+                    this->command_list = &Defence_Dodge_commands;
                     _command_ongoing = true;      
                 }
                 break;
             case 3:
-                Cylinder_Operation("Defend_Grab",false);   
+                if(!_command_ongoing){
+                    this->command_list = &Defence_GrabPos_commands;
+                    _command_ongoing = true;      
+                }
                 break;
             case 4:
-                Cylinder_Operation("Defend_Grab",true);   
+                Cylinder_Operation("Defend_Grab",false);   
                 break;
             case 5:
+                Cylinder_Operation("Defend_Grab",true);   
+                break;
+            case 6:
                 if(!_command_ongoing){
                     this->command_list = &Defence_Enable_commands;
                     _command_ongoing = true;      
@@ -1997,20 +2022,20 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 //_reverse_control = false;
                 //_swap_control = true;
                 break;
-            case 6:
+            case 7:
                 if(!_command_ongoing){  
                     this->command_list = &Defence_Release_commands;
                     _command_ongoing = true;      
                 }
                 break;
-            case 7:
+            case 8:
                 Cylinder_Operation("Defend_Press", false);
                 if(!_command_ongoing){
                     this->command_list = &Defence_Unable_commands;
                     _command_ongoing = true;      
                 }
                 break;
-            case 8:
+            case 9:
                 if(!_command_ongoing){  
                     this->command_list = &Defence_Down_commands;
                     _command_ongoing = true;      
@@ -2379,12 +2404,12 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
     //}
 
     if(_piling_auto_Mode && !_start){ //--------------------------------------------------------------------------------------------------------------------------------
-        if(!(_autoPile_L_mode_count == 3 && !_arm_l_avoid1lagori) && !(_autoPile_L_mode_count == 6 && !_arm_l_avoidlagoribase)){
+        if(!(_autoPile_L_mode_count == 3 && !_arm_l_avoid1lagori) && !(_autoPile_L_mode_count == 6 && !_arm_l_avoidlagoribase) && !(_autoPile_L_mode_count == 15 && !_arm_l_get4lagori)){
             if(_leftthumb){
                 if(Arm_L_position <= arm_l_lower_pos){
                     this->Arm_L_move_Vel(0.0);
                 }else if(Arm_L_position <= arm_l_lower_pos + 5){
-                    this->Arm_L_move_Vel(-8.0);
+                    this->Arm_L_move_Vel(-10.0);
                 }else{
                     this->Arm_L_move_Vel(-20.0);
                 }
@@ -2392,7 +2417,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
                 if(Arm_L_position >= arm_l_upper_pos){
                     this->Arm_L_move_Vel(0.0);
                 }else if(Arm_L_position >= arm_l_upper_pos - 5){
-                    this->Arm_L_move_Vel(8.0);
+                    this->Arm_L_move_Vel(10.0);
                 }else{
                     this->Arm_L_move_Vel(20.0);
                 }
@@ -2400,12 +2425,12 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
                 this->Arm_L_move_Vel(0.0);
             }
         }
-        if(!(_autoPile_R_mode_count == 3 && !_arm_r_avoid1lagori) && !(_autoPile_R_mode_count == 6 && !_arm_r_avoidlagoribase)){
+        if(!(_autoPile_R_mode_count == 3 && !_arm_r_avoid1lagori) && !(_autoPile_R_mode_count == 6 && !_arm_r_avoidlagoribase) && !(_autoPile_R_mode_count == 15 && !_arm_r_get4lagori)){
             if(_rightthumb){
                 if(Arm_R_position >= arm_r_lower_pos){
                     this->Arm_R_move_Vel(0.0);
                 }else if(Arm_R_position >= arm_r_lower_pos - 5){
-                    this->Arm_R_move_Vel(8.0);
+                    this->Arm_R_move_Vel(10.0);
                 }else{
                     this->Arm_R_move_Vel(20.0);
                 }
@@ -2413,7 +2438,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
                 if(Arm_R_position <= arm_r_upper_pos){
                     this->Arm_R_move_Vel(0.0);
                 }else if(Arm_R_position <= arm_r_upper_pos + 5){
-                    this->Arm_R_move_Vel(-8.0);
+                    this->Arm_R_move_Vel(-10.0);
                 }else{
                     this->Arm_R_move_Vel(-20.0);
                 }
@@ -2464,12 +2489,13 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         }
     }
 
-    if(_recent_R_mode_count != _autoPile_R_mode_count || _autoPile_R_mode_count == 3 || _autoPile_R_mode_count == 6){
+    if(_recent_R_mode_count != _autoPile_R_mode_count || _autoPile_R_mode_count == 3 || _autoPile_R_mode_count == 6 || _autoPile_R_mode_count == 15){
         switch (_autoPile_R_mode_count)
         {
         case 0:
             _arm_r_avoidlagoribase = false;
             _arm_r_avoid1lagori = false;
+            _arm_r_get4lagori = false;
             //Cylinder_Operation("R_Clutch",true);
             if(_Arm_Deploy){
                 Cylinder_Operation("R_Upper_Grab",false);
@@ -2495,7 +2521,10 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
                 _Arm_R_moving = true;
                 this->Arm_R_move_Vel(-22.0);
             }else{
-                if(Arm_R_position <= arm_r_avoid1lagori_pos && !_arm_r_avoid1lagori){
+                if(_rb || _rightthumb){
+                    _Arm_R_moving = false;
+                    _arm_r_avoid1lagori = true;
+                }else if(Arm_R_position <= arm_r_avoid1lagori_pos && !_arm_r_avoid1lagori){
                     this->Arm_R_move_Vel(0.0);
                     _Arm_R_moving = false;
                     _arm_r_avoid1lagori = true;
@@ -2521,7 +2550,10 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
                 _Arm_R_moving = true;
                 this->Arm_R_move_Vel(-22.0);
             }else{
-                if(Arm_R_position <= arm_r_avoidlagoribase_pos && !_arm_r_avoidlagoribase){
+                if(_rb || _rightthumb){
+                    _Arm_R_moving = false;
+                    _arm_r_avoidlagoribase = true;
+                }else if(Arm_R_position <= arm_r_avoidlagoribase_pos && !_arm_r_avoidlagoribase){
                     this->Arm_R_move_Vel(0.0);
                     _Arm_R_moving = false;
                     _arm_r_avoidlagoribase = true;
@@ -2560,17 +2592,42 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             }
             Cylinder_Operation("R_Lower_Deploy",true);
             Cylinder_Operation("R_Upper_Rotate",false);
+            _Arm_R_moving = false;
+            _arm_r_get4lagori = false;
             break;
         case 15:
             Cylinder_Operation("R_Upper_Deploy",false);
             Cylinder_Operation("R_Lower_Deploy",false);
             Cylinder_Operation("R_Lower_Grab",false);
             Cylinder_Operation("R_Upper_Grab",false);
+            if(!_Arm_R_moving && !_arm_r_get4lagori){
+                _Arm_R_moving = true;
+                if(Arm_R_position <= arm_r_get4lagori_pos - 0.5){
+                    this->Arm_R_move_Vel(20.0);
+                }else if(Arm_R_position >= arm_r_get4lagori_pos + 0.5){
+                    this->Arm_R_move_Vel(-20.0);
+                }else{
+                    this->Arm_R_move_Vel(0.0);
+                    _Arm_R_moving = false;
+                    _arm_r_get4lagori = true;
+                }
+            }else{
+                if(_rb || _rightthumb){
+                    _Arm_R_moving = false;
+                    _arm_r_get4lagori = true;
+                }else if((Arm_R_position >= arm_r_get4lagori_pos - 0.5) && (Arm_R_position <= arm_r_get4lagori_pos + 0.5) && !_arm_r_get4lagori){
+                    this->Arm_R_move_Vel(0.0);
+                    _Arm_R_moving = false;
+                    _arm_r_get4lagori = true;
+                }
+            }
             break;
         case 16:
             Cylinder_Operation("R_Lower_Grab",true);
             Cylinder_Operation("R_Upper_Grab",true);
             break;
+            _Arm_R_moving = false;
+            _arm_r_get4lagori = false;
         case 17:
             Cylinder_Operation("R_Lower_Grab",false);
             Cylinder_Operation("R_Upper_Grab",false);
@@ -2579,12 +2636,13 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             break;
         }
     }
-    if(_recent_L_mode_count != _autoPile_L_mode_count || _autoPile_L_mode_count == 3 || _autoPile_L_mode_count == 6){
+    if(_recent_L_mode_count != _autoPile_L_mode_count || _autoPile_L_mode_count == 3 || _autoPile_L_mode_count == 6 || _autoPile_L_mode_count == 15){
         switch (_autoPile_L_mode_count)
         {
         case 0:
             _arm_l_avoidlagoribase = false;
             _arm_l_avoid1lagori = false;
+            _arm_l_get4lagori = false;
             //Cylinder_Operation("L_Clutch",true);
             if(_Arm_Deploy){
                 Cylinder_Operation("L_Upper_Grab",false);
@@ -2610,7 +2668,10 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
                 _Arm_L_moving = true;
                 this->Arm_L_move_Vel(22.0);
             }else{
-                if(Arm_L_position >= arm_l_avoid1lagori_pos && !_arm_l_avoid1lagori){
+                if(_lb || _leftthumb){
+                    _Arm_L_moving = false;
+                    _arm_l_avoid1lagori = true;
+                }else if(Arm_L_position >= arm_l_avoid1lagori_pos && !_arm_l_avoid1lagori){
                     this->Arm_L_move_Vel(0.0);
                     _Arm_L_moving = false;
                     _arm_l_avoid1lagori = true;
@@ -2636,7 +2697,10 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
                 _Arm_L_moving = true;
                 this->Arm_L_move_Vel(22.0);
             }else{
-                if(Arm_L_position >= arm_l_avoidlagoribase_pos && !_arm_l_avoidlagoribase){
+                if(_lb || _leftthumb){
+                    _Arm_L_moving = false;
+                    _arm_l_avoidlagoribase = true;
+                }else if(Arm_L_position >= arm_l_avoidlagoribase_pos && !_arm_l_avoidlagoribase){
                     this->Arm_L_move_Vel(0.0);
                     _Arm_L_moving = false;
                     _arm_l_avoidlagoribase = true;
@@ -2681,6 +2745,27 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             Cylinder_Operation("L_Lower_Deploy",false);
             Cylinder_Operation("L_Lower_Grab",false);
             Cylinder_Operation("L_Upper_Grab",false);
+            if(!_Arm_L_moving && !_arm_l_get4lagori){
+                _Arm_L_moving = true;
+                if(Arm_L_position <= arm_l_get4lagori_pos - 0.5){
+                    this->Arm_L_move_Vel(20.0);
+                }else if(Arm_L_position >= arm_l_get4lagori_pos + 0.5){
+                    this->Arm_L_move_Vel(-20.0);
+                }else{
+                    this->Arm_L_move_Vel(0.0);
+                    _Arm_L_moving = false;
+                    _arm_l_get4lagori = true;
+                }
+            }else{
+                if(_lb || _leftthumb){
+                    _Arm_L_moving = false;
+                    _arm_l_get4lagori = true;
+                }else if((Arm_L_position >= arm_l_get4lagori_pos - 0.5) && (Arm_L_position <= arm_l_get4lagori_pos + 0.5) && !_arm_l_get4lagori){
+                    this->Arm_L_move_Vel(0.0);
+                    _Arm_L_moving = false;
+                    _arm_l_get4lagori = true;
+                }
+            }
             break;
         case 16:
             Cylinder_Operation("L_Lower_Grab",true);
@@ -2738,6 +2823,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         if(defenceLift_position >= defence_lift_upper_pos-1.0){
             _defence_lift_upper_speeddown = false;
             Defence_Lift_move_Vel(0.0);
+            Defence_Lift_move_Vel(0.0);
             this->currentCommandIndex++;
             NODELET_INFO("Defence Lift Move to Upper Slowly");
         }else if(defenceLift_position >= defence_lift_upper_pos-10.0){
@@ -2780,6 +2866,16 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
             Defence_Lift_move_Vel(0.0);
             this->currentCommandIndex++;
             NODELET_INFO("Defence Lift Move to DodgeLagori Slowly");
+        }
+    }else if(currentCommand == ControllerCommands::defenceLift_mv_AvoidBOH_slowly){
+        if(defenceLift_position >= defence_lift_avoidBOH_pos+1.5){
+            Defence_Lift_move_Vel(-10.0);
+        }else if(defenceLift_position <= defence_lift_avoidBOH_pos-1.5){
+            Defence_Lift_move_Vel(8.0);
+        }else{
+            Defence_Lift_move_Vel(0.0);
+            this->currentCommandIndex++;
+            NODELET_INFO("Defence Lift Move to AvoidBOH Slowly");
         }
     }else if(currentCommand == ControllerCommands::defenceLift_mv_GetLagori_slowly){
         if(defenceLift_position >= defence_lift_getlagori_pos+1.0){
@@ -2835,11 +2931,13 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         _is_manual_enabled = true;
     }else if(currentCommand == ControllerCommands::wait_defenceLift_Upper){
         if(defenceLift_position >= defence_lift_upper_pos - 1.0){
+            Defence_Lift_move_Vel(0.0);
             this->currentCommandIndex++;
             NODELET_INFO("DefenceLift reached Upper");
         }
     }else if(currentCommand == ControllerCommands::wait_defenceLift_Lower){
         if(defenceLift_position <= defence_lift_lower_pos + 1.0){
+            Defence_Lift_move_Vel(0.0);
             this->currentCommandIndex++;
             NODELET_INFO("DefenceLift reached Lower");
         }
