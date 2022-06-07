@@ -118,9 +118,17 @@
       <param name="LagoriBrake_pos_2_speed" type="double" value="1320.0" />
       -->
 
+      <!-- おそらく大会で使う
       <param name="LagoriBrake_pos_1_yaw" type="double" value="0.0" />
       <param name="LagoriBrake_pos_1_pitch" type="double" value="0.075" />
-      <param name="LagoriBrake_pos_1_speed" type="double" value="1180.0" />  <!--十の位絶対偶数-->
+      <param name="LagoriBrake_pos_1_speed" type="double" value="1180.0" />
+      <param name="LagoriBrake_pos_2_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_2_pitch" type="double" value="-0.05" />
+      <param name="LagoriBrake_pos_2_speed" type="double" value="800.0" /> 
+      -->
+      <param name="LagoriBrake_pos_1_yaw" type="double" value="0.0" />
+      <param name="LagoriBrake_pos_1_pitch" type="double" value="0.075" />
+      <param name="LagoriBrake_pos_1_speed" type="double" value="1100.0" />  <!--十の位絶対偶数-->
       <param name="LagoriBrake_pos_2_yaw" type="double" value="0.0" />
       <param name="LagoriBrake_pos_2_pitch" type="double" value="-0.05" />
       <param name="LagoriBrake_pos_2_speed" type="double" value="800.0" /> <!--十の位絶対偶数-->

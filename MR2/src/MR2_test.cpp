@@ -1897,6 +1897,14 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 L_mode_Count(1);
                 //_autoPile_R_mode_count = 0;
                 //_autoPile_L_mode_count = 0;
+                if(_Defend_mode_count == -1){
+                    Cylinder_Operation("Defend_Grab",false);   
+                    Cylinder_Operation("Defend_Press", false);
+                    Cylinder_Operation("Defend_Rise",false);
+                    _Defend_mode_count = 1;
+                }else if(_Defend_mode_count == 0){
+                    _Defend_mode_count = 1;
+                }
                 _b_enable = false;
                 _x_enable = false;
             }
@@ -1939,7 +1947,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                 if(_padx == -1){
                     Defend_mode_Count(-1);
                 }else if(_pady == 1){
-                    this->_Defend_mode_count = 6;
+                    this->_Defend_mode_count = 7;
                 }else{
                     Defend_mode_Count(1);
                 }
@@ -1951,12 +1959,14 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         }
         if(_a /*&& _a_enable */&& !_start){
             if(_padx == 1){
-                if(!_reverse_control){
-                    _reverse_control = true;
-                    _swap_control = false;
-                }else{
-                    _reverse_control = false;
-                    _swap_control = false;
+                if(_a_enable){
+                    if(!_reverse_control){
+                        _reverse_control = true;
+                        _swap_control = false;
+                    }else{
+                        _reverse_control = false;
+                        _swap_control = false;
+                    }
                 }
             }else if(_padx == -1){
                 if(defenceLift_position <= defence_lift_lower_pos + 0.5){
