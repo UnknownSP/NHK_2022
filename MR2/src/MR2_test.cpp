@@ -386,6 +386,7 @@ private:
     bool _defence_Mode = false;
     bool _homing_Mode = false;
     bool _autoMoving_Mode = false;
+    bool _piling_auto_Mode_UnderFirst = false;
 
     double defence_lift_upper_pos = 0.0;
     bool _defence_lift_upper_speeddown = false;
@@ -407,6 +408,8 @@ private:
     double arm_l_get4lagori_pos = 0.0;
     bool _arm_r_get4lagori = false;
     bool _arm_l_get4lagori = false;
+    bool _arm_r_under = false;
+    bool _arm_l_under = false;
     double arm_r_upper_pos = 0.0;
     double arm_l_upper_pos = 0.0;
     double arm_r_lower_pos = 0.0;
@@ -416,8 +419,8 @@ private:
     int _autoPile_L_mode_count = -1;
     int _recent_R_mode_count = -1;
     int _recent_L_mode_count = -1;
-    int R_mode_count_max = 17;
-    int L_mode_count_max = 17;
+    int R_mode_count_max = 20;
+    int L_mode_count_max = 20;
     bool _R_mode_count_changed = false;
     bool _L_mode_count_changed = false;
     int _Defend_mode_count = -1;
@@ -1700,9 +1703,11 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         _arm_l_avoidlagoribase = false;
         _arm_l_avoid1lagori = false;
         _arm_l_get4lagori = false;
+        _arm_l_under = false;
         _arm_r_avoidlagoribase = false;
         _arm_r_avoid1lagori = false;
         _arm_r_get4lagori = false;
+        _arm_r_under = false;
         _Arm_Deploy = false;
         _Arm_R_moving = false;
         _Arm_L_moving = false;
@@ -1726,12 +1731,14 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this-> _piling_auto_Mode = false;
             this-> _ballPick_Mode = false;
             this-> _defence_Mode = false;
+            this->_piling_auto_Mode_UnderFirst = false;
         }else if(_pady == -1 && !_piling_manual_Mode){
             this->_autoMoving_Mode = false;
             this-> _piling_manual_Mode = true;
             this-> _piling_auto_Mode = false;
             this-> _ballPick_Mode = false;
             this-> _defence_Mode = false;
+            this->_piling_auto_Mode_UnderFirst = false;
             return;
         }else if(_pady == 1 && !_piling_auto_Mode){
             this->_autoMoving_Mode = false;
@@ -1739,6 +1746,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this-> _piling_auto_Mode = true;
             this-> _ballPick_Mode = false;
             this-> _defence_Mode = false;
+            this->_piling_auto_Mode_UnderFirst = false;
             return;
         }else if(_padx == -1 && !_defence_Mode){
             this->_autoMoving_Mode = false;
@@ -1746,6 +1754,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this-> _piling_auto_Mode = false;
             this-> _ballPick_Mode = false;
             this-> _defence_Mode = true;
+            this->_piling_auto_Mode_UnderFirst = false;
             return;
         }else if(_padx == 1 && !_ballPick_Mode){
             this->_autoMoving_Mode = false;
@@ -1753,6 +1762,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this-> _piling_auto_Mode = false;
             this-> _ballPick_Mode = true;
             this-> _defence_Mode = false;
+            this->_piling_auto_Mode_UnderFirst = false;
             return;
         }else if(_rb && _lb && !_autoMoving_Mode){
             this->_autoMoving_Mode = true;
@@ -1760,6 +1770,14 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             this-> _piling_auto_Mode = false;
             this-> _ballPick_Mode = false;
             this-> _defence_Mode = false;
+            this->_piling_auto_Mode_UnderFirst = false;
+            return;
+        }else if(_piling_auto_Mode){
+            if(_pady == 1){
+                _piling_auto_Mode_UnderFirst = false;
+            }else if(_rightthumb && _leftthumb){
+                _piling_auto_Mode_UnderFirst = true;
+            }
             return;
         }
         return;
@@ -1777,9 +1795,11 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         _arm_r_avoidlagoribase = false;
         _arm_r_avoid1lagori = false;
         _arm_r_get4lagori = false;
+        _arm_r_under = false;
         _arm_l_avoidlagoribase = false;
         _arm_l_avoid1lagori = false;
         _arm_l_get4lagori = false;
+        _arm_l_under = false;
         _Arm_Deploy = false;
         _Defend_mode_count = -1;
         _recent_Defend_mode_count = -1;
@@ -1797,6 +1817,7 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
         this-> _piling_auto_Mode = false;
         this-> _ballPick_Mode = false;
         this-> _defence_Mode = false;
+        _piling_auto_Mode_UnderFirst = false;
         return;
     }
    
@@ -2005,24 +2026,37 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
                     this->command_list = &Defence_AvoidBOH_commands;
                     _command_ongoing = true;      
                 }
+                Cylinder_Operation("Defend_Grab",false);   
+                Cylinder_Operation("Defend_Press", false);
+                Cylinder_Operation("Defend_Rise",false);   
                 break;
             case 2:
                 if(!_command_ongoing){
                     this->command_list = &Defence_Dodge_commands;
                     _command_ongoing = true;      
                 }
+                Cylinder_Operation("Defend_Grab",false);   
+                Cylinder_Operation("Defend_Press", false);
+                Cylinder_Operation("Defend_Rise",false);   
                 break;
             case 3:
                 if(!_command_ongoing){
                     this->command_list = &Defence_GrabPos_commands;
                     _command_ongoing = true;      
                 }
+                Cylinder_Operation("Defend_Grab",false);   
+                Cylinder_Operation("Defend_Press", false);
+                Cylinder_Operation("Defend_Rise",false);   
                 break;
             case 4:
-                Cylinder_Operation("Defend_Grab",false);   
+                Cylinder_Operation("Defend_Grab",false);
+                Cylinder_Operation("Defend_Press", false);
+                Cylinder_Operation("Defend_Rise",false);   
                 break;
             case 5:
-                Cylinder_Operation("Defend_Grab",true);   
+                Cylinder_Operation("Defend_Grab",true);
+                Cylinder_Operation("Defend_Press", false);
+                Cylinder_Operation("Defend_Rise",false);     
                 break;
             case 6:
                 if(!_command_ongoing){
@@ -2249,6 +2283,19 @@ void MR2_nodelet_main::joyCallback(const sensor_msgs::Joy::ConstPtr& joy)
             _y_enable = false;
         }
     }else if(_homing_Mode){ //------------------------------------------------------------------------------------------------------
+            Cylinder_Operation("Ball_Grab",true);
+            Cylinder_Operation("Defend_Rise",true);
+            Cylinder_Operation("Defend_Grab",false);
+            Cylinder_Operation("Defend_Press",true);
+            Cylinder_Operation("R_Upper_Grab",true);
+            Cylinder_Operation("R_Upper_Deploy",true);
+            Cylinder_Operation("R_Lower_Grab",true);
+            Cylinder_Operation("R_Lower_Deploy",true);
+            Cylinder_Operation("L_Upper_Grab",true);
+            Cylinder_Operation("L_Upper_Deploy",true);
+            Cylinder_Operation("L_Lower_Grab",true);
+            Cylinder_Operation("L_Lower_Deploy",true);
+
         //NODELET_INFO("Homing Mode");
         if(_rightthumb){
             this->Arm_R_move_Vel(5.0);
@@ -2414,47 +2461,93 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
     //}
 
     if(_piling_auto_Mode && !_start){ //--------------------------------------------------------------------------------------------------------------------------------
-        if(!(_autoPile_L_mode_count == 3 && !_arm_l_avoid1lagori) && !(_autoPile_L_mode_count == 6 && !_arm_l_avoidlagoribase) && !(_autoPile_L_mode_count == 15 && !_arm_l_get4lagori)){
-            if(_leftthumb){
-                if(Arm_L_position <= arm_l_lower_pos){
-                    this->Arm_L_move_Vel(0.0);
-                }else if(Arm_L_position <= arm_l_lower_pos + 5){
-                    this->Arm_L_move_Vel(-10.0);
+        if(!_piling_auto_Mode_UnderFirst){
+            if(!(_autoPile_L_mode_count == 3 && !_arm_l_avoid1lagori) && !(_autoPile_L_mode_count == 6 && !_arm_l_avoidlagoribase) && !(_autoPile_L_mode_count == 15 && !_arm_l_get4lagori)){
+                if(_leftthumb){
+                    if(Arm_L_position <= arm_l_lower_pos){
+                        this->Arm_L_move_Vel(0.0);
+                    }else if(Arm_L_position <= arm_l_lower_pos + 5){
+                        this->Arm_L_move_Vel(-10.0);
+                    }else{
+                        this->Arm_L_move_Vel(-20.0);
+                    }
+                }else if(_lb){
+                    if(Arm_L_position >= arm_l_upper_pos){
+                        this->Arm_L_move_Vel(0.0);
+                    }else if(Arm_L_position >= arm_l_upper_pos - 5){
+                        this->Arm_L_move_Vel(10.0);
+                    }else{
+                        this->Arm_L_move_Vel(20.0);
+                    }
                 }else{
-                    this->Arm_L_move_Vel(-20.0);
-                }
-            }else if(_lb){
-                if(Arm_L_position >= arm_l_upper_pos){
                     this->Arm_L_move_Vel(0.0);
-                }else if(Arm_L_position >= arm_l_upper_pos - 5){
-                    this->Arm_L_move_Vel(10.0);
-                }else{
-                    this->Arm_L_move_Vel(20.0);
                 }
-            }else{
-                this->Arm_L_move_Vel(0.0);
             }
-        }
-        if(!(_autoPile_R_mode_count == 3 && !_arm_r_avoid1lagori) && !(_autoPile_R_mode_count == 6 && !_arm_r_avoidlagoribase) && !(_autoPile_R_mode_count == 15 && !_arm_r_get4lagori)){
-            if(_rightthumb){
-                if(Arm_R_position >= arm_r_lower_pos){
-                    this->Arm_R_move_Vel(0.0);
-                }else if(Arm_R_position >= arm_r_lower_pos - 5){
-                    this->Arm_R_move_Vel(10.0);
+            if(!(_autoPile_R_mode_count == 3 && !_arm_r_avoid1lagori) && !(_autoPile_R_mode_count == 6 && !_arm_r_avoidlagoribase) && !(_autoPile_R_mode_count == 15 && !_arm_r_get4lagori)){
+                if(_rightthumb){
+                    if(Arm_R_position >= arm_r_lower_pos){
+                        this->Arm_R_move_Vel(0.0);
+                    }else if(Arm_R_position >= arm_r_lower_pos - 5){
+                        this->Arm_R_move_Vel(10.0);
+                    }else{
+                        this->Arm_R_move_Vel(20.0);
+                    }
+                }else if(_rb){
+                    if(Arm_R_position <= arm_r_upper_pos){
+                        this->Arm_R_move_Vel(0.0);
+                    }else if(Arm_R_position <= arm_r_upper_pos + 5){
+                        this->Arm_R_move_Vel(-10.0);
+                    }else{
+                        this->Arm_R_move_Vel(-20.0);
+                    }
                 }else{
-                    this->Arm_R_move_Vel(20.0);
-                }
-            }else if(_rb){
-                if(Arm_R_position <= arm_r_upper_pos){
+                    //Cylinder_Operation("R_Clutch",false);
                     this->Arm_R_move_Vel(0.0);
-                }else if(Arm_R_position <= arm_r_upper_pos + 5){
-                    this->Arm_R_move_Vel(-10.0);
-                }else{
-                    this->Arm_R_move_Vel(-20.0);
                 }
-            }else{
-                //Cylinder_Operation("R_Clutch",false);
-                this->Arm_R_move_Vel(0.0);
+            }
+        }else{
+            if(!(_autoPile_L_mode_count == 0 && !_arm_l_avoid1lagori) && !(_autoPile_L_mode_count == 3 && !_arm_l_avoidlagoribase) && !(_autoPile_L_mode_count == 8 && !_arm_l_under) && !(_autoPile_L_mode_count == 11 && !_arm_l_avoidlagoribase) && !(_autoPile_L_mode_count == 15 && !_arm_l_get4lagori)){
+                if(_leftthumb){
+                    if(Arm_L_position <= arm_l_lower_pos){
+                        this->Arm_L_move_Vel(0.0);
+                    }else if(Arm_L_position <= arm_l_lower_pos + 5){
+                        this->Arm_L_move_Vel(-10.0);
+                    }else{
+                        this->Arm_L_move_Vel(-20.0);
+                    }
+                }else if(_lb){
+                    if(Arm_L_position >= arm_l_upper_pos){
+                        this->Arm_L_move_Vel(0.0);
+                    }else if(Arm_L_position >= arm_l_upper_pos - 5){
+                        this->Arm_L_move_Vel(10.0);
+                    }else{
+                        this->Arm_L_move_Vel(20.0);
+                    }
+                }else{
+                    this->Arm_L_move_Vel(0.0);
+                }
+            }
+            if(!(_autoPile_R_mode_count == 0 && !_arm_r_avoid1lagori) && !(_autoPile_R_mode_count == 3 && !_arm_r_avoidlagoribase)  && !(_autoPile_R_mode_count == 8 && !_arm_r_under) && !(_autoPile_R_mode_count == 11 && !_arm_r_avoidlagoribase) && !(_autoPile_R_mode_count == 15 && !_arm_r_get4lagori)){
+                if(_rightthumb){
+                    if(Arm_R_position >= arm_r_lower_pos){
+                        this->Arm_R_move_Vel(0.0);
+                    }else if(Arm_R_position >= arm_r_lower_pos - 5){
+                        this->Arm_R_move_Vel(10.0);
+                    }else{
+                        this->Arm_R_move_Vel(20.0);
+                    }
+                }else if(_rb){
+                    if(Arm_R_position <= arm_r_upper_pos){
+                        this->Arm_R_move_Vel(0.0);
+                    }else if(Arm_R_position <= arm_r_upper_pos + 5){
+                        this->Arm_R_move_Vel(-10.0);
+                    }else{
+                        this->Arm_R_move_Vel(-20.0);
+                    }
+                }else{
+                    //Cylinder_Operation("R_Clutch",false);
+                    this->Arm_R_move_Vel(0.0);
+                }
             }
         }
     }else if(_piling_manual_Mode && !_start){
@@ -2499,294 +2592,694 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         }
     }
 
-    if(_recent_R_mode_count != _autoPile_R_mode_count || _autoPile_R_mode_count == 3 || _autoPile_R_mode_count == 6 || _autoPile_R_mode_count == 15){
-        switch (_autoPile_R_mode_count)
-        {
-        case 0:
-            _arm_r_avoidlagoribase = false;
-            _arm_r_avoid1lagori = false;
-            _arm_r_get4lagori = false;
-            //Cylinder_Operation("R_Clutch",true);
-            if(_Arm_Deploy){
-                Cylinder_Operation("R_Upper_Grab",false);
-            }
-            //this->_delay_s_r = ros::Time::now().toSec() + 0.5;       
-            //while(this->_delay_s_r > ros::Time::now().toSec());
-            //this->_delay_s_r = 0.0;
-            Cylinder_Operation("R_Upper_Deploy",false);
-            Cylinder_Operation("R_Upper_Rotate",false);
-            Cylinder_Operation("R_Lower_Grab",false);
-            Cylinder_Operation("R_Lower_Deploy",false);
-            break;
-        case 1:
-            Cylinder_Operation("R_Upper_Grab",false);
-            break;
-        case 2:
-            Cylinder_Operation("R_Upper_Grab",true);
-            _Arm_R_moving = false;
-            _arm_r_avoid1lagori = false;
-            break;
-        case 3:
-            if(!_Arm_R_moving && !_arm_r_avoid1lagori){
-                _Arm_R_moving = true;
-                this->Arm_R_move_Vel(-22.0);
-            }else{
-                if(_rb || _rightthumb){
-                    _Arm_R_moving = false;
-                    _arm_r_avoid1lagori = true;
-                }else if(Arm_R_position <= arm_r_avoid1lagori_pos && !_arm_r_avoid1lagori){
-                    this->Arm_R_move_Vel(0.0);
-                    _Arm_R_moving = false;
-                    _arm_r_avoid1lagori = true;
+    if(_piling_auto_Mode && !_piling_auto_Mode_UnderFirst){
+        if(_recent_R_mode_count != _autoPile_R_mode_count || _autoPile_R_mode_count == 3 || _autoPile_R_mode_count == 6 || _autoPile_R_mode_count == 15){
+            switch (_autoPile_R_mode_count)
+            {
+            case 0:
+                _arm_r_avoidlagoribase = false;
+                _arm_r_avoid1lagori = false;
+                _arm_r_get4lagori = false;
+                //Cylinder_Operation("R_Clutch",true);
+                if(_Arm_Deploy){
+                    Cylinder_Operation("R_Upper_Grab",false);
                 }
-            }
-            break;
-        case 4:
-            _Arm_R_moving = false;
-            _arm_r_avoid1lagori = false;
-            Cylinder_Operation("R_Lower_Grab",false);
-            break;
-        case 5:
-            Cylinder_Operation("R_Lower_Grab",true);
-            _Arm_R_moving = false;
-            _arm_r_avoidlagoribase = false;
-            break;
-        //case 7:
-        //case 8:
-        //    //L_LIFT MOVE
-        //    break;
-        case 6:
-            if(!_Arm_R_moving && !_arm_r_avoidlagoribase){
-                _Arm_R_moving = true;
-                this->Arm_R_move_Vel(-22.0);
-            }else{
-                if(_rb || _rightthumb){
-                    _Arm_R_moving = false;
-                    _arm_r_avoidlagoribase = true;
-                }else if(Arm_R_position <= arm_r_avoidlagoribase_pos && !_arm_r_avoidlagoribase){
-                    this->Arm_R_move_Vel(0.0);
-                    _Arm_R_moving = false;
-                    _arm_r_avoidlagoribase = true;
-                }
-            }
-            break;
-        case 7:
-            _Arm_R_moving = false;
-            _arm_r_avoidlagoribase = false;
-            Cylinder_Operation("R_Lower_Grab",true);
-            break;
-        case 8:
-            Cylinder_Operation("R_Lower_Grab",false);
-            break;
-        case 9:
-            Cylinder_Operation("R_Lower_Deploy",false);
-            break;
-        case 10:
-            Cylinder_Operation("R_Lower_Deploy",true);
-            break;
-        case 11:
-            Cylinder_Operation("R_Upper_Grab",true);
-            break;
-        case 12:
-            Cylinder_Operation("R_Upper_Grab",false);
-            break;
-        case 13:
-            Cylinder_Operation("R_Upper_Deploy",false);
-            Cylinder_Operation("R_Lower_Deploy",true);
-            break;
-        case 14:
-            if(fabs(Arm_R_position) >= 45.0){ //&& fabs(Arm_R_position) <= 50.0){
+                //this->_delay_s_r = ros::Time::now().toSec() + 0.5;       
+                //while(this->_delay_s_r > ros::Time::now().toSec());
+                //this->_delay_s_r = 0.0;
                 Cylinder_Operation("R_Upper_Deploy",false);
-            }else{
-                Cylinder_Operation("R_Upper_Deploy",true);
-            }
-            Cylinder_Operation("R_Lower_Deploy",true);
-            Cylinder_Operation("R_Upper_Rotate",false);
-            _Arm_R_moving = false;
-            _arm_r_get4lagori = false;
-            break;
-        case 15:
-            Cylinder_Operation("R_Upper_Deploy",false);
-            Cylinder_Operation("R_Lower_Deploy",false);
-            Cylinder_Operation("R_Lower_Grab",false);
-            Cylinder_Operation("R_Upper_Grab",false);
-            if(!_Arm_R_moving && !_arm_r_get4lagori){
-                _Arm_R_moving = true;
-                if(Arm_R_position <= arm_r_get4lagori_pos - 0.5){
-                    this->Arm_R_move_Vel(20.0);
-                }else if(Arm_R_position >= arm_r_get4lagori_pos + 0.5){
-                    this->Arm_R_move_Vel(-20.0);
+                Cylinder_Operation("R_Upper_Rotate",false);
+                Cylinder_Operation("R_Lower_Grab",false);
+                Cylinder_Operation("R_Lower_Deploy",false);
+                break;
+            case 1:
+                Cylinder_Operation("R_Upper_Grab",false);
+                break;
+            case 2:
+                Cylinder_Operation("R_Upper_Grab",true);
+                _Arm_R_moving = false;
+                _arm_r_avoid1lagori = false;
+                break;
+            case 3:
+                if(!_Arm_R_moving && !_arm_r_avoid1lagori){
+                    _Arm_R_moving = true;
+                    this->Arm_R_move_Vel(-22.0);
                 }else{
-                    this->Arm_R_move_Vel(0.0);
-                    _Arm_R_moving = false;
-                    _arm_r_get4lagori = true;
+                    if(_rb || _rightthumb){
+                        _Arm_R_moving = false;
+                        _arm_r_avoid1lagori = true;
+                    }else if(Arm_R_position <= arm_r_avoid1lagori_pos && !_arm_r_avoid1lagori){
+                        this->Arm_R_move_Vel(0.0);
+                        _Arm_R_moving = false;
+                        _arm_r_avoid1lagori = true;
+                    }
                 }
-            }else{
-                if(_rb || _rightthumb){
-                    _Arm_R_moving = false;
-                    _arm_r_get4lagori = true;
-                }else if((Arm_R_position >= arm_r_get4lagori_pos - 0.5) && (Arm_R_position <= arm_r_get4lagori_pos + 0.5) && !_arm_r_get4lagori){
-                    this->Arm_R_move_Vel(0.0);
-                    _Arm_R_moving = false;
-                    _arm_r_get4lagori = true;
+                break;
+            case 4:
+                _Arm_R_moving = false;
+                _arm_r_avoid1lagori = false;
+                Cylinder_Operation("R_Lower_Grab",false);
+                break;
+            case 5:
+                Cylinder_Operation("R_Lower_Grab",true);
+                _Arm_R_moving = false;
+                _arm_r_avoidlagoribase = false;
+                break;
+            //case 7:
+            //case 8:
+            //    //L_LIFT MOVE
+            //    break;
+            case 6:
+                if(!_Arm_R_moving && !_arm_r_avoidlagoribase){
+                    _Arm_R_moving = true;
+                    this->Arm_R_move_Vel(-22.0);
+                }else{
+                    if(_rb || _rightthumb){
+                        _Arm_R_moving = false;
+                        _arm_r_avoidlagoribase = true;
+                    }else if(Arm_R_position <= arm_r_avoidlagoribase_pos && !_arm_r_avoidlagoribase){
+                        this->Arm_R_move_Vel(0.0);
+                        _Arm_R_moving = false;
+                        _arm_r_avoidlagoribase = true;
+                    }
                 }
+                break;
+            case 7:
+                _Arm_R_moving = false;
+                _arm_r_avoidlagoribase = false;
+                Cylinder_Operation("R_Lower_Grab",true);
+                break;
+            case 8:
+                Cylinder_Operation("R_Lower_Grab",false);
+                break;
+            case 9:
+                Cylinder_Operation("R_Lower_Deploy",false);
+                break;
+            case 10:
+                Cylinder_Operation("R_Lower_Deploy",true);
+                break;
+            case 11:
+                Cylinder_Operation("R_Upper_Grab",true);
+                break;
+            case 12:
+                Cylinder_Operation("R_Upper_Grab",false);
+                break;
+            case 13:
+                Cylinder_Operation("R_Upper_Deploy",false);
+                Cylinder_Operation("R_Lower_Deploy",true);
+                break;
+            case 14:
+                if(fabs(Arm_R_position) >= 45.0){ //&& fabs(Arm_R_position) <= 50.0){
+                    Cylinder_Operation("R_Upper_Deploy",false);
+                }else{
+                    Cylinder_Operation("R_Upper_Deploy",true);
+                }
+                Cylinder_Operation("R_Lower_Deploy",true);
+                Cylinder_Operation("R_Upper_Rotate",false);
+                _Arm_R_moving = false;
+                _arm_r_get4lagori = false;
+                break;
+            case 15:
+                Cylinder_Operation("R_Upper_Deploy",false);
+                Cylinder_Operation("R_Lower_Deploy",false);
+                Cylinder_Operation("R_Lower_Grab",false);
+                Cylinder_Operation("R_Upper_Grab",false);
+                if(!_Arm_R_moving && !_arm_r_get4lagori){
+                    _Arm_R_moving = true;
+                    if(Arm_R_position <= arm_r_get4lagori_pos - 0.5){
+                        this->Arm_R_move_Vel(20.0);
+                    }else if(Arm_R_position >= arm_r_get4lagori_pos + 0.5){
+                        this->Arm_R_move_Vel(-20.0);
+                    }else{
+                        this->Arm_R_move_Vel(0.0);
+                        _Arm_R_moving = false;
+                        _arm_r_get4lagori = true;
+                    }
+                }else{
+                    if(_rb || _rightthumb){
+                        _Arm_R_moving = false;
+                        _arm_r_get4lagori = true;
+                    }else if((Arm_R_position >= arm_r_get4lagori_pos - 0.5) && (Arm_R_position <= arm_r_get4lagori_pos + 0.5) && !_arm_r_get4lagori){
+                        this->Arm_R_move_Vel(0.0);
+                        _Arm_R_moving = false;
+                        _arm_r_get4lagori = true;
+                    }
+                }
+                break;
+            case 16:
+                Cylinder_Operation("R_Lower_Grab",true);
+                Cylinder_Operation("R_Upper_Grab",true);
+                _Arm_R_moving = false;
+                _arm_r_get4lagori = false;
+                break;
+            case 17:
+                Cylinder_Operation("R_Lower_Grab",false);
+                Cylinder_Operation("R_Upper_Grab",false);
+                break;
+            default:
+                break;
             }
-            break;
-        case 16:
-            Cylinder_Operation("R_Lower_Grab",true);
-            Cylinder_Operation("R_Upper_Grab",true);
-            break;
-            _Arm_R_moving = false;
-            _arm_r_get4lagori = false;
-        case 17:
-            Cylinder_Operation("R_Lower_Grab",false);
-            Cylinder_Operation("R_Upper_Grab",false);
-            break;
-        default:
-            break;
         }
-    }
-    if(_recent_L_mode_count != _autoPile_L_mode_count || _autoPile_L_mode_count == 3 || _autoPile_L_mode_count == 6 || _autoPile_L_mode_count == 15){
-        switch (_autoPile_L_mode_count)
-        {
-        case 0:
-            _arm_l_avoidlagoribase = false;
-            _arm_l_avoid1lagori = false;
-            _arm_l_get4lagori = false;
-            //Cylinder_Operation("L_Clutch",true);
-            if(_Arm_Deploy){
-                Cylinder_Operation("L_Upper_Grab",false);
-            }
-            //this->_delay_s_l = ros::Time::now().toSec() + 0.5;       
-            //while(this->_delay_s_l > ros::Time::now().toSec());
-            //this->_delay_s_l = 0.0;
-            Cylinder_Operation("L_Upper_Deploy",false);
-            Cylinder_Operation("L_Upper_Rotate",false);
-            Cylinder_Operation("L_Lower_Grab",false);
-            Cylinder_Operation("L_Lower_Deploy",false);
-            break;
-        case 1:
-            Cylinder_Operation("L_Upper_Grab",false);
-            break;
-        case 2:
-            Cylinder_Operation("L_Upper_Grab",true);
-            _Arm_L_moving = false;
-            _arm_l_avoid1lagori = false;
-            break;
-        case 3:
-            if(!_Arm_L_moving && !_arm_l_avoid1lagori){
-                _Arm_L_moving = true;
-                this->Arm_L_move_Vel(22.0);
-            }else{
-                if(_lb || _leftthumb){
-                    _Arm_L_moving = false;
-                    _arm_l_avoid1lagori = true;
-                }else if(Arm_L_position >= arm_l_avoid1lagori_pos && !_arm_l_avoid1lagori){
-                    this->Arm_L_move_Vel(0.0);
-                    _Arm_L_moving = false;
-                    _arm_l_avoid1lagori = true;
+        if(_recent_L_mode_count != _autoPile_L_mode_count || _autoPile_L_mode_count == 3 || _autoPile_L_mode_count == 6 || _autoPile_L_mode_count == 15){
+            switch (_autoPile_L_mode_count)
+            {
+            case 0:
+                _arm_l_avoidlagoribase = false;
+                _arm_l_avoid1lagori = false;
+                _arm_l_get4lagori = false;
+                //Cylinder_Operation("L_Clutch",true);
+                if(_Arm_Deploy){
+                    Cylinder_Operation("L_Upper_Grab",false);
                 }
-            }
-            break;
-        case 4:
-            _Arm_L_moving = false;
-            _arm_l_avoid1lagori = false;
-            Cylinder_Operation("L_Lower_Grab",false);
-            break;
-        case 5:
-            Cylinder_Operation("L_Lower_Grab",true);
-            _Arm_L_moving = false;
-            _arm_l_avoidlagoribase = false;
-            break;
-        //case 7:
-        //case 8:
-        //    //L_LIFT MOVE
-        //    break;
-        case 6:
-            if(!_Arm_L_moving && !_arm_l_avoidlagoribase){
-                _Arm_L_moving = true;
-                this->Arm_L_move_Vel(22.0);
-            }else{
-                if(_lb || _leftthumb){
-                    _Arm_L_moving = false;
-                    _arm_l_avoidlagoribase = true;
-                }else if(Arm_L_position >= arm_l_avoidlagoribase_pos && !_arm_l_avoidlagoribase){
-                    this->Arm_L_move_Vel(0.0);
-                    _Arm_L_moving = false;
-                    _arm_l_avoidlagoribase = true;
-                }
-            }
-            break;
-        case 7:
-            _Arm_L_moving = false;
-            _arm_l_avoidlagoribase = false;
-            Cylinder_Operation("L_Lower_Grab",true);
-            break;
-        case 8:
-            Cylinder_Operation("L_Lower_Grab",false);
-            break;
-        case 9:
-            Cylinder_Operation("L_Lower_Deploy",false);
-            break;
-        case 10:
-            Cylinder_Operation("L_Lower_Deploy",true);
-            break;
-        case 11:
-            Cylinder_Operation("L_Upper_Grab",true);
-            break;
-        case 12:
-            Cylinder_Operation("L_Upper_Grab",false);
-            break;
-        case 13:
-            Cylinder_Operation("L_Upper_Deploy",false);
-            Cylinder_Operation("L_Lower_Deploy",true);
-            break;
-        case 14:
-            if(fabs(Arm_L_position) >= 45.0){ //&& fabs(Arm_L_position) <= 50.0){
+                //this->_delay_s_l = ros::Time::now().toSec() + 0.5;       
+                //while(this->_delay_s_l > ros::Time::now().toSec());
+                //this->_delay_s_l = 0.0;
                 Cylinder_Operation("L_Upper_Deploy",false);
-            }else{
-                Cylinder_Operation("L_Upper_Deploy",true);
-            }
-            Cylinder_Operation("L_Lower_Deploy",true);
-            Cylinder_Operation("L_Upper_Rotate",false);
-            break;
-        case 15:
-            Cylinder_Operation("L_Upper_Deploy",false);
-            Cylinder_Operation("L_Lower_Deploy",false);
-            Cylinder_Operation("L_Lower_Grab",false);
-            Cylinder_Operation("L_Upper_Grab",false);
-            if(!_Arm_L_moving && !_arm_l_get4lagori){
-                _Arm_L_moving = true;
-                if(Arm_L_position <= arm_l_get4lagori_pos - 0.5){
-                    this->Arm_L_move_Vel(20.0);
-                }else if(Arm_L_position >= arm_l_get4lagori_pos + 0.5){
-                    this->Arm_L_move_Vel(-20.0);
+                Cylinder_Operation("L_Upper_Rotate",false);
+                Cylinder_Operation("L_Lower_Grab",false);
+                Cylinder_Operation("L_Lower_Deploy",false);
+                break;
+            case 1:
+                Cylinder_Operation("L_Upper_Grab",false);
+                break;
+            case 2:
+                Cylinder_Operation("L_Upper_Grab",true);
+                _Arm_L_moving = false;
+                _arm_l_avoid1lagori = false;
+                break;
+            case 3:
+                if(!_Arm_L_moving && !_arm_l_avoid1lagori){
+                    _Arm_L_moving = true;
+                    this->Arm_L_move_Vel(22.0);
                 }else{
-                    this->Arm_L_move_Vel(0.0);
-                    _Arm_L_moving = false;
-                    _arm_l_get4lagori = true;
+                    if(_lb || _leftthumb){
+                        _Arm_L_moving = false;
+                        _arm_l_avoid1lagori = true;
+                    }else if(Arm_L_position >= arm_l_avoid1lagori_pos && !_arm_l_avoid1lagori){
+                        this->Arm_L_move_Vel(0.0);
+                        _Arm_L_moving = false;
+                        _arm_l_avoid1lagori = true;
+                    }
                 }
-            }else{
-                if(_lb || _leftthumb){
-                    _Arm_L_moving = false;
-                    _arm_l_get4lagori = true;
-                }else if((Arm_L_position >= arm_l_get4lagori_pos - 0.5) && (Arm_L_position <= arm_l_get4lagori_pos + 0.5) && !_arm_l_get4lagori){
-                    this->Arm_L_move_Vel(0.0);
-                    _Arm_L_moving = false;
-                    _arm_l_get4lagori = true;
+                break;
+            case 4:
+                _Arm_L_moving = false;
+                _arm_l_avoid1lagori = false;
+                Cylinder_Operation("L_Lower_Grab",false);
+                break;
+            case 5:
+                Cylinder_Operation("L_Lower_Grab",true);
+                _Arm_L_moving = false;
+                _arm_l_avoidlagoribase = false;
+                break;
+            //case 7:
+            //case 8:
+            //    //L_LIFT MOVE
+            //    break;
+            case 6:
+                if(!_Arm_L_moving && !_arm_l_avoidlagoribase){
+                    _Arm_L_moving = true;
+                    this->Arm_L_move_Vel(22.0);
+                }else{
+                    if(_lb || _leftthumb){
+                        _Arm_L_moving = false;
+                        _arm_l_avoidlagoribase = true;
+                    }else if(Arm_L_position >= arm_l_avoidlagoribase_pos && !_arm_l_avoidlagoribase){
+                        this->Arm_L_move_Vel(0.0);
+                        _Arm_L_moving = false;
+                        _arm_l_avoidlagoribase = true;
+                    }
                 }
+                break;
+            case 7:
+                _Arm_L_moving = false;
+                _arm_l_avoidlagoribase = false;
+                Cylinder_Operation("L_Lower_Grab",true);
+                break;
+            case 8:
+                Cylinder_Operation("L_Lower_Grab",false);
+                break;
+            case 9:
+                Cylinder_Operation("L_Lower_Deploy",false);
+                break;
+            case 10:
+                Cylinder_Operation("L_Lower_Deploy",true);
+                break;
+            case 11:
+                Cylinder_Operation("L_Upper_Grab",true);
+                break;
+            case 12:
+                Cylinder_Operation("L_Upper_Grab",false);
+                break;
+            case 13:
+                Cylinder_Operation("L_Upper_Deploy",false);
+                Cylinder_Operation("L_Lower_Deploy",true);
+                break;
+            case 14:
+                if(fabs(Arm_L_position) >= 45.0){ //&& fabs(Arm_L_position) <= 50.0){
+                    Cylinder_Operation("L_Upper_Deploy",false);
+                }else{
+                    Cylinder_Operation("L_Upper_Deploy",true);
+                }
+                Cylinder_Operation("L_Lower_Deploy",true);
+                Cylinder_Operation("L_Upper_Rotate",false);
+                _Arm_L_moving = false;
+                _arm_l_get4lagori = false;
+                break;
+            case 15:
+                Cylinder_Operation("L_Upper_Deploy",false);
+                Cylinder_Operation("L_Lower_Deploy",false);
+                Cylinder_Operation("L_Lower_Grab",false);
+                Cylinder_Operation("L_Upper_Grab",false);
+                if(!_Arm_L_moving && !_arm_l_get4lagori){
+                    _Arm_L_moving = true;
+                    if(Arm_L_position <= arm_l_get4lagori_pos - 0.5){
+                        this->Arm_L_move_Vel(20.0);
+                    }else if(Arm_L_position >= arm_l_get4lagori_pos + 0.5){
+                        this->Arm_L_move_Vel(-20.0);
+                    }else{
+                        this->Arm_L_move_Vel(0.0);
+                        _Arm_L_moving = false;
+                        _arm_l_get4lagori = true;
+                    }
+                }else{
+                    if(_lb || _leftthumb){
+                        _Arm_L_moving = false;
+                        _arm_l_get4lagori = true;
+                    }else if((Arm_L_position >= arm_l_get4lagori_pos - 0.5) && (Arm_L_position <= arm_l_get4lagori_pos + 0.5) && !_arm_l_get4lagori){
+                        this->Arm_L_move_Vel(0.0);
+                        _Arm_L_moving = false;
+                        _arm_l_get4lagori = true;
+                    }
+                }
+                break;
+            case 16:
+                Cylinder_Operation("L_Lower_Grab",true);
+                Cylinder_Operation("L_Upper_Grab",true);
+                _Arm_L_moving = false;
+                _arm_l_get4lagori = false;
+                break;
+            case 17:
+                Cylinder_Operation("L_Lower_Grab",false);
+                Cylinder_Operation("L_Upper_Grab",false);
+                break;
+            default:
+                break;
             }
-            break;
-        case 16:
-            Cylinder_Operation("L_Lower_Grab",true);
-            Cylinder_Operation("L_Upper_Grab",true);
-            break;
-        case 17:
-            Cylinder_Operation("L_Lower_Grab",false);
-            Cylinder_Operation("L_Upper_Grab",false);
-            break;
-        default:
-            break;
+        }
+    }else if(_piling_auto_Mode && _piling_auto_Mode_UnderFirst){
+        if(_recent_R_mode_count != _autoPile_R_mode_count || _autoPile_R_mode_count == 0 || _autoPile_R_mode_count == 3 || _autoPile_R_mode_count == 8 ||  _autoPile_R_mode_count == 11 || _autoPile_R_mode_count == 15){
+            switch (_autoPile_R_mode_count)
+            {
+            case 0:
+                _arm_r_avoidlagoribase = false;
+                //_arm_r_avoid1lagori = false;
+                _arm_r_get4lagori = false;
+                _arm_r_under = false;
+                //_Arm_R_moving = false;
+                //Cylinder_Operation("R_Clutch",true);
+                if(_Arm_Deploy){
+                    Cylinder_Operation("R_Upper_Grab",false);
+                }
+                //this->_delay_s_r = ros::Time::now().toSec() + 0.5;       
+                //while(this->_delay_s_r > ros::Time::now().toSec());
+                //this->_delay_s_r = 0.0;
+                Cylinder_Operation("R_Upper_Deploy",false);
+                Cylinder_Operation("R_Upper_Rotate",false);
+                Cylinder_Operation("R_Lower_Grab",false);
+                Cylinder_Operation("R_Lower_Deploy",false);
+                if(!_Arm_R_moving && !_arm_r_avoid1lagori){
+                    _Arm_R_moving = true;
+                    this->Arm_R_move_Vel(-22.0);
+                }else{
+                    if(_rb || _rightthumb){
+                        _Arm_R_moving = false;
+                        _arm_r_avoid1lagori = true;
+                    }else if(Arm_R_position <= arm_r_avoid1lagori_pos && !_arm_r_avoid1lagori){
+                        this->Arm_R_move_Vel(0.0);
+                        _Arm_R_moving = false;
+                        _arm_r_avoid1lagori = true;
+                    }
+                }
+                break;
+            case 1:
+                Cylinder_Operation("R_Lower_Grab",false);
+                _Arm_R_moving = false;
+                _arm_r_avoid1lagori = false;
+                break;
+            case 2:
+                Cylinder_Operation("R_Lower_Grab",true);
+                _Arm_R_moving = false;
+                _arm_r_avoidlagoribase = false;
+                break;
+            case 3:
+                if(!_Arm_R_moving && !_arm_r_avoidlagoribase){
+                    _Arm_R_moving = true;
+                    this->Arm_R_move_Vel(-22.0);
+                }else{
+                    if(_rb || _rightthumb){
+                        _Arm_R_moving = false;
+                        _arm_r_avoidlagoribase = true;
+                    }else if(Arm_R_position <= arm_r_avoidlagoribase_pos && !_arm_r_avoidlagoribase){
+                        this->Arm_R_move_Vel(0.0);
+                        _Arm_R_moving = false;
+                        _arm_r_avoidlagoribase = true;
+                    }
+                }
+                break;
+            case 4:
+                Cylinder_Operation("R_Lower_Grab",true);
+                _Arm_R_moving = false;
+                _arm_r_avoidlagoribase = false;
+                break;
+            case 5:
+                Cylinder_Operation("R_Lower_Grab",false);
+                break;
+            case 6:
+                Cylinder_Operation("R_Lower_Deploy",false);
+                break;
+            case 7:
+                Cylinder_Operation("R_Lower_Deploy",true);
+                _Arm_R_moving = false;
+                _arm_r_under = false;
+                break;
+            case 8:
+                if(!_Arm_R_moving && !_arm_r_under){
+                    _Arm_R_moving = true;
+                    if(Arm_R_position <= arm_r_lower_pos - 4.0){
+                        this->Arm_R_move_Vel(20.0);
+                    }else{
+                        this->Arm_R_move_Vel(0.0);
+                        _Arm_R_moving = false;
+                        _arm_r_under = true;
+                    }
+                }else{
+                    if(_rb || _rightthumb){
+                        _Arm_R_moving = false;
+                        _arm_r_under = true;
+                    }else if((Arm_R_position >= arm_r_lower_pos - 4.0) && !_arm_r_under){
+                        this->Arm_R_move_Vel(0.0);
+                        _Arm_R_moving = false;
+                        _arm_r_under = true;
+                    }
+                }
+                break;
+            case 9:
+                Cylinder_Operation("R_Upper_Grab",false);
+                _Arm_R_moving = false;
+                _arm_r_under = false;
+                break;
+            case 10:
+                Cylinder_Operation("R_Upper_Grab",true);
+                Cylinder_Operation("R_Lower_Grab",false);
+                _Arm_R_moving = false;
+                _arm_r_avoidlagoribase = false;
+                break;
+            case 11:
+                if(!_Arm_R_moving && !_arm_r_avoidlagoribase){
+                    _Arm_R_moving = true;
+                    this->Arm_R_move_Vel(-22.0);
+                }else{
+                    if(_rb || _rightthumb){
+                        _Arm_R_moving = false;
+                        _arm_r_avoidlagoribase = true;
+                    }else if(Arm_R_position <= arm_r_avoidlagoribase_pos && !_arm_r_avoidlagoribase){
+                        this->Arm_R_move_Vel(0.0);
+                        _Arm_R_moving = false;
+                        _arm_r_avoidlagoribase = true;
+                    }
+                }
+                if(fabs(Arm_R_position) >= 20.0){ 
+                    Cylinder_Operation("R_Lower_Grab",true);
+                }else{
+                    Cylinder_Operation("R_Lower_Grab",false);
+                }
+                break;
+            case 12:
+                Cylinder_Operation("R_Upper_Grab",true);
+                _Arm_R_moving = false;
+                _arm_r_avoidlagoribase = false;
+                break;
+            case 13:
+                Cylinder_Operation("R_Upper_Grab",false);
+                Cylinder_Operation("R_Upper_Deploy",false);
+                break;
+            case 14:
+                if(fabs(Arm_R_position) >= 45.0){ //&& fabs(Arm_R_position) <= 50.0){
+                    Cylinder_Operation("R_Upper_Deploy",false);
+                }else{
+                    Cylinder_Operation("R_Upper_Deploy",true);
+                }
+                Cylinder_Operation("R_Lower_Deploy",true);
+                break;
+            case 15:
+                _Arm_R_moving = false;
+                _arm_r_get4lagori = false;
+                break;
+            case 16:
+                _Arm_R_moving = false;
+                _arm_r_get4lagori = false;
+                break;
+            case 17:
+                _Arm_R_moving = false;
+                _arm_r_get4lagori = false;
+                break;
+            case 18:
+                Cylinder_Operation("R_Upper_Deploy",false);
+                Cylinder_Operation("R_Lower_Deploy",false);
+                Cylinder_Operation("R_Lower_Grab",false);
+                Cylinder_Operation("R_Upper_Grab",false);
+                if(!_Arm_R_moving && !_arm_r_get4lagori){
+                    _Arm_R_moving = true;
+                    if(Arm_R_position <= arm_r_get4lagori_pos - 0.5){
+                        this->Arm_R_move_Vel(20.0);
+                    }else if(Arm_R_position >= arm_r_get4lagori_pos + 0.5){
+                        this->Arm_R_move_Vel(-20.0);
+                    }else{
+                        this->Arm_R_move_Vel(0.0);
+                        _Arm_R_moving = false;
+                        _arm_r_get4lagori = true;
+                    }
+                }else{
+                    if(_rb || _rightthumb){
+                        _Arm_R_moving = false;
+                        _arm_r_get4lagori = true;
+                    }else if((Arm_R_position >= arm_r_get4lagori_pos - 0.5) && (Arm_R_position <= arm_r_get4lagori_pos + 0.5) && !_arm_r_get4lagori){
+                        this->Arm_R_move_Vel(0.0);
+                        _Arm_R_moving = false;
+                        _arm_r_get4lagori = true;
+                    }
+                }
+                break;
+            case 19:
+                Cylinder_Operation("R_Lower_Grab",true);
+                Cylinder_Operation("R_Upper_Grab",true);
+                _Arm_R_moving = false;
+                _arm_r_get4lagori = false;
+                break;
+            case 20:
+                Cylinder_Operation("R_Lower_Grab",false);
+                Cylinder_Operation("R_Upper_Grab",false);
+                break;
+            default:
+                break;
+            }
+        }
+        if(_recent_L_mode_count != _autoPile_L_mode_count || _autoPile_L_mode_count == 0 || _autoPile_L_mode_count == 3 || _autoPile_L_mode_count == 8 || _autoPile_L_mode_count == 11 || _autoPile_L_mode_count == 15){
+            switch (_autoPile_L_mode_count)
+            {
+            case 0:
+                _arm_l_avoidlagoribase = false;
+                //_arm_l_avoid1lagori = false;
+                _arm_l_get4lagori = false;
+                //_Arm_L_moving = false;
+                //Cylinder_Operation("L_Clutch",true);
+                if(_Arm_Deploy){
+                    Cylinder_Operation("L_Upper_Grab",false);
+                }
+                //this->_delay_s_l = ros::Time::now().toSec() + 0.5;       
+                //while(this->_delay_s_l > ros::Time::now().toSec());
+                //this->_delay_s_l = 0.0;
+                Cylinder_Operation("L_Upper_Deploy",false);
+                Cylinder_Operation("L_Upper_Rotate",false);
+                Cylinder_Operation("L_Lower_Grab",false);
+                Cylinder_Operation("L_Lower_Deploy",false);
+                if(!_Arm_L_moving && !_arm_l_avoid1lagori){
+                    _Arm_L_moving = true;
+                    this->Arm_L_move_Vel(22.0);
+                }else{
+                    if(_lb || _leftthumb){
+                        _Arm_L_moving = false;
+                        _arm_l_avoid1lagori = true;
+                    }else if(Arm_L_position >= arm_l_avoid1lagori_pos && !_arm_l_avoid1lagori){
+                        this->Arm_L_move_Vel(0.0);
+                        _Arm_L_moving = false;
+                        _arm_l_avoid1lagori = true;
+                    }
+                }
+                break;
+            case 1:
+                Cylinder_Operation("L_Upper_Grab",false);
+                _Arm_L_moving = false;
+                _arm_l_avoid1lagori = false;
+                break;
+            case 2:
+                Cylinder_Operation("L_Lower_Grab",true);
+                _Arm_L_moving = false;
+                _arm_l_avoidlagoribase = false;
+                break;
+            case 3:
+                if(!_Arm_L_moving && !_arm_l_avoidlagoribase){
+                    _Arm_L_moving = true;
+                    this->Arm_L_move_Vel(22.0);
+                }else{
+                    if(_lb || _leftthumb){
+                        _Arm_L_moving = false;
+                        _arm_l_avoidlagoribase = true;
+                    }else if(Arm_L_position >= arm_l_avoidlagoribase_pos && !_arm_l_avoidlagoribase){
+                        this->Arm_L_move_Vel(0.0);
+                        _Arm_L_moving = false;
+                        _arm_l_avoidlagoribase = true;
+                    }
+                }
+                break;
+            case 4:
+                Cylinder_Operation("L_Lower_Grab",true);
+                _Arm_L_moving = false;
+                _arm_l_avoidlagoribase = false;
+                break;
+            case 5:
+                Cylinder_Operation("L_Lower_Grab",false);
+                break;
+            case 6:
+                Cylinder_Operation("L_Lower_Deploy",false);
+                break;
+            case 7:
+                Cylinder_Operation("L_Lower_Deploy",true);
+                _Arm_L_moving = false;
+                _arm_l_under = false;
+                break;
+            case 8:
+                 if(!_Arm_L_moving && !_arm_l_under){
+                    _Arm_L_moving = true;
+                    if(Arm_L_position >= arm_l_lower_pos + 4.0){
+                        this->Arm_L_move_Vel(-20.0);
+                    }else{
+                        this->Arm_L_move_Vel(0.0);
+                        _Arm_L_moving = false;
+                        _arm_l_under = true;
+                    }
+                }else{
+                    if(_lb || _leftthumb){
+                        _Arm_L_moving = false;
+                        _arm_l_under = true;
+                    }else if((Arm_L_position <= arm_l_lower_pos + 4.0) && !_arm_l_under){
+                        this->Arm_L_move_Vel(0.0);
+                        _Arm_L_moving = false;
+                        _arm_l_under = true;
+                    }
+                }
+                break;
+            case 9:
+                Cylinder_Operation("L_Upper_Grab",false);
+                _Arm_L_moving = false;
+                _arm_l_under = false;
+                break;
+            case 10:
+                Cylinder_Operation("L_Upper_Grab",true);
+                Cylinder_Operation("L_Lower_Grab",false);
+                _Arm_L_moving = false;
+                _arm_l_avoidlagoribase = false;
+                break;
+            case 11:
+                if(!_Arm_L_moving && !_arm_l_avoidlagoribase){
+                    _Arm_L_moving = true;
+                    this->Arm_L_move_Vel(22.0);
+                }else{
+                    if(_lb || _leftthumb){
+                        _Arm_L_moving = false;
+                        _arm_l_avoidlagoribase = true;
+                    }else if(Arm_L_position >= arm_l_avoidlagoribase_pos && !_arm_l_avoidlagoribase){
+                        this->Arm_L_move_Vel(0.0);
+                        _Arm_L_moving = false;
+                        _arm_l_avoidlagoribase = true;
+                    }
+                }
+                if(fabs(Arm_L_position) >= 20.0){ 
+                    Cylinder_Operation("L_Lower_Grab",true);
+                }else{
+                    Cylinder_Operation("L_Lower_Grab",false);
+                }
+                break;
+            case 12:
+                Cylinder_Operation("L_Upper_Grab",true);
+                _Arm_L_moving = false;
+                _arm_l_avoidlagoribase = false;
+                break;
+            case 13:
+                Cylinder_Operation("L_Upper_Grab",false);
+                Cylinder_Operation("L_Upper_Deploy",false);
+                break;
+            case 14:
+                if(fabs(Arm_L_position) >= 45.0){ //&& fabs(Arm_L_position) <= 50.0){
+                    Cylinder_Operation("L_Upper_Deploy",false);
+                }else{
+                    Cylinder_Operation("L_Upper_Deploy",true);
+                }
+                Cylinder_Operation("L_Lower_Deploy",true);
+                break;
+            case 15:
+                _Arm_L_moving = false;
+                _arm_l_get4lagori = false;
+                break;
+            case 16:
+                _Arm_L_moving = false;
+                _arm_l_get4lagori = false;
+                break;
+            case 17:
+                _Arm_L_moving = false;
+                _arm_l_get4lagori = false;
+                break;
+            case 18:
+                Cylinder_Operation("L_Upper_Deploy",false);
+                Cylinder_Operation("L_Lower_Deploy",false);
+                Cylinder_Operation("L_Lower_Grab",false);
+                Cylinder_Operation("L_Upper_Grab",false);
+                if(!_Arm_L_moving && !_arm_l_get4lagori){
+                    _Arm_L_moving = true;
+                    if(Arm_L_position <= arm_l_get4lagori_pos - 0.5){
+                        this->Arm_L_move_Vel(20.0);
+                    }else if(Arm_L_position >= arm_l_get4lagori_pos + 0.5){
+                        this->Arm_L_move_Vel(-20.0);
+                    }else{
+                        this->Arm_L_move_Vel(0.0);
+                        _Arm_L_moving = false;
+                        _arm_l_get4lagori = true;
+                    }
+                }else{
+                    if(_lb || _leftthumb){
+                        _Arm_L_moving = false;
+                        _arm_l_get4lagori = true;
+                    }else if((Arm_L_position >= arm_l_get4lagori_pos - 0.5) && (Arm_L_position <= arm_l_get4lagori_pos + 0.5) && !_arm_l_get4lagori){
+                        this->Arm_L_move_Vel(0.0);
+                        _Arm_L_moving = false;
+                        _arm_l_get4lagori = true;
+                    }
+                }
+                break;
+            case 19:
+                Cylinder_Operation("L_Lower_Grab",true);
+                Cylinder_Operation("L_Upper_Grab",true);
+                _Arm_L_moving = false;
+                _arm_l_get4lagori = false;
+                break;
+            case 20:
+                Cylinder_Operation("L_Lower_Grab",false);
+                Cylinder_Operation("L_Upper_Grab",false);
+                break;
+            default:
+                break;
+            }
         }
     }
     _recent_R_mode_count = _autoPile_R_mode_count;
@@ -2830,7 +3323,7 @@ void MR2_nodelet_main::control_timer_callback(const ros::TimerEvent &event)
         this->currentCommandIndex++;
         NODELET_INFO("Defence Lift Move to Upper");
     }else if(currentCommand == ControllerCommands::defenceLift_mv_Upper_slowly){
-        if(defenceLift_position >= defence_lift_upper_pos-1.0){
+        if(defenceLift_position >= defence_lift_upper_pos-0.7){
             _defence_lift_upper_speeddown = false;
             Defence_Lift_move_Vel(0.0);
             Defence_Lift_move_Vel(0.0);

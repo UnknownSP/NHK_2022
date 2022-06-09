@@ -138,7 +138,7 @@
       <param name="arm_l_get4lagori_pos" type="double" value="43.5" />
       <param name="arm_r_upper_pos" type="double" value="-64.0" />
       <param name="arm_l_upper_pos" type="double" value="64.0" />
-      <param name="arm_r_lower_pos" type="double" value="-0.0" />
+      <param name="arm_r_lower_pos" type="double" value="0.0" />
       <param name="arm_l_lower_pos" type="double" value="0.0" />
 
 
